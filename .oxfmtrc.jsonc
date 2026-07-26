@@ -1,0 +1,25 @@
+{
+  "experimentalSortImports": {
+    "groups": [
+      "builtin",
+      "external",
+      "internal",
+      "parent",
+      "sibling",
+      "type"
+    ],
+    "internalPattern": ["^@repo/"],
+    "ignoreCase": true,
+    "newlinesBetween": true,
+    "order": "asc"
+  },
+  "experimentalTailwindcss": {
+    "stylesheet": "./packages/ui/src/styles/globals.css",
+    "attributes": ["class", "className"],
+    "functions": ["clsx", "cn"],
+    "preserveWhitespace": true
+  },
+  "experimentalSortPackageJson": {
+    "sortScripts": true
+  }
+}
