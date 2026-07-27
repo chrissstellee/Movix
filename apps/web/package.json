@@ -6,14 +6,21 @@
   "scripts": {
     "build": "next build",
     "dev": "next dev --port 3000",
-    "lint:fix": "oxlint --fix . && oxfmt --write . && next typegen && tsc --noEmit",
-    "start": "next start"
+    "format:check": "oxfmt --check app core features test",
+    "lint": "oxlint app core features test",
+    "lint:fix": "oxlint --fix app core features test && oxfmt --write app core features test",
+    "start": "next start",
+    "test": "vitest run --configLoader runner",
+    "test:a11y": "vitest run --configLoader runner features/foundation/foundation-showcase.a11y.test.tsx",
+    "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@hookstate/core": "^4.0.2",
     "@hookstate/devtools": "^4.0.3",
+    "@repo/domain": "workspace:*",
+    "@repo/stellar": "workspace:*",
     "@repo/ui": "workspace:*",
-    "convex": "^1.31.7",
+    "convex": "^1.42.3",
     "lodash.merge": "^4.6.2",
     "next": "16.1.6",
     "react": "^19.2.4",
@@ -22,10 +29,15 @@
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",
+    "@testing-library/jest-dom": "^7.0.0",
+    "@testing-library/react": "^16.3.2",
     "@types/lodash.merge": "^4.6.9",
     "@types/node": "^22.15.3",
     "@types/react": "19.2.13",
     "@types/react-dom": "19.2.3",
-    "typescript": "5.9.2"
+    "jsdom": "^29.1.1",
+    "typescript": "5.9.2",
+    "vitest": "^4.1.10",
+    "vitest-axe": "^0.1.0"
   }
 }

@@ -16,21 +16,21 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://vercel.com"),
-  title: "Next-Tailwind Starter Template",
-  description: "Starter Template",
-  keywords: ["nextjs", "tailwindcss", "template", "starter", "kit"],
+  title: {
+    default: "Movix",
+    template: "%s | Movix",
+  },
+  description: "Secure procurement and escrow workflows on Stellar.",
+  keywords: ["Movix", "Stellar", "procurement", "escrow"],
   openGraph: {
-    siteName: "Next-Tailwind Starter Template",
-    title: "Next-Tailwind Starter Template",
-    description: "Starter Template",
-    images: "/banner.png",
+    siteName: "Movix",
+    title: "Movix",
+    description: "Secure procurement and escrow workflows on Stellar.",
     type: "website",
   },
   twitter: {
-    title: "Next-Tailwind Starter Template",
-    description: "Starter Template",
-    images: "/banner.png",
+    title: "Movix",
+    description: "Secure procurement and escrow workflows on Stellar.",
     card: "summary_large_image",
   },
 };
@@ -41,7 +41,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="scroll-smooth">
+    <html lang="en" className="dark scroll-smooth">
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         <ConvexClientProvider>
           <UiProviders>{children}</UiProviders>

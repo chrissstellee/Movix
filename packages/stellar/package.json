@@ -1,0 +1,32 @@
+{
+  "name": "@repo/stellar",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./amounts": "./src/amounts.ts",
+    "./auth": "./src/auth.ts",
+    "./config": "./src/config.ts",
+    "./contracts": "./src/contracts.ts",
+    "./events": "./src/events.ts",
+    "./transactions": "./src/transactions.ts",
+    "./wallet": "./src/wallet.ts"
+  },
+  "scripts": {
+    "build": "tsc --noEmit",
+    "format:check": "oxfmt --check src",
+    "lint": "oxlint src",
+    "lint:fix": "oxlint --fix src && oxfmt --write src",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@stellar/stellar-sdk": "^16.1.0"
+  },
+  "devDependencies": {
+    "@repo/typescript-config": "workspace:*",
+    "typescript": "5.9.2",
+    "vitest": "^4.1.10"
+  }
+}

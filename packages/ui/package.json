@@ -9,8 +9,12 @@
     "./lib/utils": "./src/lib/utils.ts"
   },
   "scripts": {
+    "build": "tsc --noEmit",
+    "format:check": "oxfmt --check src",
     "generate:component": "turbo gen react-component",
-    "lint:fix": "oxlint --fix . && oxfmt --write . && tsc --noEmit"
+    "lint": "oxlint src",
+    "lint:fix": "oxlint --fix src && oxfmt --write src",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
