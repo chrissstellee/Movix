@@ -2,6 +2,18 @@ import { v } from "convex/values";
 
 export const networkValidator = v.literal("testnet");
 
+export const authChallengeStateValidator = v.union(
+  v.literal("active"),
+  v.literal("superseded"),
+  v.literal("consumed"),
+);
+
+export const authSessionStateValidator = v.union(
+  v.literal("active"),
+  v.literal("rotated"),
+  v.literal("revoked"),
+);
+
 export const userStatusValidator = v.union(
   v.literal("active"),
   v.literal("suspended"),

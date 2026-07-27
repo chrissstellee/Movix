@@ -1,0 +1,17 @@
+# Movix Architecture Decisions
+
+Architecture Decision Records preserve choices that future implementers must not silently reinterpret.
+
+## Index
+
+| ADR | Decision | Status |
+|---|---|---|
+| [ADR-001](ADR-001-sprint-1-auth-boundary.md) | Sprint 1 wallet, SEP-10, session, JWT, and Convex authentication boundary | Accepted for implementation |
+
+## Lifecycle
+
+Each ADR records context, decision, consequences, alternatives, owners, and change triggers. A later decision does not rewrite history: create a new ADR that supersedes the earlier record and update this index.
+
+A new or superseding ADR is required before changing a fixed network, supported account/wallet class, SEP-10 trust boundary, JWT algorithm/identity contract, key-separation rule, browser persistence model, session rotation/revocation model, or authorization boundary.
+
+Bri maintains clarity and indexing. Elliot owns technical accuracy. Product, security, or DevOps approve decisions in their areas.

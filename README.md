@@ -1,112 +1,115 @@
-# Turbo-Next-Convex Template
+# Movix
 
-### Package Manager: `pnpm`
+Movix is a Testnet procurement pilot that uses Stellar for wallet-based authentication and, in later sprints, traceable escrow settlement. Sprint 1 delivers the public landing page and a secure visitor-to-authenticated-user flow using Freighter, Stellar Wallets Kit, SEP-10, short-lived application JWTs, and Convex custom authentication.
 
-## Use this template
+> [!IMPORTANT]
+> Movix currently supports Stellar Testnet only. Testnet assets have no production monetary value. Connecting or signing in with a wallet does not transfer funds and does not authorize a business to buy or supply.
+
+## Prerequisites
+
+- Node.js `>=20.9`
+- pnpm `10.1.0`
+- Rust and the `wasm32v1-none` target for contract checks
+- A Convex development deployment
+- Freighter configured for Stellar Testnet for the manual authentication smoke test
+- Server secrets supplied through the approved local or deployment secret store
+
+Never commit wallet secrets, private signing keys, session credentials, JWTs, or raw/signed authentication transactions.
+
+## Local setup
+
+1. Install dependencies:
+
+   ```bash
+   pnpm install --frozen-lockfile
+   ```
+
+2. Generate development-only authentication keys and synchronize the public/shared
+   values with your selected Convex development deployment:
+
+   ```bash
+   pnpm auth:setup:local
+   ```
+
+   This command preserves the existing Convex URLs in `apps/web/.env.local`, writes
+   uncommitted local keys, and does not change any external deployment.
+
+3. Synchronize the issuer/audience, auth-store bearer secret, and public JWT
+   verification material with the Convex development deployment selected by
+   `packages/backend/.env.local`:
+
+   ```bash
+   pnpm auth:setup:convex
+   ```
+
+   This command changes the selected external development deployment. It does not
+   upload the SEP-10 signing secret or RSA private key. See
+   [Sprint 1 authentication configuration](docs/auth/configuration.md) for production
+   provisioning.
+
+4. Start the Convex backend:
+
+   ```bash
+   pnpm --filter @repo/backend dev
+   ```
+
+5. In another terminal, start the web app:
+
+   ```bash
+   pnpm --filter web dev
+   ```
+
+6. Open `http://localhost:3000`.
+
+PowerShell environments that block `pnpm.ps1` can invoke the same commands with `pnpm.cmd`.
+
+## Repository map
+
+| Path                      | Purpose                                                                               |
+| ------------------------- | ------------------------------------------------------------------------------------- |
+| `apps/web`                | Next.js public pages, login experience, auth client, and Convex provider              |
+| `packages/backend/convex` | Convex schema, internal auth persistence, protected functions, and auth configuration |
+| `packages/stellar`        | Testnet configuration and wallet/SEP-10 boundaries                                    |
+| `packages/ui`             | Shared accessible UI primitives                                                       |
+| `packages/domain`         | Shared domain types and fixtures                                                      |
+| `contracts`               | Soroban escrow contract work retained as a quality gate                               |
+| `e2e`                     | Playwright journeys and deterministic wallet/auth fixtures                            |
+| `docs`                    | Sprint plans, architecture, decisions, operations, and review evidence                |
+
+## Quality gates
+
+Run the complete Sprint 1 closure suite from the repository root:
 
 ```bash
-npx create-turbo@latest --example https://github.com/nelwincatalogo/turbo-next-convex [project-name-here]
-```
-
-## Commands
-
-```bash
-# Run dev all apps
-pnpm dev
-
-# Run apps/web only
-pnpm --filter web dev
-
-# Run build
+pnpm format:check
+pnpm lint
+pnpm typecheck
+pnpm test
+pnpm test:a11y
+pnpm test:e2e
 pnpm build
-
-# Check types, lint, and format
-pnpm lint:fix
+pnpm test:contracts
+pnpm build:contracts
 ```
 
-## Add new package
+The current inherited baseline and the rules for distinguishing baseline failures from Sprint 1 regressions are recorded in [testing and evidence](docs/auth/testing-and-evidence.md).
 
-```bash
-# apps/web
-pnpm --filter web add date-fns
+## Sprint 1 documentation
 
-# packages/ui
-pnpm --filter @repo/ui add date-fns
-```
+- [Sprint 1 detailed specification](docs/Movix-Sprint-01-Landing-SEP10-Detailed.md)
+- [Authentication architecture](docs/auth/architecture.md)
+- [Authentication API contract](docs/auth/api-contract.md)
+- [Environment and secret configuration](docs/auth/configuration.md)
+- [Security and operations runbook](docs/auth/security-operations-runbook.md)
+- [Testing and evidence checklist](docs/auth/testing-and-evidence.md)
+- [Authentication-boundary ADR](docs/decisions/ADR-001-sprint-1-auth-boundary.md)
+- [Sprint 1 evidence manifest](docs/evidence/sprint-01/README.md)
 
-## Add new app
+## Contribution rules for authentication
 
-copy the content of `apps/web` to `apps/docs` and change the name of the app in `turbo.json` and `package.json`
-
-OR
-
-```bash
-# apps/docs
-pnpm create next-app docs --typescript
-```
-
-## What's inside?
-
-This Turborepo includes the following packages/apps:
-
-### Apps and Packages
-
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library with shadcn components shared by both `web` and `docs` applications
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
-
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
-
-### Remote Caching
-
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
-
-Turborepo can use a technique known as [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
-
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
-
-```
-
-cd my-turborepo
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-
-turbo login
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-
-```
-
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
-
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
-
-```
-
-# With [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation) installed (recommended)
-
-turbo link
-
-# Without [global `turbo`](https://turborepo.dev/docs/getting-started/installation#global-installation), use your package manager
-
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-
-```
-
-## Useful Links
-
-Learn more about the power of Turborepo:
-
-- [Tasks](https://turborepo.dev/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.dev/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.dev/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.dev/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.dev/docs/reference/configuration)
-- [CLI Usage](https://turborepo.dev/docs/reference/command-line-reference)
+- Wallet connection is not authentication.
+- SEP-10 proves control of a wallet; it does not grant organization or business authorization.
+- Browser-callable code must not mint JWTs, sign or consume challenges, or create refresh sessions.
+- Access JWTs remain in memory. The browser persists only an opaque rotating HttpOnly session cookie.
+- Protected Convex functions derive identity from `ctx.auth`; they never trust a client-supplied user identifier.
+- Update the relevant contract, runbook, evidence matrix, and ADR in the same change whenever auth behavior changes.

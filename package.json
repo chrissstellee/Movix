@@ -6,6 +6,8 @@
     "packages/*"
   ],
   "scripts": {
+    "auth:setup:convex": "node scripts/setup-local-auth.mjs --sync-convex",
+    "auth:setup:local": "node scripts/setup-local-auth.mjs",
     "build": "turbo run build",
     "build:contracts": "cargo build --manifest-path contracts/Cargo.toml --release --target wasm32v1-none",
     "dev": "turbo run dev",
@@ -15,7 +17,7 @@
     "prepare": "husky",
     "test": "turbo run test",
     "test:a11y": "pnpm --filter web test:a11y",
-    "test:contracts": "cargo test --manifest-path contracts/Cargo.toml",
+    "test:contracts": "cargo test --manifest-path contracts/Cargo.toml --lib",
     "test:e2e": "playwright test",
     "test:unit": "turbo run test",
     "typecheck": "turbo run typecheck"

@@ -31,3 +31,38 @@ test("foundation sample is reviewable at mobile and desktop widths", async ({ pa
     contentType: "image/png",
   });
 });
+
+test("landing navigation, FAQ, and responsive disclosure remain usable", async ({
+  page,
+}, testInfo) => {
+  await page.setViewportSize({ width: 320, height: 900 });
+  await page.goto("/");
+
+  await page.getByRole("button", { name: "Menu" }).click();
+  await expect(page.getByRole("navigation", { name: "Mobile" })).toBeVisible();
+  await page.getByRole("link", { name: "FAQ" }).click();
+  await expect(page.getByRole("navigation", { name: "Mobile" })).toBeHidden();
+
+  await page.getByRole("button", { name: "Does signing in move funds?" }).click();
+  await expect(page.getByText(/only proves control of your wallet address/i)).toBeVisible();
+  await testInfo.attach("landing-mobile", {
+    body: await page.screenshot({ fullPage: true }),
+    contentType: "image/png",
+  });
+
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.reload();
+  await expect(page.getByRole("link", { name: "Sign in with Freighter" })).toHaveAttribute(
+    "href",
+    "/login",
+  );
+});
+
+test("direct protected navigation hands unauthenticated visitors to login", async ({ page }) => {
+  await page.goto("/onboarding/business");
+  await expect(page).toHaveURL(/\/login$/, { timeout: 15_000 });
+  await expect(
+    page.getByRole("heading", { name: "Sign in with your Stellar wallet" }),
+  ).toBeVisible();
+  await expect(page.getByText(/signing the challenge authenticates you/i)).toBeVisible();
+});

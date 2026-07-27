@@ -3,6 +3,8 @@ import { v } from "convex/values";
 
 import {
   agreementStatusValidator,
+  authChallengeStateValidator,
+  authSessionStateValidator,
   commonMutableFields,
   fulfillmentStatusValidator,
   membershipRoleValidator,
@@ -21,9 +23,12 @@ export default defineSchema({
     primaryWallet: v.string(),
     status: userStatusValidator,
     timezone: v.string(),
+    tokenIdentifier: v.optional(v.string()),
+    lastLoginAt: v.optional(v.number()),
     ...commonMutableFields,
   })
     .index("by_primaryWallet", ["primaryWallet"])
+    .index("by_tokenIdentifier", ["tokenIdentifier"])
     .index("by_status", ["status"]),
 
   wallets: defineTable({
@@ -34,7 +39,75 @@ export default defineSchema({
     createdAt: v.number(),
   })
     .index("by_address", ["address"])
+    .index("by_address_and_network", ["address", "network"])
     .index("by_userId", ["userId"]),
+
+  authChallenges: defineTable({
+    challengeHash: v.string(),
+    intentHash: v.string(),
+    account: v.string(),
+    homeDomain: v.string(),
+    webAuthDomain: v.string(),
+    network: networkValidator,
+    state: authChallengeStateValidator,
+    issuedAt: v.number(),
+    expiresAt: v.number(),
+    consumedAt: v.optional(v.number()),
+    supersededAt: v.optional(v.number()),
+    outcome: v.optional(v.string()),
+    correlationId: v.string(),
+  })
+    .index("by_challengeHash", ["challengeHash"])
+    .index("by_intentHash_and_state", ["intentHash", "state"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  authSessionFamilies: defineTable({
+    familyId: v.string(),
+    userId: v.id("users"),
+    walletId: v.id("wallets"),
+    network: networkValidator,
+    currentCredentialHash: v.string(),
+    absoluteExpiresAt: v.number(),
+    revokedAt: v.optional(v.number()),
+    revocationReason: v.optional(v.string()),
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_familyId", ["familyId"])
+    .index("by_userId", ["userId"])
+    .index("by_absoluteExpiresAt", ["absoluteExpiresAt"]),
+
+  authSessions: defineTable({
+    credentialHash: v.string(),
+    familyId: v.id("authSessionFamilies"),
+    userId: v.id("users"),
+    walletId: v.id("wallets"),
+    network: networkValidator,
+    predecessorId: v.optional(v.id("authSessions")),
+    successorId: v.optional(v.id("authSessions")),
+    jwtKeyId: v.string(),
+    state: authSessionStateValidator,
+    createdAt: v.number(),
+    expiresAt: v.number(),
+    rotatedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+  })
+    .index("by_credentialHash", ["credentialHash"])
+    .index("by_familyId", ["familyId"])
+    .index("by_userId", ["userId"])
+    .index("by_expiresAt", ["expiresAt"]),
+
+  authSecurityEvents: defineTable({
+    category: v.string(),
+    outcome: v.string(),
+    correlationId: v.string(),
+    network: networkValidator,
+    walletFingerprint: v.optional(v.string()),
+    occurredAt: v.number(),
+  })
+    .index("by_category_and_occurredAt", ["category", "occurredAt"])
+    .index("by_correlationId", ["correlationId"])
+    .index("by_occurredAt", ["occurredAt"]),
 
   organizations: defineTable({
     legalName: v.string(),
