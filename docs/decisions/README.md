@@ -4,9 +4,10 @@ Architecture Decision Records preserve choices that future implementers must not
 
 ## Index
 
-| ADR | Decision | Status |
-|---|---|---|
-| [ADR-001](ADR-001-sprint-1-auth-boundary.md) | Sprint 1 wallet, SEP-10, session, JWT, and Convex authentication boundary | Accepted for implementation |
+| ADR                                                                | Decision                                                                                      | Status                      |
+| ------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | --------------------------- |
+| [ADR-001](ADR-001-sprint-1-auth-boundary.md)                       | Sprint 1 wallet, SEP-10, session, JWT, and Convex authentication boundary                     | Accepted for implementation |
+| [ADR-002](ADR-002-sprint-2-organization-authorization-boundary.md) | Sprint 2 identity, membership, organization, tenant-isolation, and atomic-onboarding boundary | Accepted for implementation |
 
 ## Lifecycle
 

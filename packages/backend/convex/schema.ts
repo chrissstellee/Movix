@@ -2,16 +2,22 @@ import { defineSchema, defineTable } from "convex/server";
 import { v } from "convex/values";
 
 import {
+  addressTypeValidator,
   agreementStatusValidator,
   authChallengeStateValidator,
   authSessionStateValidator,
   commonMutableFields,
+  contactTypeValidator,
   fulfillmentStatusValidator,
   membershipRoleValidator,
   membershipStatusValidator,
   networkValidator,
+  onboardingDraftStatusValidator,
+  onboardingStepValidator,
+  organizationEntityTypeValidator,
   organizationCapabilityValidator,
   organizationStatusValidator,
+  organizationVerificationStatusValidator,
   reconciliationStatusValidator,
   settlementStatusValidator,
   transactionStatusValidator,
@@ -111,22 +117,118 @@ export default defineSchema({
 
   organizations: defineTable({
     legalName: v.string(),
+    normalizedLegalName: v.optional(v.string()),
+    registrationCountry: v.optional(v.string()),
+    businessEmail: v.optional(v.string()),
     capability: organizationCapabilityValidator,
+    defaultTimezone: v.optional(v.string()),
     status: organizationStatusValidator,
+    verificationStatus: v.optional(organizationVerificationStatusValidator),
+    tradingName: v.optional(v.string()),
+    entityType: v.optional(organizationEntityTypeValidator),
+    registrationNumber: v.optional(v.string()),
+    registrationFingerprint: v.optional(v.string()),
+    taxId: v.optional(v.string()),
+    industry: v.optional(v.string()),
+    website: v.optional(v.string()),
+    businessPhone: v.optional(v.string()),
     createdByUserId: v.id("users"),
+    profileAttestationVersion: v.optional(v.string()),
+    profileAttestedByUserId: v.optional(v.id("users")),
+    profileAttestedAt: v.optional(v.number()),
     ...commonMutableFields,
   })
     .index("by_status", ["status"])
-    .index("by_createdByUserId", ["createdByUserId"]),
+    .index("by_createdByUserId", ["createdByUserId"])
+    .index("by_registrationFingerprint", ["registrationFingerprint"]),
+
+  businessOnboardingDrafts: defineTable({
+    userId: v.id("users"),
+    identity: v.optional(
+      v.object({
+        legalName: v.string(),
+        tradingName: v.optional(v.string()),
+        entityType: v.optional(organizationEntityTypeValidator),
+        registrationNumber: v.optional(v.string()),
+        taxId: v.optional(v.string()),
+        industry: v.optional(v.string()),
+        website: v.optional(v.string()),
+        businessPhone: v.optional(v.string()),
+        registrationCountry: v.string(),
+        businessEmail: v.string(),
+        capability: organizationCapabilityValidator,
+        defaultTimezone: v.string(),
+      }),
+    ),
+    contact: v.optional(
+      v.object({
+        type: contactTypeValidator,
+        name: v.string(),
+        email: v.string(),
+        phone: v.optional(v.string()),
+        jobTitle: v.optional(v.string()),
+        department: v.optional(v.string()),
+      }),
+    ),
+    registeredAddress: v.optional(
+      v.object({
+        recipientName: v.string(),
+        line1: v.string(),
+        line2: v.optional(v.string()),
+        city: v.string(),
+        region: v.optional(v.string()),
+        postalCode: v.optional(v.string()),
+        countryCode: v.string(),
+        deliveryInstructions: v.optional(v.string()),
+      }),
+    ),
+    billingAddress: v.optional(
+      v.object({
+        recipientName: v.string(),
+        line1: v.string(),
+        line2: v.optional(v.string()),
+        city: v.string(),
+        region: v.optional(v.string()),
+        postalCode: v.optional(v.string()),
+        countryCode: v.string(),
+        deliveryInstructions: v.optional(v.string()),
+      }),
+    ),
+    shippingAddress: v.optional(
+      v.object({
+        recipientName: v.string(),
+        line1: v.string(),
+        line2: v.optional(v.string()),
+        city: v.string(),
+        region: v.optional(v.string()),
+        postalCode: v.optional(v.string()),
+        countryCode: v.string(),
+        deliveryInstructions: v.optional(v.string()),
+      }),
+    ),
+    currentStep: onboardingStepValidator,
+    completedSteps: v.array(onboardingStepValidator),
+    sameBillingAsRegistered: v.boolean(),
+    sameShippingAsRegistered: v.boolean(),
+    status: onboardingDraftStatusValidator,
+    completionKey: v.optional(v.string()),
+    completedOrganizationId: v.optional(v.id("organizations")),
+    attestationVersion: v.optional(v.string()),
+    ...commonMutableFields,
+  })
+    .index("by_userId", ["userId"])
+    .index("by_userId_and_status", ["userId", "status"]),
 
   memberships: defineTable({
     userId: v.id("users"),
     organizationId: v.id("organizations"),
     role: membershipRoleValidator,
     status: membershipStatusValidator,
+    acceptedAt: v.optional(v.number()),
     ...commonMutableFields,
   })
     .index("by_userId", ["userId"])
+    .index("by_userId_and_status", ["userId", "status"])
     .index("by_organizationId", ["organizationId"])
     .index("by_organizationId_userId", ["organizationId", "userId"])
     .index("by_organizationId_status", ["organizationId", "status"]),
@@ -134,33 +236,40 @@ export default defineSchema({
   contacts: defineTable({
     organizationId: v.id("organizations"),
     type: v.union(
+      contactTypeValidator,
       v.literal("primary"),
       v.literal("billing"),
-      v.literal("sales"),
       v.literal("dispatch"),
     ),
     name: v.string(),
     email: v.optional(v.string()),
     phone: v.optional(v.string()),
+    jobTitle: v.optional(v.string()),
+    department: v.optional(v.string()),
     isPrimary: v.boolean(),
     createdAt: v.number(),
     updatedAt: v.number(),
+    version: v.optional(v.int64()),
   })
     .index("by_organizationId", ["organizationId"])
     .index("by_organizationId_type", ["organizationId", "type"]),
 
   addresses: defineTable({
     organizationId: v.id("organizations"),
-    type: v.union(v.literal("billing"), v.literal("shipping"), v.literal("business")),
+    type: v.union(addressTypeValidator, v.literal("business")),
     label: v.string(),
+    recipientName: v.optional(v.string()),
     line1: v.string(),
     line2: v.optional(v.string()),
     city: v.string(),
-    region: v.string(),
-    postalCode: v.string(),
+    region: v.optional(v.string()),
+    postalCode: v.optional(v.string()),
     countryCode: v.string(),
+    deliveryInstructions: v.optional(v.string()),
+    isDefault: v.optional(v.boolean()),
     createdAt: v.number(),
     updatedAt: v.number(),
+    version: v.optional(v.int64()),
   })
     .index("by_organizationId", ["organizationId"])
     .index("by_organizationId_type", ["organizationId", "type"]),
@@ -331,6 +440,7 @@ export default defineSchema({
     actorWalletAddress: v.optional(v.string()),
     action: v.string(),
     correlationId: v.string(),
+    changedFields: v.optional(v.array(v.string())),
     occurredAt: v.number(),
   })
     .index("by_entityType_entityId", ["entityType", "entityId"])

@@ -28,6 +28,48 @@ export const organizationCapabilityValidator = v.union(
   v.literal("buyer_supplier"),
 );
 
+export const organizationVerificationStatusValidator = v.union(
+  v.literal("unverified"),
+  v.literal("pending"),
+  v.literal("verified"),
+  v.literal("rejected"),
+);
+
+export const organizationEntityTypeValidator = v.union(
+  v.literal("sole_proprietor"),
+  v.literal("partnership"),
+  v.literal("corporation"),
+  v.literal("limited_company"),
+  v.literal("nonprofit"),
+  v.literal("government"),
+  v.literal("other"),
+);
+
+export const contactTypeValidator = v.union(
+  v.literal("general"),
+  v.literal("procurement"),
+  v.literal("accounts_payable"),
+  v.literal("sales"),
+  v.literal("shipping"),
+  v.literal("legal"),
+);
+
+export const addressTypeValidator = v.union(
+  v.literal("registered"),
+  v.literal("billing"),
+  v.literal("shipping"),
+);
+
+export const onboardingStepValidator = v.union(
+  v.literal("identity"),
+  v.literal("contact"),
+  v.literal("address"),
+  v.literal("preferences"),
+  v.literal("review"),
+);
+
+export const onboardingDraftStatusValidator = v.union(v.literal("draft"), v.literal("completed"));
+
 export const membershipRoleValidator = v.union(
   v.literal("owner"),
   v.literal("admin"),

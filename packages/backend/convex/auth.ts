@@ -1,6 +1,7 @@
 import { v } from "convex/values";
 
 import { query } from "./_generated/server";
+import { getCurrentPrincipal } from "./lib/authorization";
 
 export const currentUser = query({
   args: {},
@@ -13,46 +14,42 @@ export const currentUser = query({
     }),
   ),
   handler: async (ctx) => {
-    const identity = await ctx.auth.getUserIdentity();
-    if (!identity) {
-      return null;
-    }
-
-    const familyPublicId = identity.session_family_id;
-    if (typeof familyPublicId !== "string") {
-      return null;
-    }
-    const [user, family] = await Promise.all([
-      ctx.db
-        .query("users")
-        .withIndex("by_tokenIdentifier", (queryBuilder) =>
-          queryBuilder.eq("tokenIdentifier", identity.tokenIdentifier),
-        )
-        .unique(),
-      ctx.db
-        .query("authSessionFamilies")
-        .withIndex("by_familyId", (queryBuilder) => queryBuilder.eq("familyId", familyPublicId))
-        .unique(),
-    ]);
-    if (
-      !user ||
-      user.status !== "active" ||
-      !family ||
-      family.revokedAt ||
-      family.userId !== user._id
-    ) {
-      return null;
-    }
-
-    const wallet = await ctx.db.get("wallets", family.walletId);
-    if (!wallet) {
+    const principal = await getCurrentPrincipal(ctx);
+    if (!principal) {
       return null;
     }
 
     return {
-      id: user._id,
-      walletAddress: wallet.address,
+      id: principal.user._id,
+      walletAddress: principal.wallet.address,
       network: "testnet" as const,
+    };
+  },
+});
+
+export const walletSettings = query({
+  args: {},
+  returns: v.union(
+    v.null(),
+    v.object({
+      walletAddress: v.string(),
+      network: v.literal("testnet"),
+      verifiedAt: v.number(),
+      accountStatus: v.literal("active"),
+      sessionExpiresAt: v.number(),
+    }),
+  ),
+  handler: async (ctx) => {
+    const principal = await getCurrentPrincipal(ctx);
+    if (!principal) {
+      return null;
+    }
+    return {
+      walletAddress: principal.wallet.address,
+      network: "testnet" as const,
+      verifiedAt: principal.wallet.verifiedAt,
+      accountStatus: "active" as const,
+      sessionExpiresAt: principal.sessionFamily.absoluteExpiresAt,
     };
   },
 });

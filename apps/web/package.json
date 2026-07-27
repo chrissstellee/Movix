@@ -11,12 +11,13 @@
     "lint:fix": "oxlint --fix app core features test && oxfmt --write app core features test",
     "start": "next start",
     "test": "vitest run --configLoader runner",
-    "test:a11y": "vitest run --configLoader runner features/foundation/foundation-showcase.a11y.test.tsx",
+    "test:a11y": "vitest run --configLoader runner features/foundation/foundation-showcase.a11y.test.tsx features/sprint2.a11y.test.tsx",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {
     "@hookstate/core": "^4.0.2",
     "@hookstate/devtools": "^4.0.3",
+    "@repo/backend": "workspace:*",
     "@repo/domain": "workspace:*",
     "@repo/stellar": "workspace:*",
     "@repo/ui": "workspace:*",

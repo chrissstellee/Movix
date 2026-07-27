@@ -1,6 +1,6 @@
 # Movix
 
-Movix is a Testnet procurement pilot that uses Stellar for wallet-based authentication and, in later sprints, traceable escrow settlement. Sprint 1 delivers the public landing page and a secure visitor-to-authenticated-user flow using Freighter, Stellar Wallets Kit, SEP-10, short-lived application JWTs, and Convex custom authentication.
+Movix is a Testnet procurement pilot that uses Stellar for wallet-based authentication and, in later sprints, traceable escrow settlement. Sprint 1 provides the secure wallet sign-in boundary. Sprint 2 adds resumable business onboarding, atomic organization/owner creation, tenant-isolated buyer and supplier workspaces, and concurrency-safe business settings.
 
 > [!IMPORTANT]
 > Movix currently supports Stellar Testnet only. Testnet assets have no production monetary value. Connecting or signing in with a wallet does not transfer funds and does not authorize a business to buy or supply.
@@ -65,16 +65,16 @@ PowerShell environments that block `pnpm.ps1` can invoke the same commands with 
 
 ## Repository map
 
-| Path                      | Purpose                                                                               |
-| ------------------------- | ------------------------------------------------------------------------------------- |
-| `apps/web`                | Next.js public pages, login experience, auth client, and Convex provider              |
-| `packages/backend/convex` | Convex schema, internal auth persistence, protected functions, and auth configuration |
-| `packages/stellar`        | Testnet configuration and wallet/SEP-10 boundaries                                    |
-| `packages/ui`             | Shared accessible UI primitives                                                       |
-| `packages/domain`         | Shared domain types and fixtures                                                      |
-| `contracts`               | Soroban escrow contract work retained as a quality gate                               |
-| `e2e`                     | Playwright journeys and deterministic wallet/auth fixtures                            |
-| `docs`                    | Sprint plans, architecture, decisions, operations, and review evidence                |
+| Path                      | Purpose                                                                         |
+| ------------------------- | ------------------------------------------------------------------------------- |
+| `apps/web`                | Next.js public/login pages, onboarding, organization shell, and settings        |
+| `packages/backend/convex` | Convex auth, onboarding, tenant authorization, settings, schema, and migrations |
+| `packages/stellar`        | Testnet configuration and wallet/SEP-10 boundaries                              |
+| `packages/ui`             | Shared accessible UI primitives                                                 |
+| `packages/domain`         | Shared domain types and fixtures                                                |
+| `contracts`               | Soroban escrow contract work retained as a quality gate                         |
+| `e2e`                     | Playwright journeys and deterministic wallet/auth fixtures                      |
+| `docs`                    | Sprint plans, architecture, decisions, operations, and review evidence          |
 
 ## Quality gates
 
@@ -92,7 +92,7 @@ pnpm test:contracts
 pnpm build:contracts
 ```
 
-The current inherited baseline and the rules for distinguishing baseline failures from Sprint 1 regressions are recorded in [testing and evidence](docs/auth/testing-and-evidence.md).
+The current inherited baseline and Sprint 1 rules are recorded in [authentication testing and evidence](docs/auth/testing-and-evidence.md). Sprint 2 criteria and remaining release evidence are recorded in [business-onboarding testing and evidence](docs/business-onboarding/testing-and-evidence.md).
 
 ## Sprint 1 documentation
 
@@ -113,3 +113,17 @@ The current inherited baseline and the rules for distinguishing baseline failure
 - Access JWTs remain in memory. The browser persists only an opaque rotating HttpOnly session cookie.
 - Protected Convex functions derive identity from `ctx.auth`; they never trust a client-supplied user identifier.
 - Update the relevant contract, runbook, evidence matrix, and ADR in the same change whenever auth behavior changes.
+
+## Sprint 2 business onboarding
+
+- [Detailed Sprint 2 specification](docs/Movix-Sprint-02-Business-Onboarding-Detailed.md)
+- [Implementation runbook](docs/business-onboarding/implementation-runbook.md)
+- [Architecture](docs/business-onboarding/architecture.md)
+- [API contract](docs/business-onboarding/api-contract.md)
+- [Data and validation](docs/business-onboarding/data-and-validation.md)
+- [Security and operations](docs/business-onboarding/security-operations-runbook.md)
+- [Testing and evidence](docs/business-onboarding/testing-and-evidence.md)
+- [Organization authorization ADR](docs/decisions/ADR-002-sprint-2-organization-authorization-boundary.md)
+- [Sprint 2 evidence manifest](docs/evidence/sprint-02/README.md)
+
+Organization context is server-derived. Do not trust client-selected organization, membership, role, status, capability, or document version values.

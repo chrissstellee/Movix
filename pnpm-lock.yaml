@@ -42,6 +42,9 @@ importers:
       '@hookstate/devtools':
         specifier: ^4.0.3
         version: 4.0.3(@hookstate/core@4.0.2(react@19.2.8))
+      '@repo/backend':
+        specifier: workspace:*
+        version: link:../../packages/backend
       '@repo/domain':
         specifier: workspace:*
         version: link:../../packages/domain
@@ -115,9 +118,15 @@ importers:
 
   packages/backend:
     dependencies:
+      '@convex-dev/migrations':
+        specifier: ^0.3.5
+        version: 0.3.5(convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))(react@19.2.8)(typescript@5.9.2)(zod@4.4.3))(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))
       '@convex-dev/rate-limiter':
         specifier: 0.3.2
         version: 0.3.2(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))(react@19.2.8)
+      '@repo/domain':
+        specifier: workspace:*
+        version: link:../domain
       convex:
         specifier: ^1.42.3
         version: 1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6)
@@ -125,9 +134,6 @@ importers:
       '@edge-runtime/vm':
         specifier: ^5.0.0
         version: 5.0.0
-      '@repo/domain':
-        specifier: workspace:*
-        version: link:../domain
       convex-test:
         specifier: ^0.0.54
         version: 0.0.54(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))
@@ -142,6 +148,10 @@ importers:
         version: 4.1.10(@edge-runtime/vm@5.0.0)(@types/node@22.20.1)(jsdom@29.1.1(@noble/hashes@2.2.0))(vite@7.3.6(@types/node@22.20.1)(jiti@2.7.0)(lightningcss@1.32.0))
 
   packages/domain:
+    dependencies:
+      libphonenumber-js:
+        specifier: ^1.13.9
+        version: 1.13.9
     devDependencies:
       '@repo/typescript-config':
         specifier: workspace:*
@@ -366,6 +376,12 @@ packages:
 
   '@coinbase/wallet-sdk@4.3.6':
     resolution: {integrity: sha512-4q8BNG1ViL4mSAAvPAtpwlOs1gpC+67eQtgIwNvT3xyeyFFd+guwkc8bcX5rTmQhXpqnhzC4f0obACbP9CqMSA==}
+
+  '@convex-dev/migrations@0.3.5':
+    resolution: {integrity: sha512-vj5qjY5XB8laX9WvvxeIFZe8sNW8DGvJ5cPo1zvpjJzYnPLqs5C+VG9HP6sSkEW2QGhsfYOZv56FUNkHiLe1wA==}
+    peerDependencies:
+      convex: ^1.35.0
+      convex-helpers: ^0.1.115
 
   '@convex-dev/rate-limiter@0.3.2':
     resolution: {integrity: sha512-+oBPsBfFbzdxiF/9XaaTQmVnvDlvEfg/c69/v8LxTbw4VLuiflIKlfnPQL8OS0azXQQ11hcPWHmU8ytFmHKDXA==}
@@ -3737,6 +3753,28 @@ packages:
   convert-source-map@2.0.0:
     resolution: {integrity: sha512-Kvp459HrV2FEJ1CAsi1Ku+MY3kasH19TFykTz2xWmMeq6bk2NU3XXvfJ+Q61m0xktWwt+1HSYf3JZsTms3aRJg==}
 
+  convex-helpers@0.1.120:
+    resolution: {integrity: sha512-FPqtmN/10uoxmmhVq0ViNi08AnmHKT/eU1R8+ohmPZoHfg8noZEZCltApY/ASDdhq92o0kLZETggzBvMfHJDLQ==}
+    hasBin: true
+    peerDependencies:
+      '@standard-schema/spec': ^1.0.0
+      convex: ^1.32.0
+      hono: ^4.0.5
+      react: ^17.0.2 || ^18.0.0 || ^19.0.0
+      typescript: ^5.5 || ^6.0.0
+      zod: ^3.25.0 || ^4.0.0
+    peerDependenciesMeta:
+      '@standard-schema/spec':
+        optional: true
+      hono:
+        optional: true
+      react:
+        optional: true
+      typescript:
+        optional: true
+      zod:
+        optional: true
+
   convex-test@0.0.54:
     resolution: {integrity: sha512-C0v2SQcuxrELAJRNzE6fQ686XDPor7UFoC22jcoJXeCRqhLo8ZIMZ4jyUHoo1UdAL2enCb0AbiprCVpLDN8u9Q==}
     peerDependencies:
@@ -4336,6 +4374,9 @@ packages:
 
   keyvaluestorage-interface@1.0.0:
     resolution: {integrity: sha512-8t6Q3TclQ4uZynJY9IGr2+SsIGwK9JHcO6ootkHCGA0CrQCRy+VkouYNO2xicET6b9al7QKzpebNow+gkpCL8g==}
+
+  libphonenumber-js@1.13.9:
+    resolution: {integrity: sha512-VNS5vWMM7r0P66BYv+TQJATxExEgLxN+34hfHDVhDkUsGAE4cRg0shCNSLTXNKm7nIUscC7AfB51TjxEeF7msQ==}
 
   lightningcss-android-arm64@1.32.0:
     resolution: {integrity: sha512-YK7/ClTt4kAK0vo6w3X+Pnm0D2cf2vPHbhOXdoNti1Ga0al1P4TBZhwjATvjNwLEBCnKvjJc2jQgHXH0NEwlAg==}
@@ -5765,6 +5806,11 @@ snapshots:
       - utf-8-validate
       - zod
     optional: true
+
+  '@convex-dev/migrations@0.3.5(convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))(react@19.2.8)(typescript@5.9.2)(zod@4.4.3))(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))':
+    dependencies:
+      convex: 1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6)
+      convex-helpers: 0.1.120(@standard-schema/spec@1.1.0)(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))(react@19.2.8)(typescript@5.9.2)(zod@4.4.3)
 
   '@convex-dev/rate-limiter@0.3.2(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))(react@19.2.8)':
     dependencies:
@@ -10015,6 +10061,15 @@ snapshots:
 
   convert-source-map@2.0.0: {}
 
+  convex-helpers@0.1.120(@standard-schema/spec@1.1.0)(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6))(react@19.2.8)(typescript@5.9.2)(zod@4.4.3):
+    dependencies:
+      convex: 1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6)
+    optionalDependencies:
+      '@standard-schema/spec': 1.1.0
+      react: 19.2.8
+      typescript: 5.9.2
+      zod: 4.4.3
+
   convex-test@0.0.54(convex@1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6)):
     dependencies:
       convex: 1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6)
@@ -10633,6 +10688,8 @@ snapshots:
       safe-buffer: 5.2.1
 
   keyvaluestorage-interface@1.0.0: {}
+
+  libphonenumber-js@1.13.9: {}
 
   lightningcss-android-arm64@1.32.0:
     optional: true

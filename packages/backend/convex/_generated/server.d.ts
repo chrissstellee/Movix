@@ -25,6 +25,7 @@ import type { DataModel } from "./dataModel.js";
  * Typesafe environment variables declared in `convex.config.ts`.
  */
 type Env = {
+  readonly BUSINESS_REGISTRATION_FINGERPRINT_KEY: string | undefined;
   readonly MOVIX_AUTH_AUDIENCE: string;
   readonly MOVIX_AUTH_ISSUER: string;
   readonly MOVIX_AUTH_JWKS_URL: string;

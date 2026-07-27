@@ -5,6 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
+    "./business": "./src/business.ts",
     "./fixtures": "./src/fixtures.ts"
   },
   "scripts": {
@@ -14,6 +15,9 @@
     "lint:fix": "oxlint --fix src && oxfmt --write src",
     "test": "vitest run",
     "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "libphonenumber-js": "^1.13.9"
   },
   "devDependencies": {
     "@repo/typescript-config": "workspace:*",

@@ -99,4 +99,74 @@ describe("Movix schema", () => {
       }),
     ).rejects.toThrow();
   });
+
+  it("accepts a versioned Sprint 2 onboarding draft and canonical business records", async () => {
+    const t = convexTest(schema, modules);
+
+    const result = await t.run(async (ctx) => {
+      const userId = await ctx.db.insert("users", {
+        primaryWallet: "GAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAWHF",
+        status: "active",
+        timezone: "Asia/Manila",
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        version: 1n,
+      });
+      const draftId = await ctx.db.insert("businessOnboardingDrafts", {
+        userId,
+        identity: {
+          legalName: "Acme Supply Co.",
+          registrationCountry: "PH",
+          businessEmail: "owner@example.com",
+          capability: "buyer_supplier",
+          defaultTimezone: "Asia/Manila",
+        },
+        currentStep: "contact",
+        completedSteps: ["identity"],
+        sameBillingAsRegistered: true,
+        sameShippingAsRegistered: true,
+        status: "draft",
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        version: 1n,
+      });
+      const organizationId = await ctx.db.insert("organizations", {
+        legalName: "Acme Supply Co.",
+        normalizedLegalName: "acme supply co.",
+        registrationCountry: "PH",
+        businessEmail: "owner@example.com",
+        capability: "buyer_supplier",
+        defaultTimezone: "Asia/Manila",
+        status: "active",
+        verificationStatus: "unverified",
+        createdByUserId: userId,
+        profileAttestationVersion: "business-profile-v1",
+        profileAttestedByUserId: userId,
+        profileAttestedAt: FIXED_NOW,
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        version: 1n,
+      });
+      const addressId = await ctx.db.insert("addresses", {
+        organizationId,
+        type: "registered",
+        label: "Registered",
+        recipientName: "Acme Supply Co.",
+        line1: "123 Main Street",
+        city: "Makati",
+        region: "Metro Manila",
+        postalCode: "1200",
+        countryCode: "PH",
+        isDefault: true,
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        version: 1n,
+      });
+      return { draftId, organizationId, addressId };
+    });
+
+    expect(result.draftId).toBeTruthy();
+    expect(result.organizationId).toBeTruthy();
+    expect(result.addressId).toBeTruthy();
+  });
 });
