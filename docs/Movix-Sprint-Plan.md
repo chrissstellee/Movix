@@ -1,10 +1,18 @@
 # Movix Testnet MVP Sprint Plan
 
-**Prepared:** July 27, 2026  
-**Source of truth:** [Movix MVP Analysis and Implementation Plan](./Movix-Implementation-Plan.md)  
-**Delivery target:** Testnet MVP and pilot  
-**Cadence:** Sprint 0 is one week; Sprints 1–9 are two weeks each  
-**Indicative duration:** 19 weeks, excluding holidays and staffing changes
+**Prepared:** July 27, 2026
+
+**Architecture basis:** [Movix MVP Analysis and Implementation Plan](./Movix-Implementation-Plan.md)
+
+**Delivery-sequence authority:** This sprint plan reflects the contract-first reprioritization agreed after Sprint 2
+
+**Delivery target:** Testnet MVP and pilot
+
+**Cadence:** Sprint 0 is one week; Sprints 1–10 are two weeks each
+
+**Indicative duration:** 21 weeks, excluding holidays and staffing changes
+
+**Current position:** Sprints 0–2 are complete; Sprint 3 (smart contract v1) is next
 
 ## 1. Product objective
 
@@ -61,12 +69,13 @@ These are delivery disciplines, not named individuals. One person may cover seve
 | Foundation ready | 0 | Domain vocabulary, test harness, repo structure, CI, and design tokens |
 | Visitor-to-authenticated-user | 1 | Landing and successful SEP-10 login |
 | Business ready to transact | 2 | Completed onboarding and protected application shell |
-| Accepted procurement agreement | 4 | Buyer sends; supplier accepts exact revision |
-| Core value proven | 6 | Accepted order funds, ships, confirms, and releases |
-| Exception-safe MVP | 8 | Mutual refunds, history, notifications, and reconciliation |
-| Pilot-ready testnet release | 9 | Full regression, runbooks, observability, and pilot evidence |
+| Smart contract v1 proven | 3 | Full escrow lifecycle passes local-ledger tests and a scripted testnet smoke run |
+| Accepted procurement agreement | 5 | Buyer sends; supplier accepts exact revision |
+| Core value proven | 7 | Accepted order funds, ships, confirms, and releases |
+| Exception-safe MVP | 9 | Mutual refunds, history, notifications, and reconciliation |
+| Pilot-ready testnet release | 10 | Full regression, runbooks, observability, and pilot evidence |
 
-The first product validation checkpoint is the end of Sprint 6. If pilot users do not value the funded-order-to-release flow, stop adding scope and investigate the failed assumption.
+The first product validation checkpoint is the end of Sprint 7. If pilot users do not value the funded-order-to-release flow, stop adding scope and investigate the failed assumption.
 
 ## 5. Cross-sprint delivery rules
 
@@ -113,18 +122,19 @@ Funding, release, refund, and cancellation additionally require:
 
 ## 6. Sprint schedule overview
 
-| Sprint | Duration | Phase | Primary pages/functionality | Product outcome |
-|---:|---:|---|---|---|
-| 0 | 1 week | Foundation | Architecture, schemas, design tokens, CI, test harness | Team can implement without inventing rules |
-| 1 | 2 weeks | Acquisition/auth | `/`, `/login`, SEP-10 | Visitor becomes an authenticated user |
-| 2 | 2 weeks | Business identity | Onboarding, profile, wallet settings, app shell | Business is ready to transact |
-| 3 | 2 weeks | Buyer procurement | `/buyer`, `/orders`, `/orders/new` | Buyer sends a complete order |
-| 4 | 2 weeks | Supplier agreement | `/supplier`, role-aware order detail | Supplier accepts exact order revision |
-| 5 | 2 weeks | Escrow funding | Contract core and funding panel | Buyer funds once; both parties verify |
-| 6 | 2 weeks | Fulfillment/release | Shipment, delivery confirmation, release | Core escrow promise is complete |
-| 7 | 2 weeks | Exceptions | Mutual refund and timeout cancellation | Funds have controlled exception paths |
-| 8 | 2 weeks | Transparency | Transactions, notifications, dashboards | Every material action is discoverable |
-| 9 | 2 weeks | Hardening | All MVP routes and operations | Testnet pilot can run without developers |
+| Sprint | Status | Duration | Phase | Primary pages/functionality | Product outcome |
+|---:|---|---:|---|---|---|
+| 0 | Complete | 1 week | Foundation | Architecture, schemas, design tokens, CI, test harness | Team can implement without inventing rules |
+| 1 | Complete | 2 weeks | Acquisition/auth | `/`, `/login`, SEP-10 | Visitor becomes an authenticated user |
+| 2 | Complete | 2 weeks | Business identity | Onboarding, profile, wallet settings, app shell | Business is ready to transact |
+| 3 | Next | 2 weeks | Contract-first | Complete escrow contract v1, generated bindings, local-ledger and testnet proof | Stable, tested contract ABI is ready for product integration |
+| 4 | Planned | 2 weeks | Buyer procurement | `/buyer`, `/orders`, `/orders/new` | Buyer sends a complete order |
+| 5 | Planned | 2 weeks | Supplier agreement | `/supplier`, role-aware order detail | Supplier accepts exact order revision |
+| 6 | Planned | 2 weeks | Escrow funding | Funding panel and chain projection | Buyer funds once; both parties verify |
+| 7 | Planned | 2 weeks | Fulfillment/release | Shipment, delivery confirmation, release | Core escrow promise is complete |
+| 8 | Planned | 2 weeks | Exceptions | Mutual refund and timeout cancellation | Funds have controlled exception paths |
+| 9 | Planned | 2 weeks | Transparency | Transactions, notifications, dashboards | Every material action is discoverable |
+| 10 | Planned | 2 weeks | Hardening | All MVP routes and operations | Testnet pilot can run without developers |
 
 ## 7. Detailed sprint backlogs
 
@@ -275,7 +285,78 @@ Login:
 - Full verification workflow.
 - Logo upload.
 
-## Sprint 3 — Buyer dashboard, order list, and order creation
+## Sprint 3 — Smart contract v1 lifecycle and testnet proof
+
+**Duration:** 2 weeks
+
+**Sprint goal:** Complete and prove the full Movix escrow contract v1 before resuming procurement UI work.
+
+**Scope:** `contracts/escrow`, generated bindings in `packages/stellar`, deployment manifests, and contract-focused test infrastructure
+
+**Dependencies:** Sprint 0 lifecycle and permission decisions, the existing contract skeleton, deterministic actor/asset fixtures, confirmed testnet protocol/SDK compatibility, and allowlisted XLM and USDC SAC addresses.
+
+**Starting point:** The repository already contains typed config/status/escrow scaffolding, constructor validation, and constructor snapshots; this sprint completes the value-moving lifecycle.
+
+**Demo:** A scripted local-ledger run deploys one immutable contract version and completes fund → accept → ship → release. Separate runs complete a mutual refund and an expired-unaccepted cancellation. The same release artifact passes a testnet smoke run and produces generated TypeScript bindings.
+
+### Architecture constraints
+
+- Soroban is authoritative for escrow participants, asset, value, fee snapshot, lifecycle state, and terminal payout; Convex remains authoritative for commercial data and searchable projections.
+- Use one pooled, immutable contract instance per version with no public upgrade or arbitrary administrator fund-movement entry point.
+- Store small global config in instance storage and each escrow plus per-token liability in fine-grained persistent keys.
+- Accept only server-configured XLM and USDC SAC addresses; never trust a browser-supplied token contract.
+- Keep PII and commercial text off-chain. Only addresses, exact integer amounts, deadlines, statuses, and opaque hashes belong on-chain.
+- Keep reads bounded to `get_escrow(id)` and config/liability getters. Lists and pagination belong in Convex.
+- Mainnet remains blocked until Movix chooses and reviews a settlement-liveness policy, completes an external security review, and defines incident ownership.
+
+### Committed backlog
+
+| ID | Priority | Work item | Discipline | Acceptance summary |
+|---|---|---|---|---|
+| S3-01 | P0 | Freeze the contract v1 ABI, state machine, threat model, and stable error codes | Architecture, Product, Contract, QA | Every function, actor, argument, transition, invariant, event, error, trust assumption, and mainnet blocker is versioned before value-moving code merges |
+| S3-02 | P0 | Complete typed storage and lifecycle models | Contract | `Config`, `Escrow`, `Status`, refund resume state, deadlines, hashes, timestamps, per-token liability, and schema version use bounded `#[contracttype]` values and fine-grained keys |
+| S3-03 | P0 | Harden atomic constructor and deployment configuration | Contract, DevOps | `__constructor` validates treasury, non-empty unique SAC allowlist, fee cap, and TTL policy atomically; the deployed instance has no reinitialization path |
+| S3-04 | P0 | Implement atomic escrow creation and funding | Contract | `create_and_fund` requires buyer authorization, rejects duplicate IDs/invalid parties/assets/amounts/fees/deadlines, transfers the exact SAC amount, stores `Funded`, and increases liability atomically |
+| S3-05 | P0 | Implement bounded public reads | Contract, Stellar | `get_escrow(id)`, config/version, and per-token liability getters return typed bounded records without unbounded list functions |
+| S3-06 | P0 | Implement supplier acceptance and shipment commitment | Contract | Snapshotted supplier authorization and matching terms hash enforce `Funded → Accepted → Shipped`; shipment commitment stores only an opaque hash |
+| S3-07 | P0 | Implement buyer delivery confirmation and exact release | Contract | Snapshotted buyer authorization enforces `Shipped → Released`; checked fee/net arithmetic and token transfers are atomic and decrease liability exactly once |
+| S3-08 | P0 | Implement the full mutual-refund protocol | Contract | Either party can propose; only the opposite party can approve matching terms; reject/withdraw restores the exact prior active state; approval refunds the full remaining principal once |
+| S3-09 | P0 | Implement unaccepted-timeout cancellation | Contract | Only the snapshotted buyer can cancel after `accept_by` while `Funded`; early, accepted, refund-pending, or terminal calls fail without state movement |
+| S3-10 | P0 | Emit stable typed events and preserve stable typed errors | Contract, Stellar | Every transition emits indexable, PII-free identifiers/status/value/hashes; error numbers are unique, documented, and never reused |
+| S3-11 | P0 | Enforce TTL, liability, and terminal-state invariants | Contract, QA | Hot paths extend instance, code, escrow, and liability TTL; TTL is never used as authorization; terminal states are immutable and payout conservation holds for every transition sequence |
+| S3-12 | P0 | Build the security and verification suite | Contract, QA | Exact auth trees, invalid transitions, malicious inputs, checked arithmetic, token failures, races, properties, fuzz targets, events, snapshots, TTL, and resource budgets are covered |
+| S3-13 | P0 | Prove SAC behavior on a local network | Contract, Stellar, QA | Real XLM-like and USDC-like SAC flows cover transfer success, missing/unauthorized trustline, wrong SAC, failed payout rollback, and contract balance versus liability |
+| S3-14 | P0 | Generate and publish the integration contract | Stellar, DevOps | Optimized WASM/hash, TypeScript bindings, error/event decoders, deployment manifest, network config, and repeatable local/testnet scripts come from the same tagged ABI |
+| S3-15 | P1 | Run static and mutation analysis | Contract, QA | Contract-focused static analysis has no unexplained high-severity finding; mutation survivors on authorization, transitions, or payout invariants are closed or documented |
+
+### Testing commitment
+
+- Unit tests for every public function and typed error path using `try_` clients.
+- Exact authorization-tree assertions for buyer, supplier, counterparty approval, and contract-originated SAC payouts; `mock_all_auths` alone is insufficient.
+- Boundary tests for zero/negative/maximum amounts, fee cap and rounding, same party, duplicate ID, wrong asset, deadline edges, hash mismatch, repeated calls, and all forbidden transitions.
+- Property tests over arbitrary transition sequences for terminal immutability, payout conservation, liability conservation, and release/refund/cancellation mutual exclusion.
+- Fuzz targets for all value-moving entry points; every discovered issue becomes a deterministic regression test.
+- Event XDR and committed ledger-state snapshots for every successful transition.
+- TTL/archive tests for instance, escrow, liability, and code; explicit timestamps enforce deadlines.
+- Real-WASM SAC integration on a local network, including failed nested transfers proving atomic rollback.
+- Optimized WASM size and per-entry-point CPU, memory, ledger I/O, event-size, and fee profiles remain below documented budgets.
+- Scripted testnet deployment and smoke lifecycle using the exact release WASM and generated bindings.
+
+### Exit gate
+
+- All contract v1 entry points, states, authorizations, events, errors, and invariants are implemented and documented.
+- The optimized WASM, ABI, generated TypeScript bindings, deployment manifest, and test snapshots identify the same version.
+- Local-ledger happy, refund, cancellation, failure, and race suites are green; the testnet smoke lifecycle is reproducible.
+- No unresolved P0 security defect, unauthorized value movement, duplicate payout, liability mismatch, unbounded operation, or PII exposure exists.
+- Later sprints may integrate the frozen contract but may not silently change its ABI; any required change reopens contract review and regression.
+
+### Not in this sprint
+
+- Buyer/supplier order pages or production transaction-review UI.
+- Convex event indexing, notification UX, or dashboard projections beyond fixtures needed to prove the ABI.
+- Partial funding, partial release/refund, milestones, disputes, auto-release, resolver powers, arbitrary assets, or mainnet deployment.
+
+## Sprint 4 — Buyer dashboard, order list, and order creation
 
 **Duration:** 2 weeks  
 **Sprint goal:** Enable a buyer to draft, validate, review, and send a commercially complete procurement order.  
@@ -287,17 +368,17 @@ Login:
 
 | ID | Priority | User/system story | Discipline | Acceptance summary |
 |---|---|---|---|---|
-| S3-01 | P0 | As a buyer, I see my dashboard and next actions | Design, Web, Backend | Attention counts, recent activity, first-use empty state, and create-order CTA are organization-scoped |
-| S3-02 | P0 | As a buyer, I can browse my orders | Web, Backend | Role-aware status tabs, basic date/asset/status filters, stable pagination, loading, and empty states work |
-| S3-03 | P0 | As a buyer, I can identify or invite a supplier | Web, Backend | Verified wallet/relationship selection prevents self-dealing and records provisional invite metadata where permitted |
-| S3-04 | P0 | As a buyer, I can create an order header | Web, Backend | PO number, contacts, address snapshots, references, dates, asset/network, deadlines, and terms validate |
-| S3-05 | P0 | As a buyer, I can maintain line items | Web, Backend | Name, quantity, unit, price, optional SKU/discount/tax, and deterministic line totals are supported |
-| S3-06 | P0 | As a buyer, I can see deterministic totals | Web, Backend, QA | Subtotal, discount, tax, shipping, and grand total agree across client, backend, review, and stored integer units |
-| S3-07 | P0 | As a buyer, I can save and recover a draft | Web, Backend | Autosave/manual save is versioned and duplicate-safe; refresh and navigation recover the draft |
-| S3-08 | P0 | As a buyer, I can review the complete commercial snapshot | Design, Web | Supplier, contacts, addresses, items, totals, delivery, inspection, funding, and refund terms are visible before send |
-| S3-09 | P0 | As a buyer, I can send an immutable revision | Backend, Web | Send freezes revision 1, records actor/time/terms hash, changes agreement state, and creates one notification event |
-| S3-10 | P0 | As a buyer, I can cancel before acceptance/funding | Web, Backend | Eligible drafts/sent orders cancel with reason and audit; accepted/funded orders are blocked |
-| S3-11 | P1 | As a buyer, I can preserve list context | Web | Filters and pagination survive detail navigation and browser back |
+| S4-01 | P0 | As a buyer, I see my dashboard and next actions | Design, Web, Backend | Attention counts, recent activity, first-use empty state, and create-order CTA are organization-scoped |
+| S4-02 | P0 | As a buyer, I can browse my orders | Web, Backend | Role-aware status tabs, basic date/asset/status filters, stable pagination, loading, and empty states work |
+| S4-03 | P0 | As a buyer, I can identify or invite a supplier | Web, Backend | Verified wallet/relationship selection prevents self-dealing and records provisional invite metadata where permitted |
+| S4-04 | P0 | As a buyer, I can create an order header | Web, Backend | PO number, contacts, address snapshots, references, dates, asset/network, deadlines, and terms validate |
+| S4-05 | P0 | As a buyer, I can maintain line items | Web, Backend | Name, quantity, unit, price, optional SKU/discount/tax, and deterministic line totals are supported |
+| S4-06 | P0 | As a buyer, I can see deterministic totals | Web, Backend, QA | Subtotal, discount, tax, shipping, and grand total agree across client, backend, review, and stored integer units |
+| S4-07 | P0 | As a buyer, I can save and recover a draft | Web, Backend | Autosave/manual save is versioned and duplicate-safe; refresh and navigation recover the draft |
+| S4-08 | P0 | As a buyer, I can review the complete commercial snapshot | Design, Web | Supplier, contacts, addresses, items, totals, delivery, inspection, funding, and refund terms are visible before send |
+| S4-09 | P0 | As a buyer, I can send an immutable revision | Backend, Web | Send freezes revision 1, records actor/time/terms hash, changes agreement state, and creates one notification event |
+| S4-10 | P0 | As a buyer, I can cancel before acceptance/funding | Web, Backend | Eligible drafts/sent orders cancel with reason and audit; accepted/funded orders are blocked |
+| S4-11 | P1 | As a buyer, I can preserve list context | Web | Filters and pagination survive detail navigation and browser back |
 
 ### Testing commitment
 
@@ -321,26 +402,27 @@ Login:
 - PDF generation.
 - Multi-destination line items in the UI.
 
-## Sprint 4 — Supplier inbox, review, acceptance, and rejection
+## Sprint 5 — Supplier inbox, review, acceptance, and rejection
 
 **Duration:** 2 weeks  
 **Sprint goal:** Enable the designated supplier to make an auditable decision on the exact order revision.  
 **Pages:** `/supplier`, `/orders`, supplier view of `/orders/[orderId]`  
-**Dependencies:** Sent order and supplier binding from Sprint 3.  
+**Dependencies:** Sent order and supplier binding from Sprint 4.
+
 **Demo:** A supplier sees an incoming order, reviews all material terms, accepts it, and the buyer sees that exact revision become eligible for funding. A second order demonstrates rejection.
 
 ### Committed backlog
 
 | ID | Priority | User/system story | Discipline | Acceptance summary |
 |---|---|---|---|---|
-| S4-01 | P0 | As a supplier, I see incoming orders requiring action | Web, Backend | Supplier dashboard and queue are restricted to designated relationships/wallet bindings |
-| S4-02 | P0 | As a supplier, I can review the immutable revision | Design, Web, Backend | Buyer, contacts, addresses, lines, totals, asset, dates, delivery, inspection, and refund terms are complete |
-| S4-03 | P0 | As a supplier, I can accept the exact revision | Web, Backend | Acceptance records supplier organization/user, revision, terms hash, timestamp, and audit event |
-| S4-04 | P0 | As a supplier, I can reject with a reason | Web, Backend | Rejection records structured reason/note and blocks funding |
-| S4-05 | P0 | As a buyer, I am notified of the decision | Backend, Web | Acceptance/rejection generates one durable, deep-linked notification |
-| S4-06 | P0 | As Movix, I prevent stale acceptance | Backend, QA | Superseded, cancelled, expired, wrong-supplier, or already-decided revisions reject the mutation |
-| S4-07 | P0 | As a buyer, a material edit requires re-acceptance | Backend, Web | Editing accepted commercial fields creates a new revision and returns it to supplier review |
-| S4-08 | P0 | As both parties, I see one canonical timeline | Design, Web, Backend | Send, accept/reject, revision, actor, and timestamp appear consistently in role-aware language |
+| S5-01 | P0 | As a supplier, I see incoming orders requiring action | Web, Backend | Supplier dashboard and queue are restricted to designated relationships/wallet bindings |
+| S5-02 | P0 | As a supplier, I can review the immutable revision | Design, Web, Backend | Buyer, contacts, addresses, lines, totals, asset, dates, delivery, inspection, and refund terms are complete |
+| S5-03 | P0 | As a supplier, I can accept the exact revision | Web, Backend | Acceptance records supplier organization/user, revision, terms hash, timestamp, and audit event |
+| S5-04 | P0 | As a supplier, I can reject with a reason | Web, Backend | Rejection records structured reason/note and blocks funding |
+| S5-05 | P0 | As a buyer, I am notified of the decision | Backend, Web | Acceptance/rejection generates one durable, deep-linked notification |
+| S5-06 | P0 | As Movix, I prevent stale acceptance | Backend, QA | Superseded, cancelled, expired, wrong-supplier, or already-decided revisions reject the mutation |
+| S5-07 | P0 | As a buyer, a material edit requires re-acceptance | Backend, Web | Editing accepted commercial fields creates a new revision and returns it to supplier review |
+| S5-08 | P0 | As both parties, I see one canonical timeline | Design, Web, Backend | Send, accept/reject, revision, actor, and timestamp appear consistently in role-aware language |
 
 ### Testing commitment
 
@@ -363,47 +445,50 @@ Login:
 - Email invitations.
 - Supplier team permissions.
 
-## Sprint 5 — Contract core and escrow funding
+## Sprint 6 — Escrow funding integration and reconciliation
 
 **Duration:** 2 weeks  
-**Sprint goal:** Lock the exact accepted order value once and project confirmed funding to both parties.  
+**Sprint goal:** Integrate the frozen contract v1 so a buyer can lock the exact accepted order value once and both parties can see confirmed chain state.
+
 **Page/functionality:** Funding section on `/orders/[orderId]`  
-**Dependencies:** Accepted immutable order, network/SAC allowlist, generated bindings, and local-ledger environment.  
+**Dependencies:** Accepted immutable order from Sprint 5, frozen and deployed contract v1 from Sprint 3, verified network/SAC configuration, generated bindings, and local-ledger environment.
+
 **Demo:** A buyer reviews and signs a 500 USDC funding transaction; the supplier sees confirmed funding, hash, ledger, amount, asset, and contract. A rejected wallet prompt and refresh-after-submit recovery are also demonstrated.
 
 ### Committed backlog
 
 | ID | Priority | User/system story | Discipline | Acceptance summary |
 |---|---|---|---|---|
-| S5-01 | P0 | As Movix, I deploy an initialized escrow contract | Contract, DevOps | `__constructor` stores treasury, supported SACs, fee cap, and TTL config atomically |
-| S5-02 | P0 | As a buyer, I can create and fund one escrow | Contract | `create_and_fund` validates ID, parties, token, amount, fee, deadline, and terms hash, then transfers atomically |
-| S5-03 | P0 | As anyone, I can read one escrow safely | Contract, Stellar | `get_escrow(id)` returns a bounded typed record |
-| S5-04 | P0 | As Movix, I track active liabilities and TTL | Contract | Per-token liability is exact; escrow/config/liability TTL is extended according to policy |
-| S5-05 | P0 | As Movix, I expose stable funding events and errors | Contract, Stellar | Typed event/error bindings decode into stable application models |
-| S5-06 | P0 | As a buyer, I can review funding before signing | Design, Web, Stellar | `TransactionReview` shows amount, asset, order, supplier, network, contract, balance/trustline, fee, and resulting state |
-| S5-07 | P0 | As a buyer, I can simulate, sign, and submit | Stellar, Web | Transaction is simulated, wallet-signed, submitted, and duplicate actions are disabled |
-| S5-08 | P0 | As Movix, I persist and reconcile submission | Backend, Stellar | Hash is saved as submitted; RPC finality and `get_escrow` update the projection idempotently |
-| S5-09 | P0 | As both parties, I see confirmed funding | Web, Backend | Funded appears only after reconciliation; receipt exposes asset, amount, network, contract, hash, and ledger |
-| S5-10 | P0 | As a user, I can recover interrupted funding | Web, Backend | Refresh/browser close resumes tracking; unknown final state never creates a second funding transaction |
-| S5-11 | P1 | As Operations, I can detect reconciliation failures | Backend, DevOps | Stuck submission and projection mismatch create structured alerts/logs |
+| S6-01 | P0 | As Movix, I load only a verified contract deployment | Stellar, DevOps | Network configuration pins the approved contract ID, WASM hash, ABI/binding version, passphrase, and allowlisted SACs; browser input cannot override them |
+| S6-02 | P0 | As Movix, I derive exact contract arguments from the accepted order | Backend, Stellar | Escrow ID, buyer/supplier wallet snapshots, integer amount, token, fee, deadline, and terms hash come from authorized canonical records and match the frozen ABI |
+| S6-03 | P0 | As a buyer, I can review funding before signing | Design, Web, Stellar | `TransactionReview` shows amount, asset, order, supplier, network, verified contract, balance/trustline, fee, and resulting state |
+| S6-04 | P0 | As a buyer, I can simulate, sign, and submit `create_and_fund` | Stellar, Web | The generated binding builds the call, simulation exposes the full auth tree, the wallet signs it, submission is recorded, and duplicate actions are disabled |
+| S6-05 | P0 | As Movix, I decode contract results, errors, and events | Stellar, Backend | Frozen generated bindings map typed contract output into stable application models without a hand-maintained ABI |
+| S6-06 | P0 | As Movix, I persist and reconcile submission | Backend, Stellar | Hash is saved as submitted; RPC finality and `get_escrow` update the projection idempotently |
+| S6-07 | P0 | As Movix, I verify funding against contract state | Backend, Stellar | Projection fields match contract ID/version, escrow ID, parties, token, amount, terms hash, status, ledger, and per-token liability controls |
+| S6-08 | P0 | As both parties, I see confirmed funding | Web, Backend | Funded appears only after reconciliation; receipt exposes asset, amount, network, contract, hash, and ledger |
+| S6-09 | P0 | As a user, I can recover interrupted funding | Web, Backend | Refresh/browser close resumes tracking; an unknown final state never creates a second funding transaction |
+| S6-10 | P0 | As Movix, I index funding idempotently | Backend, Stellar | Durable cursor ingestion, event deduplication, and bounded getter confirmation produce one canonical funding transition |
+| S6-11 | P1 | As Operations, I can detect reconciliation failures | Backend, DevOps | Stuck submission, cursor lag, liability mismatch, and projection mismatch create structured alerts/logs |
 
-### Contract acceptance criteria
+### Integration acceptance criteria
 
 - Buyer and supplier are distinct.
 - Token is an allowlisted network-specific SAC.
 - Amount is positive and equals the accepted order total.
 - Escrow ID is unique.
 - Terms hash equals the accepted revision.
-- Buyer authorization is required at the escrow entry point.
+- The simulated authorization tree requires the buyer at the escrow entry point and the exact nested SAC transfer.
 - Duplicate invocation cannot create a second liability.
 - Failed SAC transfer leaves no escrow or liability.
 - Event contains no PII.
+- Contract ID, WASM hash, ABI version, network passphrase, and SAC address are pinned from verified deployment configuration.
 
 ### Testing commitment
 
-- Rust unit/property tests for amount boundaries, duplicate ID, wrong token, same parties, bad deadline, fee cap, terms mismatch, authorization, liability, event, typed errors, and TTL.
-- Integration tests with real local SAC transfers for XLM-like and USDC-like assets.
-- Missing trustline, deauthorized balance, insufficient balance, and failed transfer.
+- Contract v1 regression suite remains green; this sprint does not reimplement or silently change the ABI.
+- Web-to-local-ledger integration tests exercise the release WASM and generated bindings for XLM-like and USDC-like SAC funding.
+- Missing trustline, deauthorized balance, insufficient balance, failed transfer, stale deployment config, and binding/WASM mismatch.
 - TypeScript unit tests for exact conversion, network config, transaction building, simulation, event decoding, and explorer links.
 - Convex tests for submission idempotency, organization visibility, finality updates, and repair.
 - Playwright funding success, wallet rejection, wrong network, insufficient balance, delayed confirmation, disconnect, and refresh recovery.
@@ -420,7 +505,7 @@ Login:
 - Platform fee above zero.
 - Fee sponsorship.
 
-## Sprint 6 — Supplier acceptance, shipment, delivery confirmation, and release
+## Sprint 7 — Supplier acceptance, shipment, delivery confirmation, and release
 
 **Duration:** 2 weeks  
 **Sprint goal:** Complete the core supplier-protection and buyer-release loop.  
@@ -432,15 +517,15 @@ Login:
 
 | ID | Priority | User/system story | Discipline | Acceptance summary |
 |---|---|---|---|---|
-| S6-01 | P0 | As a supplier, I accept the funded on-chain terms | Contract, Stellar, Web | Supplier signs `accept` for the snapshotted address and matching terms hash; `Funded → Accepted` |
-| S6-02 | P0 | As a supplier, I can record shipment details | Web, Backend | Method, carrier/tracking where applicable, dates, addresses, package data, notes, and evidence metadata validate |
-| S6-03 | P0 | As a supplier, I commit the shipment hash | Contract, Stellar | Supplier signs `mark_shipped`; only `Accepted → Shipped` is permitted |
-| S6-04 | P0 | As a buyer, I can review shipment and inspection terms | Design, Web | Shipment, delivery evidence, inspection warning, amount, and alternatives are clearly presented |
-| S6-05 | P0 | As a buyer, I can confirm delivery and release | Contract, Stellar, Web | Explicit irreversible review signs `confirm_delivery`; exact net/fee transfers and `Shipped → Released` are atomic |
-| S6-06 | P0 | As both parties, I receive a settlement receipt | Web, Backend | Completion appears only after confirmed contract state and shows amount, asset, recipient, hash, network, and ledger |
-| S6-07 | P0 | As both parties, I see the completed timeline | Backend, Web | Accepted, shipped, confirmed/released, actors, timestamps, and chain evidence are canonical |
-| S6-08 | P0 | As Movix, I notify the supplier and buyer | Backend | Shipment, action-required delivery review, and release notifications are durable and deduplicated |
-| S6-09 | P1 | As Product, I can measure the core funnel | Product, Backend | Accepted-to-funded, funded-to-shipped, and shipped-to-released events are measurable |
+| S7-01 | P0 | As a supplier, I accept the funded on-chain terms | Stellar, Web | Supplier signs the frozen contract v1 `accept` call for the snapshotted address and matching terms hash; confirmed state becomes `Funded → Accepted` |
+| S7-02 | P0 | As a supplier, I can record shipment details | Web, Backend | Method, carrier/tracking where applicable, dates, addresses, package data, notes, and evidence metadata validate |
+| S7-03 | P0 | As a supplier, I commit the shipment hash | Stellar | Supplier signs the frozen `mark_shipped` call; confirmed contract state permits only `Accepted → Shipped` |
+| S7-04 | P0 | As a buyer, I can review shipment and inspection terms | Design, Web | Shipment, delivery evidence, inspection warning, amount, and alternatives are clearly presented |
+| S7-05 | P0 | As a buyer, I can confirm delivery and release | Stellar, Web | Explicit irreversible review signs the frozen `confirm_delivery` call; exact net/fee transfers and `Shipped → Released` are confirmed from chain state |
+| S7-06 | P0 | As both parties, I receive a settlement receipt | Web, Backend | Completion appears only after confirmed contract state and shows amount, asset, recipient, hash, network, and ledger |
+| S7-07 | P0 | As both parties, I see the completed timeline | Backend, Web | Accepted, shipped, confirmed/released, actors, timestamps, and chain evidence are canonical |
+| S7-08 | P0 | As Movix, I notify the supplier and buyer | Backend | Shipment, action-required delivery review, and release notifications are durable and deduplicated |
+| S7-09 | P1 | As Product, I can measure the core funnel | Product, Backend | Accepted-to-funded, funded-to-shipped, and shipped-to-released events are measurable |
 
 ### Testing commitment
 
@@ -470,7 +555,7 @@ Run moderated tests with at least three buyer–supplier pairs. Validate:
 
 Do not continue adding scope without reviewing these findings.
 
-## Sprint 7 — Mutual refunds and unaccepted timeout cancellation
+## Sprint 8 — Mutual refunds and unaccepted timeout cancellation
 
 **Duration:** 2 weeks  
 **Sprint goal:** Provide controlled, auditable exception paths without enabling unilateral post-acceptance fund movement.  
@@ -482,14 +567,14 @@ Do not continue adding scope without reviewing these findings.
 
 | ID | Priority | User/system story | Discipline | Acceptance summary |
 |---|---|---|---|---|
-| S7-01 | P0 | As either party, I can propose a full refund | Contract, Web, Stellar | Eligible active state stores proposer, exact full remaining amount/hash, resume state, and `RefundPending` |
-| S7-02 | P0 | As the counterparty, I can approve matching terms | Contract, Web, Stellar | Opposite party signs identical hash; full remaining amount returns to buyer and becomes `Refunded` |
-| S7-03 | P0 | As the counterparty, I can reject | Contract, Web | Matching rejection restores the prior active state and records an audit reason |
-| S7-04 | P0 | As the proposer, I can withdraw | Contract, Web | Matching withdrawal restores prior state and prevents later approval of the stale proposal |
-| S7-05 | P0 | As a buyer, I can cancel an unaccepted escrow after deadline | Contract, Web, Stellar | Buyer-only call after `acceptBy` refunds in `Funded`; early, accepted, or terminal calls fail |
-| S7-06 | P0 | As both parties, I see who must act next | Design, Web | Amount, asset, reason, proposer, counterparty, deadline, terms, and resulting state are explicit |
-| S7-07 | P0 | As Movix, I reconcile every refund/cancellation | Backend, Stellar | Submitted/final status, hash, ledger, projection, notification, audit, and receipt are idempotent |
-| S7-08 | P0 | As Movix, I prevent settlement races | Contract, Backend, QA | Release and refund/cancellation cannot both succeed |
+| S8-01 | P0 | As either party, I can propose a full refund | Web, Stellar | Eligible active state calls the frozen contract v1 ABI with proposer and matching terms hash; confirmed state becomes `RefundPending` with the prior state preserved |
+| S8-02 | P0 | As the counterparty, I can approve matching terms | Web, Stellar | Opposite party signs the identical hash through the generated binding; full remaining amount returns to buyer and confirmed state becomes `Refunded` |
+| S8-03 | P0 | As the counterparty, I can reject | Web, Stellar | Matching rejection through the frozen ABI restores the prior active state and records an off-chain audit reason |
+| S8-04 | P0 | As the proposer, I can withdraw | Web, Stellar | Matching withdrawal restores the prior state and prevents later approval of the stale proposal |
+| S8-05 | P0 | As a buyer, I can cancel an unaccepted escrow after deadline | Web, Stellar | Buyer signs `cancel_unaccepted` after `acceptBy` while `Funded`; early, accepted, refund-pending, or terminal calls fail |
+| S8-06 | P0 | As both parties, I see who must act next | Design, Web | Amount, asset, reason, proposer, counterparty, deadline, terms, and resulting state are explicit |
+| S8-07 | P0 | As Movix, I reconcile every refund/cancellation | Backend, Stellar | Submitted/final status, hash, ledger, projection, notification, audit, and receipt are idempotent |
+| S8-08 | P0 | As Movix, I prevent settlement races | Backend, Stellar, QA | Contract v1 regression plus integration concurrency tests prove release and refund/cancellation cannot both succeed |
 
 ### Testing commitment
 
@@ -512,7 +597,7 @@ Do not continue adding scope without reviewing these findings.
 - Evidence uploads.
 - Formal dispute or resolver flow.
 
-## Sprint 8 — Transaction history, notifications, and dashboard completion
+## Sprint 9 — Transaction history, notifications, and dashboard completion
 
 **Duration:** 2 weeks  
 **Sprint goal:** Make every required action and financial transition discoverable and traceable.  
@@ -524,16 +609,16 @@ Do not continue adding scope without reviewing these findings.
 
 | ID | Priority | User/system story | Discipline | Acceptance summary |
 |---|---|---|---|---|
-| S8-01 | P0 | As a user, I can view organization transactions | Backend, Web | Funding, release, refund, cancellation, status, amount, asset, order, counterparty, and timestamp are scoped and paginated |
-| S8-02 | P0 | As a user, I can filter transaction history | Web, Backend | Date, asset, type, status, order, and counterparty filters produce stable query state |
-| S8-03 | P0 | As a user, I can inspect transaction details | Design, Web | Drawer shows network, contract, hash, ledger, fee, initiator, from/to, confirmation, and correct explorer link |
-| S8-04 | P0 | As a user, I can view actionable notifications | Backend, Web | Action-required, transactional, and informational items are categorized and deep-linked |
-| S8-05 | P0 | As a user, I can manage notification read state | Web, Backend | Individual/all read actions are optimistic, recover on error, and remain organization-scoped |
-| S8-06 | P0 | As a buyer, I see role-relevant dashboard states | Design, Web, Backend | Draft, funding, delivery review, completed, and exception counts link to filtered lists |
-| S8-07 | P0 | As a supplier, I see role-relevant dashboard states | Design, Web, Backend | Incoming, fulfill, in-transit, awaiting confirmation, completed, and exception counts link correctly |
-| S8-08 | P0 | As a user, I can see reconciliation warnings | Web, Backend | Submitted/stuck/mismatch status explains that funds follow confirmed chain state and offers safe recovery |
-| S8-09 | P0 | As Movix, notification creation is idempotent | Backend, QA | One event produces at most one notification of each type per recipient |
-| S8-10 | P1 | As Product, I can measure action latency | Product, Backend | Time-to-accept, fund, ship, release, refund decision, and reconciliation lag are available |
+| S9-01 | P0 | As a user, I can view organization transactions | Backend, Web | Funding, release, refund, cancellation, status, amount, asset, order, counterparty, and timestamp are scoped and paginated |
+| S9-02 | P0 | As a user, I can filter transaction history | Web, Backend | Date, asset, type, status, order, and counterparty filters produce stable query state |
+| S9-03 | P0 | As a user, I can inspect transaction details | Design, Web | Drawer shows network, contract, hash, ledger, fee, initiator, from/to, confirmation, and correct explorer link |
+| S9-04 | P0 | As a user, I can view actionable notifications | Backend, Web | Action-required, transactional, and informational items are categorized and deep-linked |
+| S9-05 | P0 | As a user, I can manage notification read state | Web, Backend | Individual/all read actions are optimistic, recover on error, and remain organization-scoped |
+| S9-06 | P0 | As a buyer, I see role-relevant dashboard states | Design, Web, Backend | Draft, funding, delivery review, completed, and exception counts link to filtered lists |
+| S9-07 | P0 | As a supplier, I see role-relevant dashboard states | Design, Web, Backend | Incoming, fulfill, in-transit, awaiting confirmation, completed, and exception counts link correctly |
+| S9-08 | P0 | As a user, I can see reconciliation warnings | Web, Backend | Submitted/stuck/mismatch status explains that funds follow confirmed chain state and offers safe recovery |
+| S9-09 | P0 | As Movix, notification creation is idempotent | Backend, QA | One event produces at most one notification of each type per recipient |
+| S9-10 | P1 | As Product, I can measure action latency | Product, Backend | Time-to-accept, fund, ship, release, refund decision, and reconciliation lag are available |
 
 ### Testing commitment
 
@@ -557,7 +642,7 @@ Do not continue adding scope without reviewing these findings.
 - Advanced full-text search.
 - Email notification delivery.
 
-## Sprint 9 — Pilot hardening and testnet readiness
+## Sprint 10 — Pilot hardening and testnet readiness
 
 **Duration:** 2 weeks  
 **Sprint goal:** Make the complete MVP operable by pilot businesses without developer intervention.  
@@ -569,17 +654,17 @@ Do not continue adding scope without reviewing these findings.
 
 | ID | Priority | Work item | Discipline | Acceptance summary |
 |---|---|---|---|---|
-| S9-01 | P0 | Complete cross-page state consistency | Design, Web, QA | Loading, empty, error, disabled, pending, disconnected, wrong-network, and expired-session patterns are canonical |
-| S9-02 | P0 | Complete supported-wallet/browser matrix | Stellar, Web, QA | Agreed wallets and browsers pass connection, authentication, signing, and recovery journeys |
-| S9-03 | P0 | Complete responsive/accessibility regression | Design, QA, Web | 320px/tablet/desktop, keyboard, screen reader, contrast, focus, reduced motion, and live regions pass |
-| S9-04 | P0 | Harden contract verification | Contract, QA | Unit/property/fuzz/mutation/static-analysis, WASM build/hash, resource profiling, and local integration pass |
-| S9-05 | P0 | Harden backend authorization and load | Backend, QA | Organization isolation, contention, pagination, notification, audit, and reconciliation load/recovery pass |
-| S9-06 | P0 | Script testnet deployment and reset recovery | DevOps, Contract, Stellar | Keys/config/deployments/bindings/fixtures can be recreated without manual hidden steps |
-| S9-07 | P0 | Add production-like observability | DevOps, Backend | Auth replay/failure, stuck transaction, RPC failure, cursor lag, TTL, liability mismatch, and projection mismatch alerts work |
-| S9-08 | P0 | Write operational and incident runbooks | Product, DevOps, Backend, Contract | Support, reconciliation repair, key rotation, RPC outage, testnet reset, and stuck-transaction procedures are documented |
-| S9-09 | P0 | Run clean end-to-end pilot rehearsal | Product, QA | At least two new buyer–supplier pairs complete the journeys without developer assistance |
-| S9-10 | P0 | Record mainnet blockers | Product, Contract, Architecture | Timeout/resolver policy, legal review, contract audit, key custody, asset config, and incident ownership remain explicit gates |
-| S9-11 | P1 | Tune onboarding and transaction copy | Product, Design | Pilot confusion and recoverable errors from Sprint 6 research are addressed |
+| S10-01 | P0 | Complete cross-page state consistency | Design, Web, QA | Loading, empty, error, disabled, pending, disconnected, wrong-network, and expired-session patterns are canonical |
+| S10-02 | P0 | Complete supported-wallet/browser matrix | Stellar, Web, QA | Agreed wallets and browsers pass connection, authentication, signing, and recovery journeys |
+| S10-03 | P0 | Complete responsive/accessibility regression | Design, QA, Web | 320px/tablet/desktop, keyboard, screen reader, contrast, focus, reduced motion, and live regions pass |
+| S10-04 | P0 | Harden contract verification | Contract, QA | Sprint 3 unit/property/fuzz/mutation/static-analysis, WASM build/hash, resource profiling, and local integration suites pass against the release candidate |
+| S10-05 | P0 | Harden backend authorization and load | Backend, QA | Organization isolation, contention, pagination, notification, audit, and reconciliation load/recovery pass |
+| S10-06 | P0 | Script testnet deployment and reset recovery | DevOps, Contract, Stellar | Keys/config/deployments/bindings/fixtures can be recreated without manual hidden steps |
+| S10-07 | P0 | Add production-like observability | DevOps, Backend | Auth replay/failure, stuck transaction, RPC failure, cursor lag, TTL, liability mismatch, and projection mismatch alerts work |
+| S10-08 | P0 | Write operational and incident runbooks | Product, DevOps, Backend, Contract | Support, reconciliation repair, key rotation, RPC outage, testnet reset, and stuck-transaction procedures are documented |
+| S10-09 | P0 | Run clean end-to-end pilot rehearsal | Product, QA | At least two new buyer–supplier pairs complete the journeys without developer assistance |
+| S10-10 | P0 | Record mainnet blockers | Product, Contract, Architecture | Timeout/resolver policy, legal review, contract audit, key custody, asset config, and incident ownership remain explicit gates |
+| S10-11 | P1 | Tune onboarding and transaction copy | Product, Design | Pilot confusion and recoverable errors from Sprint 7 research are addressed |
 
 ### Testing commitment
 
@@ -611,28 +696,31 @@ Do not continue adding scope without reviewing these findings.
 |---|---|---|
 | Shared lifecycle and permissions | All sprints | Teams invent conflicting status and access rules |
 | SEP-10/JWT/Convex identity | Sprint 2 onward | Protected organization data cannot be trusted |
-| Business profile and membership | Sprint 3 onward | Orders lack accountable business actors |
-| Immutable accepted order revision | Sprint 5 | Escrow cannot bind to agreed commercial terms |
-| Network/SAC allowlist and exact amounts | Sprint 5 onward | Wrong asset or amount may be funded |
-| Contract events/getter and projection | Sprint 5 onward | Dashboards cannot prove confirmed financial state |
-| Transaction review/recovery pattern | Sprints 5–7 | Users may misunderstand or duplicate financial actions |
-| Notification/audit idempotency | Sprints 4–9 | Duplicate actions and unreliable history |
+| Contract lifecycle, authorization, and invariant decisions | Sprint 3 | Value-moving code cannot be reviewed against a stable specification |
+| Verified protocol/SDK and network-specific SAC allowlist | Sprint 3 onward | The contract may target the wrong runtime or accept the wrong asset |
+| Frozen contract v1 ABI, WASM hash, bindings, and deployment manifest | Sprints 6–10 | Product code may call or display a contract different from the reviewed artifact |
+| Business profile and membership | Sprint 4 onward | Orders lack accountable business actors |
+| Immutable accepted order revision | Sprint 6 | Escrow cannot bind to agreed commercial terms |
+| Contract events/getter and projection | Sprint 6 onward | Dashboards cannot prove confirmed financial state |
+| Transaction review/recovery pattern | Sprints 6–8 | Users may misunderstand or duplicate financial actions |
+| Notification/audit idempotency | Sprints 5–10 | Duplicate actions and unreliable history |
 | Reconciliation and observability | Pilot release | Chain/application divergence becomes silent |
 
 ## 9. Test coverage matrix
 
-| Test layer | S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 | S8 | S9 |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| Type/lint/build | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Backend unit/auth | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Component tests | Shell | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Regression |
-| Accessibility | Tokens | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Full |
-| Playwright | Harness | Login | Onboard | Buyer | Supplier | Fund | Release | Refund | History | Full |
-| Contract unit/property | Harness | — | — | — | — | ✓ | ✓ | ✓ | Regression | Full |
-| SAC/local integration | Harness | — | — | — | — | ✓ | ✓ | ✓ | Regression | Full |
-| Testnet smoke | — | Auth config | — | — | — | Fund | Release | Refund | Projection | Full |
-| Recovery/chaos | — | Session | Draft | Autosave | Concurrency | Tx recovery | Tx recovery | Races | Reconcile | Full |
-| Performance/load | Baseline | Auth rate | — | Lists | Queues | RPC budget | Contract budget | Contract budget | History | Full |
+| Test layer | S0 | S1 | S2 | S3 | S4 | S5 | S6 | S7 | S8 | S9 | S10 |
+|---|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
+| Type/lint/build | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Backend unit/auth | ✓ | ✓ | ✓ | Fixtures | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Component tests | Shell | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Regression |
+| Accessibility | Tokens | ✓ | ✓ | — | ✓ | ✓ | ✓ | ✓ | ✓ | ✓ | Full |
+| Playwright | Harness | Login | Onboard | — | Buyer | Supplier | Fund | Release | Refund | History | Full |
+| Contract unit/property | Harness | — | — | Full v1 | — | — | Regression | Regression | Regression | Regression | Full |
+| Contract fuzz/static/mutation | — | — | — | P0/P1 gate | — | — | Regression | Regression | Regression | — | Full |
+| SAC/local integration | Harness | — | — | Full v1 | — | — | Fund | Release | Refund | Regression | Full |
+| Testnet smoke | — | Auth config | — | Contract v1 | — | — | Fund | Release | Refund | Projection | Full |
+| Recovery/chaos | — | Session | Draft | Contract state | Autosave | Concurrency | Tx recovery | Tx recovery | Races | Reconcile | Full |
+| Performance/load | Baseline | Auth rate | — | Contract budget | Lists | Queues | RPC budget | Contract budget | Contract budget | History | Full |
 
 ## 10. Scope cut strategy
 
@@ -663,28 +751,29 @@ Never cut:
 |---|---:|---:|
 | Supported-wallet login success excluding user rejection | ≥90% | 1 |
 | Completed business onboarding | 5 buyer–supplier pairs | 2 |
-| Median order create-to-send time | <5 minutes | 3 |
-| Supplier acceptance without support | ≥90% | 4 |
-| Accepted orders reaching confirmed funding without staff help | ≥90% | 5 |
-| Complete testnet settlement lifecycles | 20 | 6 |
-| Repeat buyers creating a second order | 3 | 6+ |
-| Unauthorized releases/refunds | 0 | 6+ |
-| Duplicate settlements | 0 | 6+ |
-| Unexplained contract/projection variance | 0 | 5+ |
-| Pilot users correctly explain lock/release/refund | 100% interviewed | 6 and 9 |
+| Contract v1 scripted lifecycle success | 100% of release smoke runs | 3 |
+| Median order create-to-send time | <5 minutes | 4 |
+| Supplier acceptance without support | ≥90% | 5 |
+| Accepted orders reaching confirmed funding without staff help | ≥90% | 6 |
+| Complete testnet settlement lifecycles | 20 | 7 |
+| Repeat buyers creating a second order | 3 | 7+ |
+| Unauthorized releases/refunds | 0 | 3+ |
+| Duplicate settlements | 0 | 3+ |
+| Unexplained contract/projection variance | 0 | 6+ |
+| Pilot users correctly explain lock/release/refund | 100% interviewed | 7 and 10 |
 
 ## 12. Risks and sprint controls
 
 | Risk | Sprint control |
 |---|---|
 | Buyer disappears after shipment | Testnet-only release; mainnet timeout/resolver remains a formal gate |
-| Wallet friction | Sprint 1 recovery states and wallet matrix; repeat in Sprint 9 |
-| Chain/Convex divergence | Projection and recovery begin with funding in Sprint 5, not after feature completion |
+| Wallet friction | Sprint 1 recovery states and wallet matrix; repeat in Sprint 10 |
+| Chain/Convex divergence | Contract events/getter are frozen in Sprint 3; projection and recovery begin with funding in Sprint 6 |
 | Wrong USDC issuer or token contract | Fixed server allowlist and contract validation |
 | Decimal/payout error | Integer units, deterministic conversion, property tests, payout conservation |
 | Duplicate funding or settlement | Unique IDs, terminal states, idempotency, saved hashes, reconciliation |
 | PII on-chain | Only opaque hashes, addresses, asset, amount, and state in contract |
-| TTL/archive incident | Contract TTL policy in Sprint 5; monitor and rehearse in Sprint 9 |
+| TTL/archive incident | Contract TTL policy and tests in Sprint 3; monitor and rehearse in Sprint 10 |
 | Scope growth | Sprint-specific stretch lists and mandatory cut strategy |
 | Testing deferred | Every sprint has a non-negotiable test commitment and exit gate |
 
@@ -723,4 +812,4 @@ Required artifacts:
 - [ ] Add test and CI commands.
 - [ ] Create deterministic buyer/supplier/order/asset fixtures.
 - [ ] Apply the dark design tokens and `packages/ui` reuse rule.
-- [ ] Schedule the Sprint 6 pilot validation session before development begins.
+- [ ] Schedule the Sprint 7 pilot validation session before development begins.
