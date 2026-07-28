@@ -1,6 +1,23 @@
 import { v } from "convex/values";
 
 export const networkValidator = v.literal("testnet");
+export const orderAssetKeyValidator = v.union(v.literal("testnet:XLM"), v.literal("testnet:USDC"));
+export const orderAssetCodeValidator = v.union(v.literal("XLM"), v.literal("USDC"));
+export const relationshipStatusValidator = v.union(
+  v.literal("active"),
+  v.literal("provisional"),
+  v.literal("paused"),
+);
+export const orderDiscountKindValidator = v.union(
+  v.literal("none"),
+  v.literal("fixed"),
+  v.literal("rate"),
+);
+export const orderCommandTypeValidator = v.union(
+  v.literal("create"),
+  v.literal("send"),
+  v.literal("cancel"),
+);
 
 export const authChallengeStateValidator = v.union(
   v.literal("active"),

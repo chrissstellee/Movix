@@ -50,13 +50,101 @@ describe("Movix schema", () => {
       const orderId = await ctx.db.insert("orders", {
         buyerOrganizationId,
         supplierOrganizationId,
+        normalizedPurchaseOrderNumber: "movix-po-0001",
         purchaseOrderNumber: "MOVIX-PO-0001",
-        agreementStatus: "accepted",
+        title: "Fixture order",
+        supplierNameSnapshot: "Supplier Fixture Ltd.",
+        assetKey: "testnet:USDC",
+        assetCode: "USDC",
+        issueDate: "2026-07-28",
+        grandTotalBaseUnits: 467_500_000n,
+        currentRevisionNumber: 1n,
+        agreementStatus: "sent",
         fulfillmentStatus: "not_started",
-        settlementStatus: "funded",
+        settlementStatus: "unfunded",
+        sentAt: FIXED_NOW,
+        sortTimestamp: FIXED_NOW,
         createdAt: FIXED_NOW,
         updatedAt: FIXED_NOW,
         version: 1n,
+      });
+      const revisionId = await ctx.db.insert("orderRevisions", {
+        orderId,
+        revisionNumber: 1n,
+        buyerOrganizationId,
+        supplierOrganizationId,
+        purchaseOrderNumber: "MOVIX-PO-0001",
+        title: "Fixture order",
+        timezone: "UTC",
+        assetKey: "testnet:USDC",
+        assetCode: "USDC",
+        assetIssuer: testnetUsdc.issuer,
+        assetContractId: testnetUsdc.contractId,
+        assetDecimals: 7n,
+        buyerLegalNameSnapshot: "Buyer Fixture Ltd.",
+        supplierLegalNameSnapshot: "Supplier Fixture Ltd.",
+        subtotalBaseUnits: 467_500_000n,
+        discountTotalBaseUnits: 0n,
+        taxTotalBaseUnits: 0n,
+        shippingTotalBaseUnits: 0n,
+        grandTotalBaseUnits: 467_500_000n,
+        paymentMode: "escrow",
+        autoReleasePolicy: "none",
+        termsHash: "a".repeat(64),
+        frozenAt: FIXED_NOW,
+        createdByUserId: buyerUserId,
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        version: 1n,
+      });
+      await ctx.db.patch(orderId, { currentRevisionId: revisionId });
+      await ctx.db.insert("orderLines", {
+        revisionId,
+        lineNumber: 1n,
+        name: "Fixture line",
+        quantityCoefficient: 2n,
+        quantityScale: 0n,
+        unitOfMeasure: "each",
+        unitPriceBaseUnits: 233_750_000n,
+        discountKind: "none",
+        taxBps: 0n,
+        requiresInspection: false,
+        grossBaseUnits: 467_500_000n,
+        discountBaseUnits: 0n,
+        taxBaseUnits: 0n,
+        lineTotalBaseUnits: 467_500_000n,
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        version: 1n,
+      });
+      await ctx.db.insert("orderCommandReceipts", {
+        buyerOrganizationId,
+        orderId,
+        commandType: "send",
+        idempotencyKey: "fixture-send",
+        requestFingerprint: "fixture-fingerprint",
+        resultRevisionId: revisionId,
+        resultAgreementStatus: "sent",
+        createdAt: FIXED_NOW,
+      });
+      await ctx.db.insert("orderDashboardCounts", {
+        organizationId: buyerOrganizationId,
+        side: "buyer",
+        draftCount: 0n,
+        sentCount: 1n,
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        version: 1n,
+      });
+      await ctx.db.insert("notifications", {
+        recipientOrganizationId: supplierOrganizationId,
+        eventType: "order.sent",
+        entityType: "order",
+        entityId: orderId,
+        actionUrl: `/orders/${orderId}`,
+        idempotencyKey: "fixture-send",
+        status: "unread",
+        createdAt: FIXED_NOW,
       });
       const escrowId = await ctx.db.insert("escrows", {
         orderId,
@@ -75,11 +163,12 @@ describe("Movix schema", () => {
         version: 1n,
       });
 
-      return { buyerOrganizationId, supplierOrganizationId, orderId, escrowId };
+      return { buyerOrganizationId, supplierOrganizationId, orderId, revisionId, escrowId };
     });
 
     expect(result.buyerOrganizationId).not.toBe(result.supplierOrganizationId);
     expect(result.orderId).toBeTruthy();
+    expect(result.revisionId).toBeTruthy();
     expect(result.escrowId).toBeTruthy();
   });
 

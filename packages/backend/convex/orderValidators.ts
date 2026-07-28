@@ -1,0 +1,168 @@
+import { v } from "convex/values";
+
+import {
+  agreementStatusValidator,
+  fulfillmentStatusValidator,
+  orderAssetCodeValidator,
+  orderAssetKeyValidator,
+  orderDiscountKindValidator,
+  settlementStatusValidator,
+} from "./validators";
+
+export const supplierTargetValidator = v.union(
+  v.object({ kind: v.literal("wallet"), walletAddress: v.string() }),
+  v.object({ kind: v.literal("relationship"), relationshipId: v.id("relationships") }),
+);
+
+export const orderLineInputValidator = v.object({
+  lineNumber: v.int64(),
+  name: v.string(),
+  sku: v.optional(v.string()),
+  supplierSku: v.optional(v.string()),
+  description: v.optional(v.string()),
+  category: v.optional(v.string()),
+  manufacturer: v.optional(v.string()),
+  brand: v.optional(v.string()),
+  origin: v.optional(v.string()),
+  quantityCoefficient: v.int64(),
+  quantityScale: v.int64(),
+  unitOfMeasure: v.string(),
+  unitPriceBaseUnits: v.int64(),
+  discountKind: orderDiscountKindValidator,
+  discountBaseUnits: v.optional(v.int64()),
+  discountBps: v.optional(v.int64()),
+  taxBps: v.int64(),
+  taxCode: v.optional(v.string()),
+  requiresInspection: v.boolean(),
+});
+
+export const orderTotalsValidator = v.object({
+  subtotalBaseUnits: v.int64(),
+  discountTotalBaseUnits: v.int64(),
+  taxTotalBaseUnits: v.int64(),
+  shippingTotalBaseUnits: v.int64(),
+  grandTotalBaseUnits: v.int64(),
+});
+
+export const orderListItemValidator = v.object({
+  orderId: v.id("orders"),
+  purchaseOrderNumber: v.optional(v.string()),
+  supplierName: v.optional(v.string()),
+  title: v.optional(v.string()),
+  issueDate: v.optional(v.string()),
+  grandTotalBaseUnits: v.int64(),
+  assetCode: v.optional(orderAssetCodeValidator),
+  agreementStatus: agreementStatusValidator,
+  fulfillmentStatus: fulfillmentStatusValidator,
+  settlementStatus: settlementStatusValidator,
+  sortTimestamp: v.number(),
+});
+
+export const draftMutationResultValidator = v.object({
+  orderId: v.id("orders"),
+  revisionId: v.id("orderRevisions"),
+  version: v.int64(),
+  totals: orderTotalsValidator,
+});
+
+export const orderCommandResultValidator = v.object({
+  orderId: v.id("orders"),
+  revisionId: v.id("orderRevisions"),
+  agreementStatus: agreementStatusValidator,
+  orderVersion: v.int64(),
+  revisionVersion: v.int64(),
+  replay: v.boolean(),
+});
+
+export const supplierSummaryValidator = v.object({
+  organizationId: v.id("organizations"),
+  relationshipId: v.optional(v.id("relationships")),
+  legalName: v.string(),
+  tradingName: v.optional(v.string()),
+  walletAddress: v.string(),
+  status: v.literal("active"),
+});
+
+export const orderAssetSummaryValidator = v.object({
+  key: orderAssetKeyValidator,
+  code: orderAssetCodeValidator,
+  issuer: v.union(v.string(), v.null()),
+  contractId: v.string(),
+  decimals: v.int64(),
+  network: v.literal("testnet"),
+});
+
+export const publicOrderLineValidator = v.object({
+  id: v.id("orderLines"),
+  lineNumber: v.int64(),
+  name: v.string(),
+  sku: v.optional(v.string()),
+  supplierSku: v.optional(v.string()),
+  description: v.optional(v.string()),
+  quantityCoefficient: v.int64(),
+  quantityScale: v.int64(),
+  unitOfMeasure: v.string(),
+  unitPriceBaseUnits: v.int64(),
+  discountKind: orderDiscountKindValidator,
+  discountBaseUnitsInput: v.optional(v.int64()),
+  discountBps: v.optional(v.int64()),
+  taxBps: v.int64(),
+  taxCode: v.optional(v.string()),
+  requiresInspection: v.boolean(),
+  grossBaseUnits: v.int64(),
+  discountBaseUnits: v.int64(),
+  taxBaseUnits: v.int64(),
+  lineTotalBaseUnits: v.int64(),
+});
+
+export const publicDraftRevisionValidator = v.object({
+  id: v.id("orderRevisions"),
+  version: v.int64(),
+  supplierOrganizationId: v.optional(v.id("organizations")),
+  supplierLegalName: v.optional(v.string()),
+  purchaseOrderNumber: v.optional(v.string()),
+  title: v.optional(v.string()),
+  description: v.optional(v.string()),
+  timezone: v.optional(v.string()),
+  orderDate: v.optional(v.string()),
+  issueDate: v.optional(v.string()),
+  requestedDeliveryDate: v.optional(v.string()),
+  supplierAcceptanceDeadline: v.optional(v.number()),
+  fundingDeadline: v.optional(v.number()),
+  asset: v.optional(orderAssetSummaryValidator),
+  deliveryMethod: v.optional(v.string()),
+  shippingResponsibility: v.optional(v.string()),
+  freightChargeTreatment: v.optional(v.string()),
+  inspectionPeriodHours: v.optional(v.int64()),
+  refundPolicy: v.optional(v.string()),
+  buyerInternalNotes: v.optional(v.string()),
+  totals: orderTotalsValidator,
+  frozenAt: v.optional(v.number()),
+});
+
+export const draftProjectionValidator = v.object({
+  order: v.object({
+    id: v.id("orders"),
+    agreementStatus: agreementStatusValidator,
+    fulfillmentStatus: fulfillmentStatusValidator,
+    settlementStatus: settlementStatusValidator,
+    version: v.int64(),
+  }),
+  revision: publicDraftRevisionValidator,
+  lines: v.array(publicOrderLineValidator),
+});
+
+export const blockerValidator = v.object({ field: v.string(), message: v.string() });
+
+export const reviewProjectionValidator = v.object({
+  complete: v.boolean(),
+  blockers: v.array(blockerValidator),
+  order: v.object({
+    id: v.id("orders"),
+    agreementStatus: agreementStatusValidator,
+  }),
+  revision: publicDraftRevisionValidator,
+  lines: v.array(publicOrderLineValidator),
+  totals: orderTotalsValidator,
+  termsHash: v.optional(v.string()),
+});

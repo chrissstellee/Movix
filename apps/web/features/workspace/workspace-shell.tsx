@@ -67,6 +67,11 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
           Buyer workspace
         </NavLink>
       ) : null}
+      {context.allowedViews.includes("buyer") ? (
+        <NavLink href="/orders" active={pathname === "/orders" || pathname.startsWith("/orders/")}>
+          Orders
+        </NavLink>
+      ) : null}
       {context.allowedViews.includes("supplier") ? (
         <NavLink href="/supplier" active={pathname === "/supplier"}>
           Supplier workspace
@@ -187,5 +192,8 @@ function NavLink({
 function breadcrumb(pathname: string) {
   if (pathname === "/settings/business") return "Settings / Business";
   if (pathname === "/settings/wallet") return "Settings / Wallet";
+  if (pathname === "/orders") return "Buyer / Orders";
+  if (pathname === "/orders/new") return "Buyer / Orders / Create";
+  if (pathname.startsWith("/orders/")) return "Buyer / Orders / Detail";
   return pathname === "/supplier" ? "Supplier workspace" : "Buyer workspace";
 }

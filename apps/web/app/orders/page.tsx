@@ -1,10 +1,10 @@
-import { BuyerDashboard } from "@/features/orders/buyer-dashboard";
+import { OrderList } from "@/features/orders/order-list";
 import { WorkspaceShell } from "@/features/workspace/workspace-shell";
 
-export default function BuyerPage() {
+export default function OrdersPage() {
   return (
     <WorkspaceShell>
-      <BuyerDashboard />
+      <OrderList />
     </WorkspaceShell>
   );
 }

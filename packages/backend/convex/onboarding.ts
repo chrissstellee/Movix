@@ -66,34 +66,61 @@ function normalizeIdentity(values: {
   capability: "buyer" | "supplier" | "buyer_supplier";
   defaultTimezone: string;
 }) {
-  try {
-    const legalName = normalizeBusinessName(values.legalName).display;
-    const country = normalizeCountryCode(values.registrationCountry);
-    return {
-      legalName,
-      ...(optionalText(values.tradingName, 160)
-        ? { tradingName: optionalText(values.tradingName, 160) }
-        : {}),
-      ...(values.entityType ? { entityType: values.entityType } : {}),
-      ...(optionalText(values.registrationNumber, 64)
-        ? { registrationNumber: optionalText(values.registrationNumber, 64) }
-        : {}),
-      ...(optionalText(values.taxId, 64) ? { taxId: optionalText(values.taxId, 64) } : {}),
-      ...(optionalText(values.industry, 120)
-        ? { industry: optionalText(values.industry, 120) }
-        : {}),
-      ...(values.website ? { website: validateBusinessUrl(values.website) } : {}),
-      ...(values.businessPhone
-        ? { businessPhone: normalizePhone(values.businessPhone, country) }
-        : {}),
-      registrationCountry: country,
-      businessEmail: normalizeBusinessEmail(values.businessEmail),
-      capability: values.capability,
-      defaultTimezone: validateTimezone(values.defaultTimezone),
-    };
-  } catch {
-    throw businessError("DRAFT_INVALID");
-  }
+  const field = <T>(name: string, message: string, normalize: () => T): T => {
+    try {
+      return normalize();
+    } catch {
+      throw businessError("DRAFT_INVALID", { fields: { [name]: message } });
+    }
+  };
+  const legalName = field(
+    "legalName",
+    "Enter a legal business name between 2 and 160 characters.",
+    () => normalizeBusinessName(values.legalName).display,
+  );
+  const country = field("registrationCountry", "Select a valid registration country.", () =>
+    normalizeCountryCode(values.registrationCountry),
+  );
+  const tradingName = field("tradingName", "Use 160 characters or fewer.", () =>
+    optionalText(values.tradingName, 160),
+  );
+  const registrationNumber = field("registrationNumber", "Use 64 characters or fewer.", () =>
+    optionalText(values.registrationNumber, 64),
+  );
+  const taxId = field("taxId", "Use 64 characters or fewer.", () => optionalText(values.taxId, 64));
+  const industry = field("industry", "Use 120 characters or fewer.", () =>
+    optionalText(values.industry, 120),
+  );
+  const website = values.website
+    ? field("website", "Enter a complete http:// or https:// website URL.", () =>
+        validateBusinessUrl(values.website!),
+      )
+    : undefined;
+  const businessPhone = values.businessPhone
+    ? field("businessPhone", "Enter a valid phone number for the registration country.", () =>
+        normalizePhone(values.businessPhone!, country),
+      )
+    : undefined;
+  return {
+    legalName,
+    ...(tradingName ? { tradingName } : {}),
+    ...(values.entityType ? { entityType: values.entityType } : {}),
+    ...(registrationNumber ? { registrationNumber } : {}),
+    ...(taxId ? { taxId } : {}),
+    ...(industry ? { industry } : {}),
+    ...(website ? { website } : {}),
+    ...(businessPhone ? { businessPhone } : {}),
+    registrationCountry: country,
+    businessEmail: field("businessEmail", "Enter a valid business email address.", () =>
+      normalizeBusinessEmail(values.businessEmail),
+    ),
+    capability: values.capability,
+    defaultTimezone: field(
+      "defaultTimezone",
+      "Enter a valid IANA timezone such as Asia/Manila.",
+      () => validateTimezone(values.defaultTimezone),
+    ),
+  };
 }
 
 function normalizeContact(

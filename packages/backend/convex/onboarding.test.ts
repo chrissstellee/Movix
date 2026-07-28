@@ -166,6 +166,43 @@ describe("business onboarding", () => {
     });
   });
 
+  it.each([
+    [
+      "businessEmail",
+      { businessEmail: "owner@localhost" },
+      "Enter a valid business email address.",
+    ],
+    ["website", { website: "example.com" }, "Enter a complete http:// or https:// website URL."],
+    [
+      "businessPhone",
+      { businessPhone: "123" },
+      "Enter a valid phone number for the registration country.",
+    ],
+  ] as const)(
+    "identifies an invalid identity %s without echoing its value",
+    async (field, identityOverride, message) => {
+      const { authenticated } = await createAuthenticatedTest(`identity-${field}`);
+
+      await expect(
+        authenticated.mutation(saveDraft, {
+          expectedVersion: 0n,
+          step: "identity",
+          patch: {
+            identity: {
+              ...identityPatch.identity,
+              ...identityOverride,
+            },
+          },
+        }),
+      ).rejects.toMatchObject({
+        data: {
+          code: "DRAFT_INVALID",
+          fields: { [field]: message },
+        },
+      });
+    },
+  );
+
   it("atomically completes one organization and returns the same result for a retry", async () => {
     const { t, authenticated } = await createAuthenticatedTest();
     await authenticated.mutation(saveDraft, {

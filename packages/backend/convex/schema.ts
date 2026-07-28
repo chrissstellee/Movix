@@ -14,11 +14,16 @@ import {
   networkValidator,
   onboardingDraftStatusValidator,
   onboardingStepValidator,
+  orderAssetCodeValidator,
+  orderAssetKeyValidator,
+  orderCommandTypeValidator,
+  orderDiscountKindValidator,
   organizationEntityTypeValidator,
   organizationCapabilityValidator,
   organizationStatusValidator,
   organizationVerificationStatusValidator,
   reconciliationStatusValidator,
+  relationshipStatusValidator,
   settlementStatusValidator,
   transactionStatusValidator,
   userStatusValidator,
@@ -276,8 +281,12 @@ export default defineSchema({
 
   relationships: defineTable({
     buyerOrganizationId: v.id("organizations"),
-    supplierOrganizationId: v.id("organizations"),
-    status: v.union(v.literal("active"), v.literal("inactive")),
+    supplierOrganizationId: v.optional(v.id("organizations")),
+    inviteEmail: v.optional(v.string()),
+    inviteWalletAddress: v.optional(v.string()),
+    defaultContactId: v.optional(v.id("contacts")),
+    defaultAddressId: v.optional(v.id("addresses")),
+    status: relationshipStatusValidator,
     defaultTermsHash: v.optional(v.string()),
     ...commonMutableFields,
   })
@@ -291,36 +300,128 @@ export default defineSchema({
 
   orders: defineTable({
     buyerOrganizationId: v.id("organizations"),
-    supplierOrganizationId: v.id("organizations"),
+    supplierOrganizationId: v.optional(v.id("organizations")),
+    relationshipId: v.optional(v.id("relationships")),
     currentRevisionId: v.optional(v.id("orderRevisions")),
-    purchaseOrderNumber: v.string(),
+    currentRevisionNumber: v.int64(),
+    purchaseOrderNumber: v.optional(v.string()),
+    normalizedPurchaseOrderNumber: v.optional(v.string()),
+    title: v.optional(v.string()),
+    supplierNameSnapshot: v.optional(v.string()),
+    assetKey: v.optional(orderAssetKeyValidator),
+    assetCode: v.optional(orderAssetCodeValidator),
+    issueDate: v.optional(v.string()),
+    grandTotalBaseUnits: v.int64(),
     agreementStatus: agreementStatusValidator,
     fulfillmentStatus: fulfillmentStatusValidator,
     settlementStatus: settlementStatusValidator,
+    cancellationReasonCode: v.optional(v.string()),
+    cancellationReasonDetails: v.optional(v.string()),
+    cancelledByUserId: v.optional(v.id("users")),
+    cancelledAt: v.optional(v.number()),
+    sentAt: v.optional(v.number()),
+    sortTimestamp: v.number(),
     ...commonMutableFields,
   })
-    .index("by_buyerOrganizationId", ["buyerOrganizationId"])
+    .index("by_buyer_and_normalizedPurchaseOrderNumber", [
+      "buyerOrganizationId",
+      "normalizedPurchaseOrderNumber",
+    ])
+    .index("by_buyer_and_sortTimestamp", ["buyerOrganizationId", "sortTimestamp"])
     .index("by_supplierOrganizationId", ["supplierOrganizationId"])
-    .index("by_buyerOrganizationId_agreementStatus", ["buyerOrganizationId", "agreementStatus"])
-    .index("by_supplierOrganizationId_agreementStatus", [
+    .index("by_buyer_and_agreementStatus_and_sortTimestamp", [
+      "buyerOrganizationId",
+      "agreementStatus",
+      "sortTimestamp",
+    ])
+    .index("by_buyer_and_assetKey_and_sortTimestamp", [
+      "buyerOrganizationId",
+      "assetKey",
+      "sortTimestamp",
+    ])
+    .index("by_buyer_status_asset_sortTimestamp", [
+      "buyerOrganizationId",
+      "agreementStatus",
+      "assetKey",
+      "sortTimestamp",
+    ])
+    .index("by_buyer_and_issueDate", ["buyerOrganizationId", "issueDate"])
+    .index("by_buyer_and_agreementStatus_and_issueDate", [
+      "buyerOrganizationId",
+      "agreementStatus",
+      "issueDate",
+    ])
+    .index("by_buyer_and_assetKey_and_issueDate", ["buyerOrganizationId", "assetKey", "issueDate"])
+    .index("by_buyer_status_asset_issueDate", [
+      "buyerOrganizationId",
+      "agreementStatus",
+      "assetKey",
+      "issueDate",
+    ])
+    .index("by_supplier_status_sortTimestamp", [
       "supplierOrganizationId",
       "agreementStatus",
-    ])
-    .index("by_purchaseOrderNumber", ["purchaseOrderNumber"]),
+      "sortTimestamp",
+    ]),
 
   orderRevisions: defineTable({
     orderId: v.id("orders"),
     revisionNumber: v.int64(),
-    agreementStatus: agreementStatusValidator,
-    termsHash: v.string(),
-    assetCode: v.string(),
-    assetContractId: v.string(),
-    totalBaseUnits: v.int64(),
+    buyerOrganizationId: v.id("organizations"),
+    supplierOrganizationId: v.optional(v.id("organizations")),
+    relationshipId: v.optional(v.id("relationships")),
+    purchaseOrderNumber: v.optional(v.string()),
+    title: v.optional(v.string()),
+    description: v.optional(v.string()),
+    buyerReference: v.optional(v.string()),
+    supplierReference: v.optional(v.string()),
+    costCenter: v.optional(v.string()),
+    projectCode: v.optional(v.string()),
+    timezone: v.optional(v.string()),
+    orderDate: v.optional(v.string()),
+    issueDate: v.optional(v.string()),
+    requestedDeliveryDate: v.optional(v.string()),
+    supplierAcceptanceDeadline: v.optional(v.number()),
+    fundingDeadline: v.optional(v.number()),
+    validUntil: v.optional(v.number()),
+    assetKey: v.optional(orderAssetKeyValidator),
+    assetCode: v.optional(orderAssetCodeValidator),
+    assetIssuer: v.optional(v.string()),
+    assetContractId: v.optional(v.string()),
+    assetDecimals: v.optional(v.int64()),
     buyerLegalNameSnapshot: v.string(),
-    supplierLegalNameSnapshot: v.string(),
+    buyerTradingNameSnapshot: v.optional(v.string()),
+    supplierLegalNameSnapshot: v.optional(v.string()),
+    supplierTradingNameSnapshot: v.optional(v.string()),
+    buyerContactSnapshot: v.optional(v.record(v.string(), v.union(v.string(), v.null()))),
+    supplierContactSnapshot: v.optional(v.record(v.string(), v.union(v.string(), v.null()))),
+    billingAddressSnapshot: v.optional(v.record(v.string(), v.union(v.string(), v.null()))),
+    shippingAddressSnapshot: v.optional(v.record(v.string(), v.union(v.string(), v.null()))),
+    subtotalBaseUnits: v.int64(),
+    discountTotalBaseUnits: v.int64(),
+    taxTotalBaseUnits: v.int64(),
+    shippingTotalBaseUnits: v.int64(),
+    grandTotalBaseUnits: v.int64(),
+    paymentMode: v.literal("escrow"),
+    deliveryMethod: v.optional(v.string()),
+    shippingResponsibility: v.optional(v.string()),
+    freightChargeTreatment: v.optional(v.string()),
+    inspectionPeriodHours: v.optional(v.int64()),
+    refundPolicy: v.optional(v.string()),
+    autoReleasePolicy: v.literal("none"),
+    deliveryWindow: v.optional(v.string()),
+    incoterm: v.optional(v.string()),
+    namedLocation: v.optional(v.string()),
+    handlingInstructions: v.optional(v.string()),
+    acceptanceCriteria: v.optional(v.string()),
+    warrantyText: v.optional(v.string()),
+    returnTerms: v.optional(v.string()),
+    sharedNotes: v.optional(v.string()),
+    buyerInternalNotes: v.optional(v.string()),
+    termsHash: v.optional(v.string()),
+    frozenAt: v.optional(v.number()),
     createdByUserId: v.id("users"),
-    createdAt: v.number(),
-    decidedAt: v.optional(v.number()),
+    ...commonMutableFields,
   })
     .index("by_orderId", ["orderId"])
     .index("by_orderId_revisionNumber", ["orderId", "revisionNumber"])
@@ -329,14 +430,57 @@ export default defineSchema({
   orderLines: defineTable({
     revisionId: v.id("orderRevisions"),
     lineNumber: v.int64(),
-    sku: v.string(),
-    description: v.string(),
-    quantity: v.int64(),
+    name: v.string(),
+    sku: v.optional(v.string()),
+    supplierSku: v.optional(v.string()),
+    description: v.optional(v.string()),
+    category: v.optional(v.string()),
+    manufacturer: v.optional(v.string()),
+    brand: v.optional(v.string()),
+    origin: v.optional(v.string()),
+    quantityCoefficient: v.int64(),
+    quantityScale: v.int64(),
+    unitOfMeasure: v.string(),
     unitPriceBaseUnits: v.int64(),
-    amountBaseUnits: v.int64(),
+    discountKind: orderDiscountKindValidator,
+    discountBaseUnitsInput: v.optional(v.int64()),
+    discountBps: v.optional(v.int64()),
+    taxBps: v.int64(),
+    taxCode: v.optional(v.string()),
+    requiresInspection: v.boolean(),
+    grossBaseUnits: v.int64(),
+    discountBaseUnits: v.int64(),
+    taxBaseUnits: v.int64(),
+    lineTotalBaseUnits: v.int64(),
+    ...commonMutableFields,
   })
     .index("by_revisionId", ["revisionId"])
     .index("by_revisionId_lineNumber", ["revisionId", "lineNumber"]),
+
+  orderCommandReceipts: defineTable({
+    buyerOrganizationId: v.id("organizations"),
+    orderId: v.id("orders"),
+    commandType: orderCommandTypeValidator,
+    idempotencyKey: v.string(),
+    requestFingerprint: v.string(),
+    resultRevisionId: v.optional(v.id("orderRevisions")),
+    resultAgreementStatus: agreementStatusValidator,
+    createdAt: v.number(),
+  })
+    .index("by_buyer_command_idempotencyKey", [
+      "buyerOrganizationId",
+      "commandType",
+      "idempotencyKey",
+    ])
+    .index("by_orderId_and_commandType", ["orderId", "commandType"]),
+
+  orderDashboardCounts: defineTable({
+    organizationId: v.id("organizations"),
+    side: v.union(v.literal("buyer"), v.literal("supplier")),
+    draftCount: v.int64(),
+    sentCount: v.int64(),
+    ...commonMutableFields,
+  }).index("by_organizationId_and_side", ["organizationId", "side"]),
 
   shipments: defineTable({
     orderId: v.id("orders"),
@@ -419,18 +563,25 @@ export default defineSchema({
     .index("by_counterpartyOrganizationId_status", ["counterpartyOrganizationId", "status"]),
 
   notifications: defineTable({
-    recipientUserId: v.id("users"),
+    recipientUserId: v.optional(v.id("users")),
     recipientOrganizationId: v.id("organizations"),
     eventType: v.string(),
     entityType: v.string(),
     entityId: v.string(),
+    actionUrl: v.string(),
+    idempotencyKey: v.string(),
     status: v.union(v.literal("unread"), v.literal("read")),
     createdAt: v.number(),
     readAt: v.optional(v.number()),
   })
     .index("by_recipientUserId", ["recipientUserId"])
     .index("by_recipientUserId_status", ["recipientUserId", "status"])
-    .index("by_eventType_recipientUserId", ["eventType", "recipientUserId"]),
+    .index("by_eventType_recipientUserId", ["eventType", "recipientUserId"])
+    .index("by_recipientOrganizationId_and_status", ["recipientOrganizationId", "status"])
+    .index("by_recipientOrganizationId_and_idempotencyKey", [
+      "recipientOrganizationId",
+      "idempotencyKey",
+    ]),
 
   auditEvents: defineTable({
     entityType: v.string(),

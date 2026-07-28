@@ -6,6 +6,12 @@ import {
   BUSINESS_ATTESTATION_TEXT,
   BUSINESS_ATTESTATION_VERSION,
   isoCountryCodes,
+  normalizeBusinessEmail,
+  normalizeBusinessName,
+  normalizeCountryCode,
+  normalizePhone,
+  validateBusinessUrl,
+  validateTimezone,
   type OnboardingStep,
   type OrganizationCapability,
 } from "@repo/domain/business";
@@ -111,13 +117,56 @@ function optional(value: string) {
   return trimmed ? trimmed : null;
 }
 
-function errorMessage(error: unknown) {
+export function identityFieldErrors(values: {
+  legalName: string;
+  registrationCountry: string;
+  businessEmail: string;
+  website: string;
+  businessPhone: string;
+  defaultTimezone: string;
+}) {
+  const errors: Record<string, string> = {};
+  const validate = (field: string, message: string, task: () => unknown) => {
+    try {
+      task();
+    } catch {
+      errors[field] = message;
+    }
+  };
+  validate("legalName", "Enter a legal business name between 2 and 160 characters.", () =>
+    normalizeBusinessName(values.legalName),
+  );
+  validate("registrationCountry", "Select a valid registration country.", () =>
+    normalizeCountryCode(values.registrationCountry),
+  );
+  validate("businessEmail", "Enter a valid business email address.", () =>
+    normalizeBusinessEmail(values.businessEmail),
+  );
+  if (values.website) {
+    validate("website", "Enter a complete http:// or https:// website URL.", () =>
+      validateBusinessUrl(values.website),
+    );
+  }
+  if (values.businessPhone) {
+    validate("businessPhone", "Enter a valid phone number for the registration country.", () =>
+      normalizePhone(values.businessPhone, values.registrationCountry),
+    );
+  }
+  validate("defaultTimezone", "Enter a valid IANA timezone such as Asia/Manila.", () =>
+    validateTimezone(values.defaultTimezone),
+  );
+  return errors;
+}
+
+export function onboardingErrorDetails(error: unknown): {
+  message: string;
+  fields: Record<string, string>;
+} {
   const fields =
     typeof error === "object" && error !== null && "data" in error
       ? (error as { data?: { fields?: Record<string, string> } }).data?.fields
       : undefined;
   const fieldMessage = fields ? Object.values(fields)[0] : undefined;
-  if (fieldMessage) return fieldMessage;
 
   const code =
     typeof error === "object" && error !== null && "data" in error
@@ -131,9 +180,17 @@ function errorMessage(error: unknown) {
     MULTIPLE_ORGANIZATIONS_UNSUPPORTED:
       "This account has multiple active organizations. Contact support before continuing.",
   };
-  return (
-    messages[code] ?? "We could not save this step. Your previous saved version is still safe."
-  );
+  return {
+    message:
+      fieldMessage ??
+      messages[code] ??
+      "We could not save this step. Your previous saved version is still safe.",
+    fields: fields ?? {},
+  };
+}
+
+function errorMessage(error: unknown) {
+  return onboardingErrorDetails(error).message;
 }
 
 function addressPayload(address: AddressForm) {
@@ -164,6 +221,7 @@ export function BusinessOnboarding() {
     "loading" | "editing" | "saving" | "completing" | "stale" | "error"
   >("loading");
   const [message, setMessage] = useState("");
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [attested, setAttested] = useState(false);
   const hydratedVersion = useRef<bigint | null>(null);
   const completionKey = useRef<string | null>(null);
@@ -248,6 +306,28 @@ export function BusinessOnboarding() {
   async function save(event: FormEvent) {
     event.preventDefault();
     setMessage("");
+    setFieldErrors({});
+    if (activeStep === "identity") {
+      const errors = identityFieldErrors(form);
+      const firstError = Object.values(errors)[0];
+      if (firstError) {
+        setFieldErrors(errors);
+        setMessage(firstError);
+        setStatus("error");
+        const firstField = Object.keys(errors)[0];
+        const fieldId =
+          {
+            legalName: "legal-name",
+            registrationCountry: "country",
+            businessEmail: "business-email",
+            website: "website",
+            businessPhone: "business-phone",
+            defaultTimezone: "timezone",
+          }[firstField!] ?? firstField;
+        requestAnimationFrame(() => document.getElementById(fieldId!)?.focus());
+        return;
+      }
+    }
     setStatus("saving");
     try {
       const patch =
@@ -309,9 +389,27 @@ export function BusinessOnboarding() {
       setActiveStep(activeStep === "preferences" ? "review" : result.currentStep);
       setStatus("editing");
     } catch (error) {
-      const text = errorMessage(error);
-      setMessage(text);
-      setStatus(text.includes("another tab") ? "stale" : "error");
+      const details = onboardingErrorDetails(error);
+      setMessage(details.message);
+      setFieldErrors(details.fields);
+      setStatus(details.message.includes("another tab") ? "stale" : "error");
+      const firstInvalidField = Object.keys(details.fields)[0];
+      if (firstInvalidField) {
+        const fieldId =
+          {
+            legalName: "legal-name",
+            tradingName: "trading-name",
+            registrationCountry: "country",
+            businessEmail: "business-email",
+            registrationNumber: "registration-number",
+            taxId: "tax-id",
+            industry: "industry",
+            website: "website",
+            businessPhone: "business-phone",
+            defaultTimezone: "timezone",
+          }[firstInvalidField] ?? firstInvalidField;
+        requestAnimationFrame(() => document.getElementById(fieldId)?.focus());
+      }
     }
   }
 
@@ -357,8 +455,15 @@ export function BusinessOnboarding() {
     );
   }
 
-  const update = <K extends keyof OnboardingForm>(key: K, value: OnboardingForm[K]) =>
+  const update = <K extends keyof OnboardingForm>(key: K, value: OnboardingForm[K]) => {
+    setFieldErrors((current) => {
+      if (!(key in current)) return current;
+      const next = { ...current };
+      delete next[key];
+      return next;
+    });
     setForm((current) => ({ ...current, [key]: value }));
+  };
 
   return (
     <main className="mx-auto min-h-screen w-full max-w-4xl px-4 py-8 sm:px-6 sm:py-12">
@@ -422,7 +527,12 @@ export function BusinessOnboarding() {
           ) : (
             <form onSubmit={save} className="space-y-6">
               {activeStep === "identity" ? (
-                <IdentityStep form={form} update={update} firstField={firstField} />
+                <IdentityStep
+                  form={form}
+                  update={update}
+                  firstField={firstField}
+                  errors={fieldErrors}
+                />
               ) : null}
               {activeStep === "contact" ? (
                 <ContactStep form={form} update={update} firstField={firstField} />
@@ -472,6 +582,7 @@ type StepProps = {
   form: OnboardingForm;
   update: <K extends keyof OnboardingForm>(key: K, value: OnboardingForm[K]) => void;
   firstField: React.RefObject<HTMLInputElement | null>;
+  errors?: Record<string, string>;
 };
 
 function Field({
@@ -483,6 +594,7 @@ function Field({
   type = "text",
   autoComplete,
   inputRef,
+  error,
 }: {
   id: string;
   label: string;
@@ -492,7 +604,9 @@ function Field({
   type?: string;
   autoComplete?: string;
   inputRef?: React.RefObject<HTMLInputElement | null>;
+  error?: string;
 }) {
+  const errorId = `${id}-error`;
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>
@@ -507,12 +621,19 @@ function Field({
         required={required}
         type={type}
         autoComplete={autoComplete}
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
       />
+      {error ? (
+        <p id={errorId} className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
 
-function IdentityStep({ form, update, firstField }: StepProps) {
+function IdentityStep({ form, update, firstField, errors = {} }: StepProps) {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
       <div className="sm:col-span-2">
@@ -524,6 +645,7 @@ function IdentityStep({ form, update, firstField }: StepProps) {
           onChange={(value) => update("legalName", value)}
           required
           autoComplete="organization"
+          error={errors.legalName}
         />
       </div>
       <Field
@@ -531,6 +653,7 @@ function IdentityStep({ form, update, firstField }: StepProps) {
         label="Trading name"
         value={form.tradingName}
         onChange={(value) => update("tradingName", value)}
+        error={errors.tradingName}
       />
       <div className="space-y-2">
         <Label htmlFor="entity-type">Entity type</Label>
@@ -557,6 +680,7 @@ function IdentityStep({ form, update, firstField }: StepProps) {
         label="Registration country"
         value={form.registrationCountry}
         onChange={(value) => update("registrationCountry", value)}
+        error={errors.registrationCountry}
       />
       <Field
         id="business-email"
@@ -566,24 +690,28 @@ function IdentityStep({ form, update, firstField }: StepProps) {
         required
         type="email"
         autoComplete="email"
+        error={errors.businessEmail}
       />
       <Field
         id="registration-number"
         label="Registration number"
         value={form.registrationNumber}
         onChange={(value) => update("registrationNumber", value)}
+        error={errors.registrationNumber}
       />
       <Field
         id="tax-id"
         label="Tax ID"
         value={form.taxId}
         onChange={(value) => update("taxId", value)}
+        error={errors.taxId}
       />
       <Field
         id="industry"
         label="Industry"
         value={form.industry}
         onChange={(value) => update("industry", value)}
+        error={errors.industry}
       />
       <Field
         id="website"
@@ -592,6 +720,7 @@ function IdentityStep({ form, update, firstField }: StepProps) {
         onChange={(value) => update("website", value)}
         type="url"
         autoComplete="url"
+        error={errors.website}
       />
       <Field
         id="business-phone"
@@ -600,6 +729,7 @@ function IdentityStep({ form, update, firstField }: StepProps) {
         onChange={(value) => update("businessPhone", value)}
         type="tel"
         autoComplete="tel"
+        error={errors.businessPhone}
       />
     </div>
   );
@@ -884,12 +1014,15 @@ function CountrySelect({
   label,
   value,
   onChange,
+  error,
 }: {
   id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
+  error?: string;
 }) {
+  const errorId = `${id}-error`;
   return (
     <div className="space-y-2">
       <Label htmlFor={id}>{label} *</Label>
@@ -900,6 +1033,8 @@ function CountrySelect({
         onChange={(event) => onChange(event.target.value)}
         required
         autoComplete="country"
+        aria-invalid={Boolean(error)}
+        aria-describedby={error ? errorId : undefined}
       >
         {isoCountryCodes.map((code) => (
           <option key={code} value={code}>
@@ -907,6 +1042,11 @@ function CountrySelect({
           </option>
         ))}
       </select>
+      {error ? (
+        <p id={errorId} className="text-sm text-destructive">
+          {error}
+        </p>
+      ) : null}
     </div>
   );
 }
