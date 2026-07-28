@@ -22,16 +22,30 @@ export const metadata: Metadata = {
   },
   description: "Secure procurement and escrow workflows on Stellar.",
   keywords: ["Movix", "Stellar", "procurement", "escrow"],
+  icons: {
+    icon: [{ url: "/movix-logo.svg", type: "image/svg+xml" }],
+    shortcut: "/movix-logo.svg",
+    apple: "/movix-logo.png",
+  },
   openGraph: {
     siteName: "Movix",
     title: "Movix",
     description: "Secure procurement and escrow workflows on Stellar.",
+    images: [
+      {
+        url: "/movix-logo.png",
+        width: 2900,
+        height: 1366,
+        alt: "Movix",
+      },
+    ],
     type: "website",
   },
   twitter: {
     title: "Movix",
     description: "Secure procurement and escrow workflows on Stellar.",
     card: "summary_large_image",
+    images: ["/movix-logo.png"],
   },
 };
 

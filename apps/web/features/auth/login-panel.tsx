@@ -1,6 +1,7 @@
 "use client";
 
 import { useMovixAuth } from "@/core/auth/auth-context";
+import { BrandLogo } from "@/core/components/brand-logo";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardHeader } from "@repo/ui/components/ui/card";
 import { useConvexAuth } from "convex/react";
@@ -163,11 +164,8 @@ export function LoginPanel() {
       />
       <Card className="relative w-full max-w-lg border-white/10 bg-card/90 shadow-2xl shadow-black/30 backdrop-blur">
         <CardHeader className="space-y-4">
-          <Link
-            href="/"
-            className="w-fit text-sm font-semibold tracking-[0.18em] text-primary uppercase"
-          >
-            Movix
+          <Link href="/" aria-label="Movix home" className="w-fit">
+            <BrandLogo className="h-10 w-auto" priority />
           </Link>
           <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">
             Sign in with your Stellar wallet

@@ -1,6 +1,7 @@
 "use client";
 
 import { useMovixAuth } from "@/core/auth/auth-context";
+import { BrandLogo } from "@/core/components/brand-logo";
 import { api } from "@repo/backend/client";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
@@ -154,8 +155,8 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
 function ShellIdentity({ name, wallet }: { name: string; wallet: string }) {
   return (
     <div>
-      <Link href="/buyer" className="text-xl font-semibold tracking-tight">
-        Movix
+      <Link href="/buyer" aria-label="Movix home" className="inline-block">
+        <BrandLogo className="h-8 w-auto" />
       </Link>
       <p className="mt-5 truncate text-sm font-medium">{name}</p>
       <p className="mt-1 font-mono text-xs text-muted-foreground">{walletLabel(wallet)}</p>

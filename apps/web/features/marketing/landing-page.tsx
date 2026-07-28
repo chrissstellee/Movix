@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandLogo } from "@/core/components/brand-logo";
 import {
   Accordion,
   AccordionContent,
@@ -70,8 +71,8 @@ export function LandingPage() {
       </a>
       <header className="sticky top-0 z-40 border-b border-white/10 bg-background/85 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-5">
-          <Link href="/" className="text-lg font-bold tracking-[0.16em] uppercase">
-            Movix
+          <Link href="/" aria-label="Movix home" className="shrink-0">
+            <BrandLogo className="h-8 w-auto" priority />
           </Link>
           <nav aria-label="Primary" className="hidden items-center gap-7 md:flex">
             {navItems.map(([label, href]) => (
@@ -303,9 +304,9 @@ export function LandingPage() {
 
       <footer className="border-t border-white/10">
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-9 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
-          <p>
-            <span className="font-semibold text-foreground">Movix</span> · Procurement settlement on
-            Stellar
+          <p className="flex items-center gap-2">
+            <BrandLogo className="h-5 w-auto shrink-0" />
+            <span>Procurement settlement on Stellar</span>
           </p>
           <p>Testnet pilot · No production-value assets</p>
         </div>
