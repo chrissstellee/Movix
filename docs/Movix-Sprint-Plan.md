@@ -360,6 +360,7 @@ Login:
 
 **Duration:** 2 weeks  
 **Sprint goal:** Enable a buyer to draft, validate, review, and send a commercially complete procurement order.  
+**Detailed implementation plan:** [Movix Sprint 4 — Detailed Buyer Procurement Plan](./Movix-Sprint-04-Buyer-Procurement-Detailed.md)
 **Pages:** `/buyer`, `/orders`, `/orders/new`, buyer view of `/orders/[orderId]`  
 **Dependencies:** Completed organization profile and app shell.  
 **Demo:** A buyer creates a multi-line order, saves and resumes it, reviews exact totals and terms, sends revision 1, and sees it as awaiting the supplier.
