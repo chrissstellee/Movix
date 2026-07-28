@@ -1,0 +1,52 @@
+{
+  "schemaVersion": 1,
+  "status": "verified",
+  "sourceCommit": "a9d09f9bf4890d6093803be6d1a62fe5d460a2b2",
+  "executedAt": "2026-07-28",
+  "environment": {
+    "host": "Windows with Docker Desktop Linux containers",
+    "containerImage": "rustlang/rust:nightly-2026-07-27",
+    "containerImageDigest": "sha256:c5636425e861e6866b7138935b259216afb174fbd0f64d24ba500af09210b662",
+    "cargoFuzz": "0.13.2",
+    "networkDuringFuzzExecution": "none",
+    "dependencyCache": "pre-fetched before the source tree was mounted"
+  },
+  "configuration": {
+    "seed": 3551879746,
+    "runsPerTarget": 10000,
+    "targets": ["funding", "lifecycle"]
+  },
+  "results": [
+    {
+      "target": "funding",
+      "runs": 10000,
+      "durationSeconds": 74,
+      "coverage": 8608,
+      "features": 11555,
+      "crashes": 0,
+      "result": "passed"
+    },
+    {
+      "target": "lifecycle",
+      "runs": 10000,
+      "durationSeconds": 1300,
+      "coverage": 9193,
+      "features": 25371,
+      "corpusEntries": 573,
+      "peakRssMegabytes": 487,
+      "crashes": 0,
+      "result": "passed"
+    }
+  ],
+  "regressionsAdded": [],
+  "notes": [
+    "The initial funding harness compile exposed missing Ledger testutils scope and nested try-client result handling; both harness defects were corrected before execution.",
+    "No Movix source was mounted while network access was enabled.",
+    "The actual fuzz runs used Docker network none."
+  ],
+  "review": {
+    "engineering": "Elliot closure pass",
+    "documentation": "Bri closure pass",
+    "independentApproval": "pending"
+  }
+}

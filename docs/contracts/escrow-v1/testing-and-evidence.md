@@ -1,28 +1,27 @@
 # Movix Escrow Contract v1 Testing and Evidence
 
-| Metadata                    | Value                                                                                    |
-| --------------------------- | ---------------------------------------------------------------------------------------- |
-| Status                      | Local and public-testnet engineering verification passed; clean release evidence pending |
-| Sprint items                | S3-01 through S3-15                                                                      |
-| Contract/schema version     | `1` / `1`                                                                                |
-| Requirements authority      | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`                                     |
-| Source commit               | Pending release capture                                                                  |
-| Last documentation review   | 2026-07-28                                                                               |
-| Last execution verification | 2026-07-28 working tree; release commit pending                                          |
-| Required reviewers          | Contract/Security, QA, Stellar, DevOps                                                   |
-| Approval                    | Pending                                                                                  |
-| Evidence index              | `docs/evidence/sprint-03/README.md`                                                      |
+| Metadata                    | Value                                                                                   |
+| --------------------------- | --------------------------------------------------------------------------------------- |
+| Status                      | Local, Linux-fuzz, and public-testnet engineering verification passed; approval pending |
+| Sprint items                | S3-01 through S3-15                                                                     |
+| Contract/schema version     | `1` / `1`                                                                               |
+| Requirements authority      | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`                                    |
+| Contract source commit      | `a9d09f9bf4890d6093803be6d1a62fe5d460a2b2`                                              |
+| Last documentation review   | 2026-07-28                                                                              |
+| Last execution verification | 2026-07-28; contract source `a9d09f9bf489`                                              |
+| Required reviewers          | Contract/Security, QA, Stellar, DevOps                                                  |
+| Approval                    | Pending                                                                                 |
+| Evidence index              | `docs/evidence/sprint-03/README.md`                                                     |
 
 The live testnet limits and approved percentage ceilings captured on
 2026-07-28 are versioned in `resource-budgets.json`. All 13 callable entry
 points were measured against the exact optimized working-tree WASM on a local
-network using testnet-like limits and passed their ceilings. Commit-bound and
-public-testnet lifecycle proof and fetched-artifact verification passed; a
-commit-bound rerun remains pending.
+network using testnet-like limits and passed their ceilings. Contract-source,
+public-testnet lifecycle, fetched-artifact, raw-event-XDR, and Linux fuzz
+verification passed.
 
 Every verification claim in this document is backed by the evidence index.
-Independent discipline approval and a clean commit-bound rerun are not yet
-claimed.
+Independent discipline approval is not yet claimed.
 
 ## Verification principles
 
@@ -289,8 +288,8 @@ profiling, fuzz-target orchestration, artifact verification, deployment, and
 testnet-smoke orchestration are implemented and fail closed by default. The
 native suite covers deterministic generated lifecycle sequences and
 TTL/archive restoration. Public-testnet deployment and lifecycle proof pass.
-Linux execution of both `cargo-fuzz` targets, mutation analysis, and
-commit-bound release evidence remain pending.
+Linux execution of both `cargo-fuzz` targets passed 10,000 runs per target.
+Mutation analysis remains a P1 follow-up.
 
 ## Evidence record
 
@@ -324,15 +323,15 @@ expected. Inspect logs and raw XDR before publication.
 | Gate                     | Status                  | Notes                                                                                                                                                                                           |
 | ------------------------ | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | ABI/control review       | Pending                 | Required discipline approvals not recorded                                                                                                                                                      |
-| Unit and matrix tests    | Working-tree verified   | 20 native real-SAC lifecycle, invariant, authorization, boundary, generated-sequence, TTL/archive, and multi-asset tests pass; commit-bound evidence pending                                    |
+| Unit and matrix tests    | Engineering verified    | 20 native real-SAC lifecycle, invariant, authorization, boundary, generated-sequence, TTL/archive, and multi-asset tests pass                                                                   |
 | Exact authorization      | Working-tree verified   | Funding nested SAC tree and the required snapshotted actor for every mutator are asserted                                                                                                       |
-| Properties/fuzz          | Partial                 | A deterministic 1,024-action lifecycle property pass and two `cargo-fuzz` targets exist; Linux fuzz execution remains pending because Windows ASan is unsupported                               |
+| Properties/fuzz          | Engineering verified    | Deterministic 1,024-action lifecycle property pass plus 10,000 Linux executions for each `cargo-fuzz` funding and lifecycle target; no crash                                                    |
 | TTL/archive              | Working-tree verified   | Instance/code/data extension and archive restoration preserve deadline and terminal rules                                                                                                       |
 | Resource budgets         | Working-tree verified   | Live limits captured; all 13 callable entry points passed approved ceilings on exact optimized local WASM                                                                                       |
 | Local real-SAC proof     | Working-tree verified   | Exact optimized artifact passes both-asset release/refund/cancel, unsupported/insufficient/trustline failures, payout rollback, races, replay denial, and multi-escrow liability reconciliation |
-| Optimized WASM           | Partial                 | Optimized 19,617-byte working-tree artifact and 14-function spec verified; commit-bound release evidence Pending                                                                                |
-| Bindings/decoders        | Partial                 | Bindings regenerated from exact optimized artifact; generated adapter and all error/event decoder variants pass native tests; commit-bound drift evidence Pending                               |
-| Testnet deployment/smoke | Working-tree verified   | Contract `CAAU4AY6…KMIS` deployed at ledger 3,839,808; release/refund/cancellation succeeded, final XLM liability is zero, and fetched WASM matches                                             |
+| Optimized WASM           | Engineering verified    | Optimized 19,617-byte artifact and 14-function spec verified against contract source commit `a9d09f9bf489`                                                                                      |
+| Bindings/decoders        | Engineering verified    | Bindings regenerate to the manifest digest; generated adapter and all error/event decoder variants pass package tests                                                                           |
+| Testnet deployment/smoke | Engineering verified    | Preferred contract `CCEECHOG…ZAP5` deployed at ledger 3,841,429; expanded refund paths, release/cancellation, zero liability, all event XDR, and fetched-WASM match verified                    |
 | Known defects            | No Sprint 3 defect open | Repository-wide format check still finds inherited generated Convex declarations outside Sprint 3; recorded in the quality evidence                                                             |
 
 ## Sign-off

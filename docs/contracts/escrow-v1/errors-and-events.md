@@ -1,17 +1,17 @@
 # Movix Escrow Contract v1 Errors and Events
 
-| Metadata                         | Value                                                                 |
-| -------------------------------- | --------------------------------------------------------------------- |
-| Status                           | As-built catalog; native decoder tests pass, release evidence pending |
-| Sprint items                     | S3-01, S3-10, S3-12, S3-14                                            |
-| Contract/schema version          | `1` / `1`                                                             |
-| Requirements authority           | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`                  |
-| Source commit                    | Pending release capture                                               |
-| Last documentation review        | 2026-07-28                                                            |
-| Last implementation verification | 2026-07-28 working tree; release commit pending                       |
-| Required reviewers               | Contract/Security, QA, Stellar                                        |
-| Approval                         | Pending                                                               |
-| Evidence index                   | `docs/evidence/sprint-03/README.md`                                   |
+| Metadata                         | Value                                                         |
+| -------------------------------- | ------------------------------------------------------------- |
+| Status                           | As-built catalog; native decoder and raw testnet XDR verified |
+| Sprint items                     | S3-01, S3-10, S3-12, S3-14                                    |
+| Contract/schema version          | `1` / `1`                                                     |
+| Requirements authority           | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`          |
+| Contract source commit           | `a9d09f9bf4890d6093803be6d1a62fe5d460a2b2`                    |
+| Last documentation review        | 2026-07-28                                                    |
+| Last implementation verification | 2026-07-28                                                    |
+| Required reviewers               | Contract/Security, QA, Stellar                                |
+| Approval                         | Pending                                                       |
+| Evidence index                   | `docs/evidence/sprint-03/README.md`                           |
 
 ## Compatibility policy
 
@@ -126,8 +126,8 @@ The stable error decoder, original-failure preservation, ten-variant normalized
 event union, strict event decoder, and unknown-event rejection are implemented
 in `packages/stellar/src/contract-errors.ts` and
 `packages/stellar/src/events.ts`. Native tests cover all 20 mappings and all
-ten event variants. Commit-bound generated-binding digests and raw network XDR
-evidence remain Pending.
+ten event variants. Raw topic and value XDR for every variant is recorded in
+`docs/evidence/sprint-03/S3-EVENT-TESTNET-CATALOG-a9d09f9bf489-TESTNET-001.json`.
 
 ## Snapshot requirements
 
@@ -161,7 +161,7 @@ that could be mistaken for a real commit.
 | --------------- | -------------------------------------------------------------- | ---------------------------------------------------------- |
 | Codes 1–20      | Each reachable code through typed `try_` client                | Pending                                                    |
 | Native failures | Host/token/auth errors remain distinct                         | Decoder preservation test passes; network evidence Pending |
-| Success events  | Raw XDR, decoded value, normalized value                       | All normalized variants tested; raw network XDR Pending    |
+| Success events  | Raw XDR, decoded value, normalized value                       | Normalized variants tested; all raw testnet XDR captured   |
 | Failed calls    | No lifecycle event and no business-state change                | Pending                                                    |
 | ABI drift       | Generated binding change fails the drift gate                  | CI gate implemented; optimized-artifact run Pending        |
 | Privacy         | Event/storage/XDR review against prohibited data               | Pending                                                    |

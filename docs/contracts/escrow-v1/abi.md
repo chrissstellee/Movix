@@ -1,25 +1,25 @@
 # Movix Escrow Contract v1 ABI
 
-| Metadata                         | Value                                                                               |
-| -------------------------------- | ----------------------------------------------------------------------------------- |
-| Status                           | As-built working-tree ABI and optimized spec verified; commit-bound release pending |
-| Sprint items                     | S3-01 through S3-11, S3-14                                                          |
-| Contract version                 | `1`                                                                                 |
-| Escrow schema version            | `1`                                                                                 |
-| Requirements authority           | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`                                |
-| Source commit                    | Pending release capture                                                             |
-| Last documentation review        | 2026-07-28                                                                          |
-| Last implementation verification | 2026-07-28 native tests and optimized spec inspection                               |
-| Required reviewers               | Product, Architecture, Contract/Security, QA                                        |
-| Approval                         | Pending                                                                             |
-| Evidence index                   | `docs/evidence/sprint-03/README.md`                                                 |
+| Metadata                         | Value                                                                  |
+| -------------------------------- | ---------------------------------------------------------------------- |
+| Status                           | As-built ABI and optimized spec engineering-verified; approval pending |
+| Sprint items                     | S3-01 through S3-11, S3-14                                             |
+| Contract version                 | `1`                                                                    |
+| Escrow schema version            | `1`                                                                    |
+| Requirements authority           | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`                   |
+| Contract source commit           | `a9d09f9bf4890d6093803be6d1a62fe5d460a2b2`                             |
+| Last documentation review        | 2026-07-28                                                             |
+| Last implementation verification | 2026-07-28 native tests and optimized spec inspection                  |
+| Required reviewers               | Product, Architecture, Contract/Security, QA                           |
+| Approval                         | Pending                                                                |
+| Evidence index                   | `docs/evidence/sprint-03/README.md`                                    |
 
 This document describes the frozen, as-built interface and behavior for the
 testnet-only Movix escrow contract. Native contract tests pass and the optimized
 WASM spec exports exactly the 14 listed functions with no prohibited entry
-point. Release conformance remains pending until the artifact is commit-bound,
-the manifest and testnet proof are complete, and reviewer approvals are linked
-from the evidence index.
+point. The optimized artifact, manifest, generated bindings, and testnet proof
+are tied to the contract source commit above. Independent reviewer approvals
+remain pending in the evidence index.
 
 ## Design boundary
 

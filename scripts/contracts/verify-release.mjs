@@ -14,7 +14,7 @@ import {
 if (hasFlag("--help")) {
   process.stdout.write(
     "Usage: node scripts/contracts/verify-release.mjs\n" +
-      "Fails unless the manifest, optimized WASM, generated bindings, and source commit agree.\n",
+      "Fails unless the manifest, optimized WASM, generated bindings, and contract source commit agree.\n",
   );
   process.exit(0);
 }
@@ -52,7 +52,16 @@ if (!manifest.deployment.contractId || !manifest.deployment.transactionHash) {
 const actualArtifactHash = sha256File(RELEASE_WASM);
 const actualArtifactSize = statSync(RELEASE_WASM).size;
 const actualBindingsHash = sha256Directory(BINDINGS_DIR);
-const sourceCommit = runGit(["rev-parse", "HEAD"]);
+const sourceCommit = runGit([
+  "rev-list",
+  "-1",
+  "HEAD",
+  "--",
+  "contracts/Cargo.toml",
+  "contracts/Cargo.lock",
+  "contracts/escrow/Cargo.toml",
+  "contracts/escrow/src/lib.rs",
+]);
 const worktreeStatus = runGit(["status", "--porcelain"]);
 if (worktreeStatus) {
   throw new Error("Release verification requires a clean worktree");

@@ -1,0 +1,93 @@
+{
+  "schemaVersion": 1,
+  "status": "verified",
+  "testnetOnly": true,
+  "sourceCommit": "a9d09f9bf4890d6093803be6d1a62fe5d460a2b2",
+  "network": "testnet",
+  "protocol": 27,
+  "contract": {
+    "id": "CCEECHOGV6MXZANAOLJNDMA2GPEBDETPNWUR4XDEW32KHJUYN3V5ZAP5",
+    "deploymentTransactionHash": "bc0752d467e9154c3e35fd2b1ea68d0f5fd8b8afba63a011f11ce271230a13f5",
+    "deploymentLedger": 3841429,
+    "version": 1,
+    "finalXlmLiability": "0"
+  },
+  "artifact": {
+    "sizeBytes": 19617,
+    "sha256": "a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498",
+    "bindingsSha256": "066d15c46562c1ca29630ae59615eb3ac6f29cd058bf7b95852ef09b43930cf8",
+    "fetchedFromTestnetSizeBytes": 19617,
+    "fetchedFromTestnetSha256": "a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498"
+  },
+  "constructor": {
+    "treasury": "GBNGA4F7BGTSYHIJEJFD2RKPFZNVVGB7ALLQZHAIZRKHSSXXVABDREQU",
+    "supportedAssets": [
+      "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
+    ],
+    "maxFeeBps": 0,
+    "ttl": {
+      "threshold": 120960,
+      "extendTo": 1555200
+    }
+  },
+  "actors": {
+    "buyer": "GBLF26HKDKMFDUA7PMKMUWEY3C6FOMG2JQTYTOONXFD3LG7AXRNTE4WZ",
+    "supplier": "GDHW55O6NSBTJTRTQSKPV5N5H7RQ63RO7EMWKYX6QSPFMLRV65VEC33X",
+    "treasury": "GBNGA4F7BGTSYHIJEJFD2RKPFZNVVGB7ALLQZHAIZRKHSSXXVABDREQU"
+  },
+  "scenarios": {
+    "release": "passed",
+    "refundRejectRestore": "passed",
+    "refundWithdrawRestore": "passed",
+    "mutualRefund": "passed",
+    "timeoutCancellation": "passed",
+    "terminalReplayDenial": "passed"
+  },
+  "readOnlyGetterVerification": {
+    "verifiedAt": "2026-07-28T08:10:58.323Z",
+    "contractVersion": 1,
+    "maxFeeBps": 0,
+    "supportedAssetCount": 2,
+    "treasuryMatchesManifest": true,
+    "ttlMatchesManifest": true,
+    "xlmLiability": "0"
+  },
+  "transactions": [
+    ["fund-release", "175c60aa12a126401d9c2b56d79d28ac575d21a730601b3f95245ebae07ec86e", 3841431],
+    ["accept", "3cae6360e460cc593f24880c3d7e565c61d5675fb74e59e61eaf46511b45ef2e", 3841433],
+    ["ship", "475192a24d892c9653c74c9d4fc93f61ea74d8c8e245036be2cad5162cbf40e5", 3841435],
+    ["release", "21512c38582f95f12832180977b165624f6d6c70bb4ad34292e002ae554a3fd4", 3841437],
+    ["fund-refund", "b34c1a79a65b1762ba80e27fa6e4a6aaae2180c294f8b98dcb5e6ad11c4331c2", 3841439],
+    [
+      "propose-refund-1",
+      "e056b4d74e2ec26e1a73bf7e11a1dbda7cf7754de20ced2cd0e5f916d7046c67",
+      3841441
+    ],
+    ["reject-refund", "900caa1d0c6bd9bb977b45dd4991bb47a43cece3b3a1f2e8448b2815d9358eb8", 3841443],
+    [
+      "propose-refund-2",
+      "f51544c312ec42de44c92059e31dc5f218f1578a632814cffe2bcba12c5108c6",
+      3841445
+    ],
+    [
+      "withdraw-refund",
+      "98f4aa71136357811835878b08e1fafbe6749ab3925e7dd23679cac332da33a7",
+      3841447
+    ],
+    [
+      "propose-refund-3",
+      "efa833bfe8dfab30882857c50d06c6c78eb9a061b2ddbf531db9fdbc8d574b86",
+      3841449
+    ],
+    ["approve-refund", "f2d8559938456449e84f5c3c32cd2a56204cef469a784900f78ec03f53fbc230", 3841451],
+    ["fund-cancel", "13041dcb1ee6d3bb314de9488b346c7bb4b40a77472c87d4178bb20ced3d932b", 3841453],
+    ["cancel", "55ae95603eabea2a7655df0357e55d8b79fad4358e0b72f790d20384b56ffef2", 3841458]
+  ],
+  "secretsDeletedAfterProof": true,
+  "review": {
+    "engineering": "Elliot closure pass",
+    "documentation": "Bri closure pass",
+    "independentApproval": "pending"
+  }
+}

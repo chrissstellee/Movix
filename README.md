@@ -140,15 +140,18 @@ value.
 
 | Contract        | Contract ID                                                | Stellar Expert                                                                                                             |
 | --------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
-| Movix Escrow v1 | `CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS` | [View contract](https://stellar.expert/explorer/testnet/contract/CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS) |
+| Movix Escrow v1 | `CCEECHOGV6MXZANAOLJNDMA2GPEBDETPNWUR4XDEW32KHJUYN3V5ZAP5` | [View contract](https://stellar.expert/explorer/testnet/contract/CCEECHOGV6MXZANAOLJNDMA2GPEBDETPNWUR4XDEW32KHJUYN3V5ZAP5) |
 | Native XLM SAC  | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` | [View contract](https://stellar.expert/explorer/testnet/contract/CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC) |
 | USDC SAC        | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` | [View contract](https://stellar.expert/explorer/testnet/contract/CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA) |
 
 Deployment transaction:
-[ledger 3,839,808](https://stellar.expert/explorer/testnet/tx/83290e28fba0d7a25891000625fb3a3a357910123a3339ce849ee88b9f9ff907).
+[ledger 3,841,429](https://stellar.expert/explorer/testnet/tx/bc0752d467e9154c3e35fd2b1ea68d0f5fd8b8afba63a011f11ce271230a13f5).
 The deployed WASM was fetched back from testnet and matched the verified
 19,617-byte artifact with SHA-256
 `a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498`.
+
+The earlier test deployment `CAAU…KMIS` is superseded and must not be used.
+Its test-only closure incident is recorded in the Sprint 3 evidence index.
 
 - [Detailed Sprint 3 specification](docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md)
 - [Frozen contract ABI](docs/contracts/escrow-v1/abi.md)

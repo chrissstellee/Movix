@@ -6,7 +6,7 @@
   "networkPassphrase": "Test SDF Network ; September 2015",
   "rpcEnvironment": "SDF public testnet RPC",
   "source": {
-    "commit": "008bec114c4ea4f2bb9e6cf2e8d3a27de55aa871"
+    "commit": "a9d09f9bf4890d6093803be6d1a62fe5d460a2b2"
   },
   "toolchain": {
     "rust": "1.97.1 (8bab26f4f 2026-07-14)",
@@ -27,12 +27,12 @@
     "sha256": "066d15c46562c1ca29630ae59615eb3ac6f29cd058bf7b95852ef09b43930cf8"
   },
   "deployment": {
-    "contractId": "CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS",
-    "transactionHash": "83290e28fba0d7a25891000625fb3a3a357910123a3339ce849ee88b9f9ff907",
-    "ledger": 3839808
+    "contractId": "CCEECHOGV6MXZANAOLJNDMA2GPEBDETPNWUR4XDEW32KHJUYN3V5ZAP5",
+    "transactionHash": "bc0752d467e9154c3e35fd2b1ea68d0f5fd8b8afba63a011f11ce271230a13f5",
+    "ledger": 3841429
   },
   "constructor": {
-    "treasury": "GDWR6PUWE6ET5BG4D6RQ3LDVPNRGM3K53TFMGVVF3J2OL756NP25C7UF",
+    "treasury": "GBNGA4F7BGTSYHIJEJFD2RKPFZNVVGB7ALLQZHAIZRKHSSXXVABDREQU",
     "maxFeeBps": 0,
     "pilotFeeBps": 0,
     "ttl": {
@@ -54,6 +54,6 @@
     }
   },
   "evidenceIndex": "docs/evidence/sprint-03/README.md",
-  "deployedAt": "2026-07-28T05:48:48.000Z",
+  "deployedAt": "2026-07-28T08:04:07.000Z",
   "testnetOnly": true
 }

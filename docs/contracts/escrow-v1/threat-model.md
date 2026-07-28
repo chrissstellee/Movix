@@ -6,7 +6,7 @@
 | Sprint items              | S3-01, S3-03, S3-04, S3-06 through S3-13                                   |
 | Contract/schema version   | `1` / `1`                                                                  |
 | Requirements authority    | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`                       |
-| Source commit             | Pending release capture                                                    |
+| Contract source commit    | `a9d09f9bf4890d6093803be6d1a62fe5d460a2b2`                                 |
 | Last documentation review | 2026-07-28                                                                 |
 | Last control verification | 2026-07-28 working tree                                                    |
 | Required reviewers        | Architecture, Contract/Security, QA, Stellar, DevOps                       |

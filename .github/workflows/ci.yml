@@ -68,6 +68,8 @@ jobs:
           node scripts/contracts/deploy-testnet.mjs
           node scripts/contracts/testnet-smoke.mjs
           node scripts/contracts/testnet-proof.mjs
+          node scripts/contracts/testnet-event-closure.mjs
+          node scripts/contracts/capture-testnet-events.mjs --help
 
   contract-fuzz:
     name: Contract fuzz

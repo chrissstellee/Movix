@@ -1,0 +1,29 @@
+{
+  "schemaVersion": 1,
+  "status": "superseded",
+  "recordedAt": "2026-07-28T08:10:58.323Z",
+  "network": "testnet",
+  "testnetOnly": true,
+  "sourceCommit": "a9d09f9bf4890d6093803be6d1a62fe5d460a2b2",
+  "supersededDeployment": {
+    "contractId": "CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS",
+    "reason": "A closure-harness argument mismatch interrupted the reject-refund scenario after funding and proposal. The disposable signer configuration was deleted by the earlier unconditional cleanup path.",
+    "result": "The test-only escrow remains RefundPending with a 10000000-stroop XLM liability. It contains no real-value asset and cannot be recovered because escrow v1 intentionally has no privileged rescue path.",
+    "use": "prohibited"
+  },
+  "preferredDeployment": {
+    "contractId": "CCEECHOGV6MXZANAOLJNDMA2GPEBDETPNWUR4XDEW32KHJUYN3V5ZAP5",
+    "deploymentTransactionHash": "bc0752d467e9154c3e35fd2b1ea68d0f5fd8b8afba63a011f11ce271230a13f5",
+    "finalXlmLiability": "0",
+    "releaseRefundCancellationProof": "passed",
+    "rawEventCatalog": "S3-EVENT-TESTNET-CATALOG-a9d09f9bf489-TESTNET-001.json"
+  },
+  "correctiveActions": [
+    "Changed the reject_refund CLI argument from responder to approver.",
+    "Moved reject and withdraw coverage into the primary lifecycle smoke.",
+    "Preserve disposable signer configuration on standalone closure failure.",
+    "Delete the fixture and signers only after liability reconciliation.",
+    "Published the clean replacement deployment as the only preferred contract."
+  ],
+  "secretsRecorded": false
+}

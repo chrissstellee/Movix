@@ -3,7 +3,7 @@
 use libfuzzer_sys::fuzz_target;
 use movix_escrow::{Config, EscrowContract, EscrowContractClient, Status, TtlConfig};
 use soroban_sdk::{
-    testutils::Address as _,
+    testutils::{Address as _, Ledger as _},
     token::{StellarAssetClient, TokenClient},
     vec, Address, BytesN, Env,
 };
@@ -66,7 +66,7 @@ fuzz_target!(|data: &[u8]| {
         &accept_by,
         &terms_hash,
     );
-    if let Ok(escrow) = result {
+    if let Ok(Ok(escrow)) = result {
         assert_eq!(escrow.status, Status::Funded);
         assert!(escrow.gross_amount > 0);
         assert!(escrow.fee_amount >= 0);

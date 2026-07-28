@@ -1,5 +1,5 @@
 {
-  "status": "Working-tree toolchain and optimizer verified; release commit pending",
+  "status": "Contract source toolchain, optimizer, and Linux fuzz execution verified",
   "capturedAt": "2026-07-28",
   "rustc": "1.97.1 (8bab26f4f 2026-07-14)",
   "cargo": "1.97.1 (c980f4866 2026-06-30)",
@@ -16,7 +16,13 @@
   "fuzzExecution": {
     "targets": ["funding", "lifecycle"],
     "defaultRunsPerTarget": 10000,
-    "status": "Targets and Linux CI gate implemented; Linux execution pending because Windows ASan is unsupported"
+    "status": "Passed 10000 Linux executions per target without a crash",
+    "seed": 3551879746,
+    "cargoFuzz": "0.13.2",
+    "containerImage": "rustlang/rust:nightly-2026-07-27",
+    "containerImageDigest": "sha256:c5636425e861e6866b7138935b259216afb174fbd0f64d24ba500af09210b662",
+    "networkDuringExecution": "none",
+    "evidence": "../../evidence/sprint-03/S3-FUZZ-LINUX-a9d09f9bf489-NATIVE-001.json"
   },
   "releaseRequirements": {
     "lockedCargoBuild": true,

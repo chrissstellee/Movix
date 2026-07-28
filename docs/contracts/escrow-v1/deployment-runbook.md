@@ -1,18 +1,18 @@
 # Movix Escrow Contract v1 Deployment Runbook
 
-| Metadata                    | Value                                                                       |
-| --------------------------- | --------------------------------------------------------------------------- |
-| Status                      | Local and public-testnet procedure verified; clean release approval pending |
-| Sprint items                | S3-03, S3-12 through S3-14                                                  |
-| Contract/schema version     | `1` / `1`                                                                   |
-| Target                      | Stellar testnet only                                                        |
-| Requirements authority      | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`                        |
-| Source commit               | Pending release capture                                                     |
-| Last documentation review   | 2026-07-28                                                                  |
-| Last procedure verification | 2026-07-28 working tree                                                     |
-| Required reviewers          | Contract/Security, Stellar, QA, DevOps, Product                             |
-| Approval                    | Pending                                                                     |
-| Evidence index              | `docs/evidence/sprint-03/README.md`                                         |
+| Metadata                    | Value                                                                     |
+| --------------------------- | ------------------------------------------------------------------------- |
+| Status                      | Local and public-testnet procedure engineering-verified; approval pending |
+| Sprint items                | S3-03, S3-12 through S3-14                                                |
+| Contract/schema version     | `1` / `1`                                                                 |
+| Target                      | Stellar testnet only                                                      |
+| Requirements authority      | `docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md`                      |
+| Contract source commit      | `a9d09f9bf4890d6093803be6d1a62fe5d460a2b2`                                |
+| Last documentation review   | 2026-07-28                                                                |
+| Last procedure verification | 2026-07-28 working tree                                                   |
+| Required reviewers          | Contract/Security, Stellar, QA, DevOps, Product                           |
+| Approval                    | Pending                                                                   |
+| Evidence index              | `docs/evidence/sprint-03/README.md`                                       |
 
 This runbook defines the release procedure; it does not record a completed
 release. Commands that depend on scripts, identities, assets, network state, or
@@ -128,8 +128,8 @@ Deployment and network-writing smoke commands are dry-run/disabled unless
 their explicit execution flag and required environment configuration are
 present. Generated-sequence, TTL/archive, negative-SAC, and measured resource
 gates are implemented and pass on the working tree. Public-testnet deployment
-and lifecycle proof pass. Linux fuzz execution, mutation analysis, and
-commit-bound release evidence remain pending.
+and lifecycle proof pass. Both Linux fuzz targets complete 10,000 executions
+without a crash. Mutation analysis remains a P1 follow-up.
 
 Stop on any P0 failure. A test rerun does not replace investigation of a
 financial invariant, authorization, or artifact-identity failure.
@@ -251,23 +251,29 @@ artifact. Do not invent future contract IDs, hashes, ledgers, or timestamps.
 
 ### Verified Sprint 3 deployment
 
-On 2026-07-28, the exact optimized working-tree artifact was deployed to
+On 2026-07-28, the exact optimized contract-source artifact was deployed to
 Stellar testnet:
 
 - Contract:
-  [`CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS`](https://stellar.expert/explorer/testnet/contract/CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS)
+  [`CCEECHOGV6MXZANAOLJNDMA2GPEBDETPNWUR4XDEW32KHJUYN3V5ZAP5`](https://stellar.expert/explorer/testnet/contract/CCEECHOGV6MXZANAOLJNDMA2GPEBDETPNWUR4XDEW32KHJUYN3V5ZAP5)
 - Deployment transaction:
-  [`83290e28…ff907`](https://stellar.expert/explorer/testnet/tx/83290e28fba0d7a25891000625fb3a3a357910123a3339ce849ee88b9f9ff907)
-- Deployment ledger: `3,839,808`
+  [`bc0752d4…a13f5`](https://stellar.expert/explorer/testnet/tx/bc0752d467e9154c3e35fd2b1ea68d0f5fd8b8afba63a011f11ce271230a13f5)
+- Deployment ledger: `3,841,429`
 - Manifest: `deployments/stellar/testnet/escrow-v1.json`
 - Evidence:
-  `docs/evidence/sprint-03/S3-TESTNET-LIFECYCLES-008bec114c4e-TESTNET-001.json`
+  `docs/evidence/sprint-03/S3-TESTNET-LIFECYCLES-a9d09f9bf489-TESTNET-002.json`
 
 Read-only post-deployment verification returned contract version `1`, the
 expected immutable configuration, zero XLM liability after smoke, and a fetched
 WASM whose 19,617-byte size and SHA-256 exactly matched the release candidate.
-This is working-tree evidence tied to base commit `008bec114c4e`; it is not a
-clean-commit production release.
+The manifest ties the optimized artifact to contract source commit
+`a9d09f9bf489`. This remains a testnet-only release.
+
+The earlier `CAAU…KMIS` test deployment is superseded. A closure-harness
+argument mismatch left one disposable, test-only refund pending before the
+signer configuration was removed. Do not use that contract. The incident,
+absence of real value, and corrective actions are recorded in
+`S3-TESTNET-SUPERSESSION-a9d09f9bf489-TESTNET-001.json`.
 
 The implemented fail-closed script is:
 
@@ -302,9 +308,9 @@ The terminal proof transactions are:
 
 | Scenario             | Status      |    Ledger | Stellar Expert                                                                                                             |
 | -------------------- | ----------- | --------: | -------------------------------------------------------------------------------------------------------------------------- |
-| Delivery release     | `Released`  | 3,839,817 | [Transaction](https://stellar.expert/explorer/testnet/tx/9c6c5299cc42362d1548d53b7d79944d11b63c3cdfd554faa428e30bdd9ec7b1) |
-| Mutual refund        | `Refunded`  | 3,839,823 | [Transaction](https://stellar.expert/explorer/testnet/tx/53466c997350e16794e888ed0c0118bcc25732f05f192a139eee44363c49841e) |
-| Timeout cancellation | `Cancelled` | 3,839,830 | [Transaction](https://stellar.expert/explorer/testnet/tx/0ef1d81a49c69789f12a24532c91541e56d93d87f68291f72425bd809e6acff2) |
+| Delivery release     | `Released`  | 3,841,437 | [Transaction](https://stellar.expert/explorer/testnet/tx/21512c38582f95f12832180977b165624f6d6c70bb4ad34292e002ae554a3fd4) |
+| Mutual refund        | `Refunded`  | 3,841,451 | [Transaction](https://stellar.expert/explorer/testnet/tx/f2d8559938456449e84f5c3c32cd2a56204cef469a784900f78ec03f53fbc230) |
+| Timeout cancellation | `Cancelled` | 3,841,458 | [Transaction](https://stellar.expert/explorer/testnet/tx/55ae95603eabea2a7655df0357e55d8b79fad4358e0b72f790d20384b56ffef2) |
 
 The implemented fail-closed lifecycle harness is:
 
@@ -326,6 +332,12 @@ the remaining release evidence around that harness:
 7. Verify getters, raw/decoded events, participant and contract balances,
    per-token liability, transaction hashes, and ledgers.
 8. Verify generated bindings against the deployed interface.
+
+Capture publishable raw topic/value XDR through the read-only RPC helper:
+
+```powershell
+node scripts/contracts/capture-testnet-events.mjs <contract-id> <deployment-ledger>
+```
 
 Testnet smoke does not replace local failure, rollback, race, property, or fuzz
 testing.

@@ -29,6 +29,8 @@ out/
 build
 dist
 target
+contracts/escrow/fuzz/corpus/
+contracts/escrow/fuzz/artifacts/
 
 
 # Debug

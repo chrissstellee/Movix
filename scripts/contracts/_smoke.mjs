@@ -158,6 +158,66 @@ export async function runLifecycleSmoke({
       network,
       contractId,
       supplierIdentity,
+      "reject_refund",
+      [
+        "--id-file-path",
+        refundId,
+        "--approver",
+        supplierAddress,
+        "--refund-terms-hash-file-path",
+        fixtures.refund,
+      ],
+      configDir,
+    );
+    invoke(
+      network,
+      contractId,
+      buyerIdentity,
+      "propose_refund",
+      [
+        "--id-file-path",
+        refundId,
+        "--proposer",
+        buyerAddress,
+        "--refund-terms-hash-file-path",
+        fixtures.refundWithdrawn,
+      ],
+      configDir,
+    );
+    invoke(
+      network,
+      contractId,
+      buyerIdentity,
+      "withdraw_refund",
+      [
+        "--id-file-path",
+        refundId,
+        "--proposer",
+        buyerAddress,
+        "--refund-terms-hash-file-path",
+        fixtures.refundWithdrawn,
+      ],
+      configDir,
+    );
+    invoke(
+      network,
+      contractId,
+      buyerIdentity,
+      "propose_refund",
+      [
+        "--id-file-path",
+        refundId,
+        "--proposer",
+        buyerAddress,
+        "--refund-terms-hash-file-path",
+        fixtures.refund,
+      ],
+      configDir,
+    );
+    invoke(
+      network,
+      contractId,
+      supplierIdentity,
       "approve_refund",
       [
         "--id-file-path",
@@ -335,6 +395,7 @@ function createCommitments(directory, seedOffset) {
       ["shipment", 12],
       ["delivery", 13],
       ["refund", 14],
+      ["refundWithdrawn", 15],
     ].map(([name, byte]) => {
       const path = resolve(directory, `${name}.bin`);
       writeFileSync(path, Buffer.alloc(32, byte + seedOffset));
