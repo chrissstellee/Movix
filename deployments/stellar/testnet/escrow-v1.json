@@ -1,0 +1,59 @@
+{
+  "schemaVersion": 1,
+  "contractVersion": 1,
+  "escrowSchemaVersion": 1,
+  "network": "testnet",
+  "networkPassphrase": "Test SDF Network ; September 2015",
+  "rpcEnvironment": "SDF public testnet RPC",
+  "source": {
+    "commit": "008bec114c4ea4f2bb9e6cf2e8d3a27de55aa871"
+  },
+  "toolchain": {
+    "rust": "1.97.1 (8bab26f4f 2026-07-14)",
+    "sorobanSdk": "27.0.2",
+    "stellarCli": "27.0.0 (5a7c5fe76530bf4248477ac812fc757146b98cc4)",
+    "stellarXdr": "27.0.0 (5262803470be965e42f80023d12fba12808c774a)",
+    "protocol": 27
+  },
+  "artifact": {
+    "path": "contracts/target/wasm32v1-none/release/movix_escrow.wasm",
+    "sizeBytes": 19617,
+    "sha256": "a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498",
+    "optimized": true
+  },
+  "bindings": {
+    "path": "packages/stellar/generated/escrow",
+    "command": "pnpm.cmd contracts:bindings",
+    "sha256": "066d15c46562c1ca29630ae59615eb3ac6f29cd058bf7b95852ef09b43930cf8"
+  },
+  "deployment": {
+    "contractId": "CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS",
+    "transactionHash": "83290e28fba0d7a25891000625fb3a3a357910123a3339ce849ee88b9f9ff907",
+    "ledger": 3839808
+  },
+  "constructor": {
+    "treasury": "GDWR6PUWE6ET5BG4D6RQ3LDVPNRGM3K53TFMGVVF3J2OL756NP25C7UF",
+    "maxFeeBps": 0,
+    "pilotFeeBps": 0,
+    "ttl": {
+      "threshold": 120960,
+      "extendTo": 1555200,
+      "networkLimitReference": "docs/contracts/escrow-v1/resource-budgets.json"
+    }
+  },
+  "assets": {
+    "XLM": {
+      "code": "XLM",
+      "issuer": null,
+      "sac": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
+    },
+    "USDC": {
+      "code": "USDC",
+      "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      "sac": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
+    }
+  },
+  "evidenceIndex": "docs/evidence/sprint-03/README.md",
+  "deployedAt": "2026-07-28T05:48:48.000Z",
+  "testnetOnly": true
+}

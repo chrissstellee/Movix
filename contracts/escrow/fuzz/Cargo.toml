@@ -1,0 +1,29 @@
+[package]
+name = "movix-escrow-fuzz"
+version = "0.0.0"
+edition = "2021"
+publish = false
+
+[package.metadata]
+cargo-fuzz = true
+
+[workspace]
+
+[dependencies]
+libfuzzer-sys = "0.4"
+movix-escrow = { path = ".." }
+soroban-sdk = { version = "27.0.2", features = ["testutils"] }
+
+[[bin]]
+name = "funding"
+path = "fuzz_targets/funding.rs"
+test = false
+doc = false
+bench = false
+
+[[bin]]
+name = "lifecycle"
+path = "fuzz_targets/lifecycle.rs"
+test = false
+doc = false
+bench = false

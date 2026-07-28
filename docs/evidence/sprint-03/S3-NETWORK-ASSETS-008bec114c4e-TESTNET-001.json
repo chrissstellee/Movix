@@ -1,0 +1,43 @@
+{
+  "name": "S3-NETWORK-ASSETS-008bec114c4e-TESTNET-001",
+  "status": "Read-only verification passed",
+  "verifiedAt": "2026-07-28",
+  "network": {
+    "name": "testnet",
+    "passphrase": "Test SDF Network ; September 2015",
+    "protocol": 27,
+    "rpcVersion": "27.1.1-7e712815319140618b9be8cf0846701a6f9a2cbe",
+    "stellarCoreVersion": "27.1.0"
+  },
+  "commands": [
+    "stellar network info --network testnet --output json-formatted",
+    "stellar network settings --network testnet",
+    "stellar contract id asset --asset native --network testnet",
+    "stellar contract id asset --asset USDC:<verified-issuer> --network testnet"
+  ],
+  "assets": {
+    "XLM": {
+      "sac": "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC"
+    },
+    "USDC": {
+      "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      "sac": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+      "references": [
+        "https://developers.circle.com/stablecoins/quickstart-transfer-usdc-stellar",
+        "https://developers.stellar.org/docs/build/agentic-payments/x402"
+      ]
+    }
+  },
+  "limits": {
+    "txMaxInstructions": 400000000,
+    "txMemoryBytes": 41943040,
+    "txMaxDiskReadEntries": 200,
+    "txMaxWriteEntries": 200,
+    "txMaxFootprintEntries": 400,
+    "txMaxDiskReadBytes": 200000,
+    "txMaxWriteBytes": 132096,
+    "txMaxEventBytes": 16384,
+    "maxEntryTtl": 3110400,
+    "minPersistentTtl": 120960
+  }
+}

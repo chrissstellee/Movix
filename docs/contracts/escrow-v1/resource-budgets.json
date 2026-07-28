@@ -1,0 +1,85 @@
+{
+  "status": "Live limits and optimized local entry-point measurements verified; approval pending",
+  "capturedAt": "2026-07-28",
+  "network": "testnet",
+  "networkPassphrase": "Test SDF Network ; September 2015",
+  "protocolVersion": 27,
+  "rpcVersion": "27.1.1-7e712815319140618b9be8cf0846701a6f9a2cbe",
+  "stellarCliVersion": "27.0.0",
+  "captureCommands": [
+    "stellar network info --network testnet --output json-formatted",
+    "stellar network settings --network testnet"
+  ],
+  "liveLimits": {
+    "txCpuInstructions": 400000000,
+    "txMemoryBytes": 41943040,
+    "txDiskReadEntries": 200,
+    "txWriteEntries": 200,
+    "txFootprintEntries": 400,
+    "txDiskReadBytes": 200000,
+    "txWriteBytes": 132096,
+    "txSizeBytes": 132096,
+    "txContractEventsAndReturnBytes": 16384,
+    "contractWasmBytes": 131072,
+    "contractDataEntryBytes": 65536,
+    "contractDataKeyBytes": 250,
+    "maxEntryTtlLedgers": 3110400,
+    "minPersistentTtlLedgers": 120960,
+    "minTemporaryTtlLedgers": 720
+  },
+  "entryPointBudgets": {
+    "absoluteMaximumPercentOfLiveLimit": 50,
+    "normalTransitionTargetPercentOfLiveLimit": 25,
+    "terminalReleaseTargetPercentOfLiveLimit": 35,
+    "releaseCandidateRegressionMaximumPercent": 10,
+    "normalTransitionTargets": {
+      "cpuInstructions": 100000000,
+      "memoryBytes": 10485760,
+      "diskReadEntries": 50,
+      "writeEntries": 50,
+      "diskReadBytes": 50000,
+      "writeBytes": 33024,
+      "eventsAndReturnBytes": 4096
+    },
+    "terminalReleaseTargets": {
+      "cpuInstructions": 140000000,
+      "memoryBytes": 14680064,
+      "diskReadEntries": 70,
+      "writeEntries": 70,
+      "diskReadBytes": 70000,
+      "writeBytes": 46234,
+      "eventsAndReturnBytes": 5735
+    }
+  },
+  "assetVerification": {
+    "capturedAt": "2026-07-28",
+    "XLM": {
+      "derivation": "Asset.native().contractId(Networks.TESTNET)"
+    },
+    "USDC": {
+      "issuer": "GBBD47IF6LWK7P7MDEVSCWR7DPUWV3NY3DTQEVFL4NAT4AQH3ZLLFLA5",
+      "sac": "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA",
+      "authoritativeReferences": [
+        "https://developers.circle.com/stablecoins/quickstart-transfer-usdc-stellar",
+        "https://developers.stellar.org/docs/build/agentic-payments/x402"
+      ]
+    }
+  },
+  "localOptimizedMeasurement": {
+    "capturedAt": "2026-07-28",
+    "network": "local",
+    "limitsProfile": "testnet",
+    "artifactSha256": "a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498",
+    "evidence": "../../evidence/sprint-03/S3-RESOURCE-ENTRYPOINTS-008bec114c4e-LOCAL-001.json",
+    "maximums": {
+      "cpuInstructions": 2263539,
+      "readEntries": 8,
+      "writeEntries": 5,
+      "diskReadBytes": 288,
+      "writeBytes": 1580
+    },
+    "highestInstructionEntryPoint": "confirm_delivery",
+    "result": "Passed all approved normal and terminal ceilings"
+  },
+  "measurementStatus": "Working-tree optimized local measurements passed; commit-bound and testnet rerun pending"
+}

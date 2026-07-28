@@ -1,0 +1,134 @@
+{
+  "name": "S3-RESOURCE-ENTRYPOINTS-008bec114c4e-LOCAL-001",
+  "status": "Passed on optimized WASM under local testnet limits",
+  "verifiedAt": "2026-07-28",
+  "source": {
+    "baseCommit": "008bec114c4ea4f2bb9e6cf2e8d3a27de55aa871",
+    "dirty": true
+  },
+  "command": "node scripts/contracts/resource-profile.mjs --execute",
+  "environment": {
+    "network": "local",
+    "limitsProfile": "testnet",
+    "protocol": 27,
+    "contractId": "CBBHTH7UIPR4LPZ3NOFS3XGNXQAM6CWXKGGOZHJOMLCLJJ6EXODRMMEI"
+  },
+  "artifact": {
+    "sizeBytes": 19617,
+    "sha256": "a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498"
+  },
+  "measurements": [
+    {
+      "function": "get_version",
+      "instructions": 1292165,
+      "readEntries": 2,
+      "writeEntries": 0,
+      "diskReadBytes": 0,
+      "writeBytes": 0
+    },
+    {
+      "function": "get_config",
+      "instructions": 1317076,
+      "readEntries": 2,
+      "writeEntries": 0,
+      "diskReadBytes": 0,
+      "writeBytes": 0
+    },
+    {
+      "function": "get_liability",
+      "instructions": 1349537,
+      "readEntries": 3,
+      "writeEntries": 0,
+      "diskReadBytes": 0,
+      "writeBytes": 0
+    },
+    {
+      "function": "create_and_fund",
+      "instructions": 1953532,
+      "readEntries": 7,
+      "writeEntries": 4,
+      "diskReadBytes": 144,
+      "writeBytes": 1364
+    },
+    {
+      "function": "get_escrow",
+      "instructions": 1523396,
+      "readEntries": 3,
+      "writeEntries": 0,
+      "diskReadBytes": 0,
+      "writeBytes": 0
+    },
+    {
+      "function": "accept",
+      "instructions": 1705726,
+      "readEntries": 3,
+      "writeEntries": 1,
+      "diskReadBytes": 0,
+      "writeBytes": 848
+    },
+    {
+      "function": "mark_shipped",
+      "instructions": 1711510,
+      "readEntries": 3,
+      "writeEntries": 1,
+      "diskReadBytes": 0,
+      "writeBytes": 884
+    },
+    {
+      "function": "confirm_delivery",
+      "instructions": 2263539,
+      "readEntries": 8,
+      "writeEntries": 5,
+      "diskReadBytes": 288,
+      "writeBytes": 1580
+    },
+    {
+      "function": "propose_refund",
+      "instructions": 1756250,
+      "readEntries": 3,
+      "writeEntries": 1,
+      "diskReadBytes": 0,
+      "writeBytes": 956
+    },
+    {
+      "function": "reject_refund",
+      "instructions": 1735372,
+      "readEntries": 3,
+      "writeEntries": 1,
+      "diskReadBytes": 0,
+      "writeBytes": 848
+    },
+    {
+      "function": "withdraw_refund",
+      "instructions": 1730502,
+      "readEntries": 3,
+      "writeEntries": 1,
+      "diskReadBytes": 0,
+      "writeBytes": 848
+    },
+    {
+      "function": "approve_refund",
+      "instructions": 2120035,
+      "readEntries": 7,
+      "writeEntries": 4,
+      "diskReadBytes": 144,
+      "writeBytes": 1440
+    },
+    {
+      "function": "cancel_unaccepted",
+      "instructions": 2084013,
+      "readEntries": 7,
+      "writeEntries": 4,
+      "diskReadBytes": 144,
+      "writeBytes": 1368
+    }
+  ],
+  "maximums": {
+    "instructions": 2263539,
+    "readEntries": 8,
+    "writeEntries": 5,
+    "diskReadBytes": 288,
+    "writeBytes": 1580
+  },
+  "decision": "All measured fields remain below the approved normal or terminal ceilings"
+}

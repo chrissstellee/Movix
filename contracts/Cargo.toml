@@ -1,6 +1,7 @@
 [workspace]
 resolver = "2"
 members = ["escrow"]
+exclude = ["escrow/fuzz"]
 
 [profile.release]
 opt-level = "z"

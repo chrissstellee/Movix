@@ -1,0 +1,35 @@
+{
+  "name": "S3-TEST-LOCAL-CLOSURE-008bec114c4e-NATIVE-001",
+  "status": "Passed on working tree; commit-bound rerun pending",
+  "verifiedAt": "2026-07-28",
+  "source": {
+    "baseCommit": "008bec114c4ea4f2bb9e6cf2e8d3a27de55aa871",
+    "dirty": true
+  },
+  "environment": {
+    "os": "Windows",
+    "rustc": "1.97.1",
+    "cargo": "1.97.1",
+    "sorobanSdk": "27.0.2"
+  },
+  "command": "cargo test --manifest-path contracts/Cargo.toml --lib",
+  "result": {
+    "passed": 20,
+    "failed": 0,
+    "durationSeconds": 24.78
+  },
+  "newClosureCoverage": [
+    "exact root authorization for every mutator and the nested funding SAC transfer",
+    "instance, code, escrow, and liability TTL extension",
+    "automatic archive restoration without changing timestamp deadline semantics",
+    "terminal replay denial after restoration",
+    "1024 deterministic arbitrary lifecycle actions using seed 0xd1b54a32d192ed03",
+    "failed-action immutability and balance/liability conservation",
+    "multi-asset, multi-escrow aggregate liability",
+    "serialized release-versus-refund exclusion"
+  ],
+  "review": {
+    "owner": "Elliot",
+    "decision": "Engineering verification passed; independent QA/security approval pending"
+  }
+}

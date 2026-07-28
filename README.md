@@ -1,6 +1,6 @@
 # Movix
 
-Movix is a Testnet procurement pilot that uses Stellar for wallet-based authentication and, in later sprints, traceable escrow settlement. Sprint 1 provides the secure wallet sign-in boundary. Sprint 2 adds resumable business onboarding, atomic organization/owner creation, tenant-isolated buyer and supplier workspaces, and concurrency-safe business settings.
+Movix is a Testnet procurement pilot that uses Stellar for wallet-based authentication and traceable escrow settlement. Sprint 1 provides the secure wallet sign-in boundary, Sprint 2 adds tenant-safe business onboarding, and Sprint 3 defines the immutable escrow contract v1 lifecycle and release proof.
 
 > [!IMPORTANT]
 > Movix currently supports Stellar Testnet only. Testnet assets have no production monetary value. Connecting or signing in with a wallet does not transfer funds and does not authorize a business to buy or supply.
@@ -69,10 +69,10 @@ PowerShell environments that block `pnpm.ps1` can invoke the same commands with 
 | ------------------------- | ------------------------------------------------------------------------------- |
 | `apps/web`                | Next.js public/login pages, onboarding, organization shell, and settings        |
 | `packages/backend/convex` | Convex auth, onboarding, tenant authorization, settings, schema, and migrations |
-| `packages/stellar`        | Testnet configuration and wallet/SEP-10 boundaries                              |
+| `packages/stellar`        | Testnet configuration, wallet boundaries, and generated escrow integration      |
 | `packages/ui`             | Shared accessible UI primitives                                                 |
 | `packages/domain`         | Shared domain types and fixtures                                                |
-| `contracts`               | Soroban escrow contract work retained as a quality gate                         |
+| `contracts`               | Stellar escrow contract, lifecycle, invariants, and native tests                |
 | `e2e`                     | Playwright journeys and deterministic wallet/auth fixtures                      |
 | `docs`                    | Sprint plans, architecture, decisions, operations, and review evidence          |
 
@@ -90,9 +90,12 @@ pnpm test:e2e
 pnpm build
 pnpm test:contracts
 pnpm build:contracts
+pnpm contracts:bindings
 ```
 
-The current inherited baseline and Sprint 1 rules are recorded in [authentication testing and evidence](docs/auth/testing-and-evidence.md). Sprint 2 criteria and remaining release evidence are recorded in [business-onboarding testing and evidence](docs/business-onboarding/testing-and-evidence.md).
+Local and testnet contract scripts are dry-run-safe by default. Read the Sprint 3 deployment runbook before adding `--execute`; never put a secret directly in a package command.
+
+The inherited baseline and Sprint 1 rules are recorded in [authentication testing and evidence](docs/auth/testing-and-evidence.md). Sprint 2 criteria are recorded in [business-onboarding testing and evidence](docs/business-onboarding/testing-and-evidence.md). Sprint 3 verification status is recorded in the [escrow testing and evidence guide](docs/contracts/escrow-v1/testing-and-evidence.md).
 
 ## Sprint 1 documentation
 
@@ -127,3 +130,31 @@ The current inherited baseline and Sprint 1 rules are recorded in [authenticatio
 - [Sprint 2 evidence manifest](docs/evidence/sprint-02/README.md)
 
 Organization context is server-derived. Do not trust client-selected organization, membership, role, status, capability, or document version values.
+
+## Sprint 3 escrow contract
+
+### Stellar testnet deployment
+
+The following contracts are testnet-only and have no production monetary
+value.
+
+| Contract        | Contract ID                                                | Stellar Expert                                                                                                             |
+| --------------- | ---------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Movix Escrow v1 | `CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS` | [View contract](https://stellar.expert/explorer/testnet/contract/CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS) |
+| Native XLM SAC  | `CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC` | [View contract](https://stellar.expert/explorer/testnet/contract/CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC) |
+| USDC SAC        | `CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA` | [View contract](https://stellar.expert/explorer/testnet/contract/CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA) |
+
+Deployment transaction:
+[ledger 3,839,808](https://stellar.expert/explorer/testnet/tx/83290e28fba0d7a25891000625fb3a3a357910123a3339ce849ee88b9f9ff907).
+The deployed WASM was fetched back from testnet and matched the verified
+19,617-byte artifact with SHA-256
+`a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498`.
+
+- [Detailed Sprint 3 specification](docs/Movix-Sprint-03-Smart-Contract-V1-Detailed.md)
+- [Frozen contract ABI](docs/contracts/escrow-v1/abi.md)
+- [Threat model](docs/contracts/escrow-v1/threat-model.md)
+- [Errors and events](docs/contracts/escrow-v1/errors-and-events.md)
+- [Deployment runbook](docs/contracts/escrow-v1/deployment-runbook.md)
+- [Testing and evidence](docs/contracts/escrow-v1/testing-and-evidence.md)
+- [Testnet deployment manifest](deployments/stellar/testnet/escrow-v1.json)
+- [Sprint 3 evidence index](docs/evidence/sprint-03/README.md)

@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://movix.local/schemas/stellar/testnet/escrow-v1.schema.json",
+  "title": "Movix Stellar Testnet Escrow v1 Deployment Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "contractVersion",
+    "escrowSchemaVersion",
+    "network",
+    "networkPassphrase",
+    "rpcEnvironment",
+    "source",
+    "toolchain",
+    "artifact",
+    "bindings",
+    "deployment",
+    "constructor",
+    "assets",
+    "evidenceIndex",
+    "deployedAt",
+    "testnetOnly"
+  ],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "contractVersion": { "const": 1 },
+    "escrowSchemaVersion": { "const": 1 },
+    "network": { "const": "testnet" },
+    "networkPassphrase": { "const": "Test SDF Network ; September 2015" },
+    "rpcEnvironment": { "type": "string", "minLength": 1 },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["commit"],
+      "properties": {
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "toolchain": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["rust", "sorobanSdk", "stellarCli", "stellarXdr", "protocol"],
+      "properties": {
+        "rust": { "type": "string", "minLength": 1 },
+        "sorobanSdk": { "type": "string", "minLength": 1 },
+        "stellarCli": { "type": "string", "minLength": 1 },
+        "stellarXdr": { "type": "string", "minLength": 1 },
+        "protocol": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "artifact": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sizeBytes", "sha256", "optimized"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "sizeBytes": { "type": "integer", "minimum": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "optimized": { "const": true }
+      }
+    },
+    "bindings": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "command", "sha256"],
+      "properties": {
+        "path": { "type": "string", "minLength": 1 },
+        "command": { "type": "string", "minLength": 1 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    },
+    "deployment": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["contractId", "transactionHash", "ledger"],
+      "properties": {
+        "contractId": { "type": "string", "pattern": "^C[A-Z2-7]{55}$" },
+        "transactionHash": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "ledger": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "constructor": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["treasury", "maxFeeBps", "pilotFeeBps", "ttl"],
+      "properties": {
+        "treasury": { "type": "string", "minLength": 1 },
+        "maxFeeBps": { "type": "integer", "minimum": 0, "maximum": 10000 },
+        "pilotFeeBps": { "const": 0 },
+        "ttl": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["threshold", "extendTo", "networkLimitReference"],
+          "properties": {
+            "threshold": { "type": "integer", "minimum": 1 },
+            "extendTo": { "type": "integer", "minimum": 2 },
+            "networkLimitReference": { "type": "string", "minLength": 1 }
+          }
+        }
+      }
+    },
+    "assets": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["XLM", "USDC"],
+      "properties": {
+        "XLM": { "$ref": "#/$defs/asset" },
+        "USDC": { "$ref": "#/$defs/asset" }
+      }
+    },
+    "evidenceIndex": { "const": "docs/evidence/sprint-03/README.md" },
+    "deployedAt": { "type": "string", "format": "date-time" },
+    "testnetOnly": { "const": true }
+  },
+  "$defs": {
+    "asset": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["code", "sac"],
+      "properties": {
+        "code": { "type": "string", "minLength": 1 },
+        "issuer": { "type": ["string", "null"] },
+        "sac": { "type": "string", "pattern": "^C[A-Z2-7]{55}$" }
+      }
+    }
+  }
+}

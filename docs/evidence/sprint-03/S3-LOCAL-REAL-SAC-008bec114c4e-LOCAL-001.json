@@ -1,0 +1,78 @@
+{
+  "name": "S3-LOCAL-REAL-SAC-008bec114c4e-LOCAL-001",
+  "status": "Passed on exact optimized working-tree artifact",
+  "verifiedAt": "2026-07-28",
+  "source": {
+    "baseCommit": "008bec114c4ea4f2bb9e6cf2e8d3a27de55aa871",
+    "dirty": true
+  },
+  "environment": {
+    "network": "local",
+    "limitsProfile": "testnet",
+    "protocol": 27,
+    "stellarCli": "27.0.0",
+    "quickstartImageDigest": "sha256:c8f1a95e43f5c0ff0b3d2ce6c3db008ccb0754ffa50175c4e0ef06b9d643b490"
+  },
+  "artifact": {
+    "path": "contracts/target/wasm32v1-none/release/movix_escrow.wasm",
+    "sizeBytes": 19617,
+    "sha256": "a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498"
+  },
+  "commands": [
+    "node scripts/contracts/local-setup.mjs --execute --reset",
+    "node scripts/contracts/local-smoke.mjs --execute",
+    "node scripts/contracts/local-negative.mjs --execute"
+  ],
+  "assets": {
+    "xlmLikeSac": "CDMLFMKMMD7MWZP3FKUBZPVHTUEDLSX4BYGYKH4GCESXYHS3IHQ4EIG4",
+    "usdcLikeSac": "CCFRATBLV4KREHEYBUYFQQF6YBT6YWK6IOX65CXXVJH53EZXH5B5BYGY"
+  },
+  "passedScenarios": [
+    "XLM-like release, refund, cancellation, terminal replay denial, zero liability",
+    "USDC-like release, refund, cancellation, terminal replay denial, zero liability",
+    "insufficient balance and unsupported asset fail before escrow creation",
+    "missing supplier trustline leaves Shipped state, full liability, and contract balance unchanged",
+    "missing treasury trustline rolls back the preceding supplier transfer and leaves Shipped state and full liability",
+    "refund proposal serializes ahead of delivery confirmation and blocks release",
+    "two active escrows reconcile aggregate liability through both terminal refunds"
+  ],
+  "ephemeralContracts": {
+    "lifecycle": "CCB6VIWKEF4IGZL5B3FX65XLB3SHV2KEPIHEGUCCJ3KAIFAPI663FMTY",
+    "failedSupplier": "CB5LCGE4SK6NYKTR2UT3I4LR6I6SZUQX4XDSHO4DAMTVPSV52QZOOUAK",
+    "failedTreasury": "CDXPFQY5PWDQ277SSNP4MYUMWEMBTSWNUKX6LBTZXLLOBIAOHXPCESXA",
+    "race": "CDMTSAN2CGGOBHCZDOWYJSJNADJ4H3CFLSIWKE7LU5BSGENUMTSLJERX"
+  },
+  "latestHappyPathTransactions": {
+    "xlmLike": [
+      "5dfde7dfe19ec81140fe995c10a1dcbcc07af9379c8c769397a44b62af40656b",
+      "2c0fce71946d69134a51cacd70e3507b5656d83afc6ddf7756b5a0c78754aaff",
+      "41deb4e8c9dafb7693836c26291b3abaaf7f7b17f1d6b883653168b64f2cf391",
+      "0e766447e9a90a2cb12f2aba78ba8c45379b0406a2fcac88bcb9c5ceef148054",
+      "7e734e26cc68b54653d05bb6aa2bbedcc8f82940a85dc2779b1d4fe7d2e443d2",
+      "e0dd8dba3e4108202aecff2e1cb57548504330f9f0a6cc94ca77611e8ac9b70e",
+      "bdf6b1e606433f652fd4e4ff8eef96db4f1679a5e9a481470e96ac48b9132b48",
+      "95f1938a12639a4d4cebd6e3eb77afcbb7c2408f1228ec729833699a9ae303d5",
+      "29472e4ec624c110200443710c97548d350e0da5c364b9b8eb5a855e799dae83"
+    ],
+    "usdcLike": [
+      "0b1330e7d5ec976b51ac395d6219b8f1c50b31e90944a5484277fb25eab32ab2",
+      "d0829b06cd6172f90ef1fdc8dafeed465c60493ba42db356dbcbfec10893a8a3",
+      "e24dd7e396b8bbdb14e366ebb7502b0ab0dcc9f3e7e8f06465c1b97b941a4c2f",
+      "5b7e92207b2f8119fdad99a9dfbf018db0890a2ec593b6049737d29b17567660",
+      "226ca134a255dfda5bb776b6870c1ce87aa63628b4e7ff82b5c4d6905c5fcdca",
+      "f9fca01eb462093e4a59db9e7eed7830f3c5e2c63118eb1914b9d388c92895e9",
+      "8af76e48dbc549475003e1c7ad0058cdd6c0ac697293becfb3398437afe76e51",
+      "15b5098137d5055fb2f66a628db178ee6711053d262e2435e6159b2027007809",
+      "920e359055afb32a9ef9bcd531f01c0004d1c604e3b59a069c15e9958366ab18"
+    ]
+  },
+  "secretHandling": {
+    "configurationDirectory": "OS temporary directory",
+    "committedSecrets": false,
+    "publicationContainsSeeds": false
+  },
+  "review": {
+    "owner": "Elliot",
+    "decision": "Local P0 SAC gate passed; independent Stellar/QA approval pending"
+  }
+}

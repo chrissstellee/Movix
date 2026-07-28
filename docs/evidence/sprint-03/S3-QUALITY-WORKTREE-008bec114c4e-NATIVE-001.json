@@ -1,0 +1,58 @@
+{
+  "name": "S3-QUALITY-WORKTREE-008bec114c4e-NATIVE-001",
+  "status": "Sprint 3 gates passed; one inherited repository formatting issue remains",
+  "verifiedAt": "2026-07-28",
+  "source": {
+    "baseCommit": "008bec114c4ea4f2bb9e6cf2e8d3a27de55aa871",
+    "dirty": true
+  },
+  "passed": [
+    {
+      "command": "cargo fmt --manifest-path contracts/Cargo.toml --all -- --check",
+      "result": "passed"
+    },
+    {
+      "command": "cargo clippy --manifest-path contracts/Cargo.toml --all-targets -- -D warnings",
+      "result": "passed"
+    },
+    {
+      "command": "cargo test --manifest-path contracts/Cargo.toml --lib",
+      "result": "20 passed"
+    },
+    {
+      "command": "pnpm.cmd --filter @repo/stellar format:check && lint && typecheck && test",
+      "result": "6 files and 54 tests passed"
+    },
+    {
+      "command": "pnpm.cmd lint",
+      "result": "passed with one inherited UI accessibility warning"
+    },
+    {
+      "command": "pnpm.cmd typecheck",
+      "result": "passed"
+    },
+    {
+      "command": "pnpm.cmd test",
+      "result": "132 package/application tests passed"
+    },
+    {
+      "command": "git diff --check",
+      "result": "passed; line-ending notices only"
+    },
+    {
+      "command": "official stellar-cli v27.0.0 locked optimized build, binding generation, Stellar typecheck and tests",
+      "result": "passed; 19,617-byte WASM, 14 exports, stable WASM and binding digests"
+    }
+  ],
+  "inheritedFailure": {
+    "command": "pnpm.cmd format:check",
+    "scope": "packages/backend/convex/_generated",
+    "files": ["api.d.ts", "dataModel.d.ts", "server.d.ts"],
+    "sprint3FilesAffected": false,
+    "action": "Do not rewrite generated Convex output as part of Sprint 3; resolve in the owning backend workflow"
+  },
+  "review": {
+    "owner": "Elliot",
+    "decision": "Sprint 3 engineering gates pass on the dirty working tree; clean commit and independent approvals pending"
+  }
+}

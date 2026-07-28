@@ -1,0 +1,138 @@
+{
+  "name": "S3-TESTNET-LIFECYCLES-008bec114c4e-TESTNET-001",
+  "status": "Passed on public Stellar testnet using the exact optimized working-tree artifact",
+  "verifiedAt": "2026-07-28T05:50:38.000Z",
+  "source": {
+    "baseCommit": "008bec114c4ea4f2bb9e6cf2e8d3a27de55aa871",
+    "dirty": true
+  },
+  "network": {
+    "name": "testnet",
+    "protocol": 27,
+    "rpc": "https://soroban-testnet.stellar.org"
+  },
+  "artifact": {
+    "path": "contracts/target/wasm32v1-none/release/movix_escrow.wasm",
+    "sizeBytes": 19617,
+    "sha256": "a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498",
+    "fetchedContractSha256": "a6c938a6148a7fd0cc768eee25088ef66822243c05e71516e1400d9bc18bd498"
+  },
+  "bindings": {
+    "path": "packages/stellar/generated/escrow",
+    "sha256": "066d15c46562c1ca29630ae59615eb3ac6f29cd058bf7b95852ef09b43930cf8"
+  },
+  "deployment": {
+    "contractId": "CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS",
+    "transactionHash": "83290e28fba0d7a25891000625fb3a3a357910123a3339ce849ee88b9f9ff907",
+    "ledger": 3839808,
+    "status": "SUCCESS",
+    "stellarExpert": {
+      "contract": "https://stellar.expert/explorer/testnet/contract/CAAU4AY6UBXVYGCWWXQ5KOAYEFWG7IPTNSACBLEMII3XX4HYD4C6KMIS",
+      "transaction": "https://stellar.expert/explorer/testnet/tx/83290e28fba0d7a25891000625fb3a3a357910123a3339ce849ee88b9f9ff907"
+    }
+  },
+  "constructorReadback": {
+    "contractVersion": 1,
+    "treasury": "GDWR6PUWE6ET5BG4D6RQ3LDVPNRGM3K53TFMGVVF3J2OL756NP25C7UF",
+    "supportedSacAddresses": [
+      "CDLZFC3SYJYDZT7K67VZ75HPJVIEUVNIXF47ZG2FB2RMQQVU2HHGCYSC",
+      "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA"
+    ],
+    "maxFeeBps": 0,
+    "ttl": {
+      "threshold": 120960,
+      "extendTo": 1555200
+    },
+    "xlmLiabilityAfterSmoke": "0"
+  },
+  "actors": {
+    "buyer": "GD7FPD3DKC5KVSRE72VLWMZEWLIXDRTLLI756WOMCLKDDSHPUIEUKYTE",
+    "supplier": "GAW43VKZGD2BMZFTQFNWFV5RWKXVUNWJQDRAQTP2HXR7KFEDSYHOGL6A",
+    "treasury": "GDWR6PUWE6ET5BG4D6RQ3LDVPNRGM3K53TFMGVVF3J2OL756NP25C7UF",
+    "keysDeletedAfterProof": true
+  },
+  "terminalProofs": [
+    {
+      "scenario": "release",
+      "status": "Released",
+      "transactionHash": "9c6c5299cc42362d1548d53b7d79944d11b63c3cdfd554faa428e30bdd9ec7b1",
+      "ledger": 3839817,
+      "stellarExpert": "https://stellar.expert/explorer/testnet/tx/9c6c5299cc42362d1548d53b7d79944d11b63c3cdfd554faa428e30bdd9ec7b1"
+    },
+    {
+      "scenario": "mutual refund",
+      "status": "Refunded",
+      "transactionHash": "53466c997350e16794e888ed0c0118bcc25732f05f192a139eee44363c49841e",
+      "ledger": 3839823,
+      "stellarExpert": "https://stellar.expert/explorer/testnet/tx/53466c997350e16794e888ed0c0118bcc25732f05f192a139eee44363c49841e"
+    },
+    {
+      "scenario": "timeout cancellation",
+      "status": "Cancelled",
+      "transactionHash": "0ef1d81a49c69789f12a24532c91541e56d93d87f68291f72425bd809e6acff2",
+      "ledger": 3839830,
+      "stellarExpert": "https://stellar.expert/explorer/testnet/tx/0ef1d81a49c69789f12a24532c91541e56d93d87f68291f72425bd809e6acff2"
+    }
+  ],
+  "allTransactions": [
+    {
+      "function": "create_and_fund",
+      "transactionHash": "85d80a7cdfd3901568aa0a9f30c52e1a4a839bb95a96345d99b65fa262c7c40c",
+      "ledger": 3839811,
+      "status": "SUCCESS"
+    },
+    {
+      "function": "accept",
+      "transactionHash": "b3e74e7f73b504597d7b4bbacd3090493feaa441ea44f9bdacd50708663efa73",
+      "ledger": 3839813,
+      "status": "SUCCESS"
+    },
+    {
+      "function": "mark_shipped",
+      "transactionHash": "78b1c50b139e3daf5e334f6d34538f581413ea586e8033756497235118f0f9b6",
+      "ledger": 3839815,
+      "status": "SUCCESS"
+    },
+    {
+      "function": "confirm_delivery",
+      "transactionHash": "9c6c5299cc42362d1548d53b7d79944d11b63c3cdfd554faa428e30bdd9ec7b1",
+      "ledger": 3839817,
+      "status": "SUCCESS"
+    },
+    {
+      "function": "create_and_fund",
+      "transactionHash": "cce42f9c2c3b332aa98cf74c06e484cf069b5b4cb976d3680e3e858b1728a1c4",
+      "ledger": 3839819,
+      "status": "SUCCESS"
+    },
+    {
+      "function": "propose_refund",
+      "transactionHash": "2211c4e439bc8b7aebeb9d5a397a2353d01e5bdb3a72751af463f39abc19608c",
+      "ledger": 3839821,
+      "status": "SUCCESS"
+    },
+    {
+      "function": "approve_refund",
+      "transactionHash": "53466c997350e16794e888ed0c0118bcc25732f05f192a139eee44363c49841e",
+      "ledger": 3839823,
+      "status": "SUCCESS"
+    },
+    {
+      "function": "create_and_fund",
+      "transactionHash": "a592550b27d5cc309b4babbca95d313686bd3a86d6b5adc59bdc081bd0993c04",
+      "ledger": 3839825,
+      "status": "SUCCESS"
+    },
+    {
+      "function": "cancel_unaccepted",
+      "transactionHash": "0ef1d81a49c69789f12a24532c91541e56d93d87f68291f72425bd809e6acff2",
+      "ledger": 3839830,
+      "status": "SUCCESS"
+    }
+  ],
+  "review": {
+    "engineeringOwner": "Elliot",
+    "documentationOwner": "Bri",
+    "decision": "Public testnet deployment and lifecycle proof passed; clean commit and independent discipline approvals remain pending"
+  }
+}

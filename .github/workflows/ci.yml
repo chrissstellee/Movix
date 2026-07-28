@@ -42,10 +42,52 @@ jobs:
         with:
           components: clippy, rustfmt
           targets: wasm32v1-none
+      - name: Install release-capable Stellar CLI
+        run: |
+          curl -fsSL \
+            https://github.com/stellar/stellar-cli/releases/download/v27.0.0/stellar-cli-27.0.0-x86_64-unknown-linux-gnu.tar.gz \
+            -o /tmp/stellar-cli.tar.gz
+          echo "357bf712f6353c28cd33c794402a3c87231757a5b305e6ef1604365af4fdd556  /tmp/stellar-cli.tar.gz" \
+            | sha256sum --check
+          tar -xzf /tmp/stellar-cli.tar.gz -C /tmp
+          sudo install /tmp/stellar /usr/local/bin/stellar
+          stellar --version
       - run: cargo fmt --manifest-path contracts/Cargo.toml --all --check
       - run: cargo clippy --manifest-path contracts/Cargo.toml --all-targets -- -D warnings
-      - run: cargo test --manifest-path contracts/Cargo.toml
-      - run: cargo build --manifest-path contracts/Cargo.toml --release --target wasm32v1-none
+      - run: cargo test --manifest-path contracts/Cargo.toml --lib
+      - run: node scripts/contracts/build.mjs
+      - run: node scripts/contracts/generate-bindings.mjs
+      - name: Verify generated ABI has no drift
+        run: git diff --exit-code -- packages/stellar/generated/escrow
+      - name: Verify mutation scripts fail safe by default
+        run: |
+          node scripts/contracts/local-setup.mjs
+          node scripts/contracts/local-smoke.mjs
+          node scripts/contracts/local-negative.mjs
+          node scripts/contracts/resource-profile.mjs
+          node scripts/contracts/deploy-testnet.mjs
+          node scripts/contracts/testnet-smoke.mjs
+          node scripts/contracts/testnet-proof.mjs
+
+  contract-fuzz:
+    name: Contract fuzz
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@nightly
+      - run: cargo install cargo-fuzz --locked
+      - name: Run deterministic funding and lifecycle fuzz targets
+        env:
+          MOVIX_FUZZ_TOOLCHAIN: +nightly
+          MOVIX_FUZZ_RUNS: "10000"
+          MOVIX_FUZZ_SEED: "3551879746"
+        run: node scripts/contracts/fuzz.mjs --execute
+      - if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: contract-fuzz-artifacts
+          path: contracts/escrow/fuzz/artifacts/
+          retention-days: 14
 
   browser-smoke:
     name: Browser smoke
