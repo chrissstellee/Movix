@@ -56,6 +56,21 @@ Only derivable values are backfilled. Missing email, country, tax, address, or a
 
 Backend authorization remains independent of route policy. Guessing or retaining a foreign organization or child identifier cannot cross the organization boundary.
 
+### Shell and settings presentation
+
+The desktop shell supports expanded and collapsed icon-navigation states. Expanded
+mode centers the Movix brand and organization/wallet identity. Collapsed mode hides
+the organization/wallet text and centers the compact logo and navigation icons;
+icons retain accessible names when labels are visually hidden. Collapse state is
+presentation only and never changes organization, capability, route authorization,
+or backend context. Tablet and mobile continue to use the existing modal Sheet and
+focus-restoration behavior.
+
+Business settings use tabs to present identity, contact, and address sections without
+changing the section-scoped APIs, optimistic versions, validation, or audit rules.
+Onboarding native selects define explicit foreground/background contrast, and
+labels maintain 12 px separation from their controls.
+
 ## Sprint 3 guarantees
 
 Sprint 3 may rely on stable organization IDs, exactly one active owner membership for newly onboarded businesses, explicit canonical addresses, capability-derived views, structured readiness, versioned mutable records, and field-name-only audits. It must not assume production verification, multi-organization selection, persisted view preference, or completed optional/P1 business defaults.

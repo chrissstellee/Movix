@@ -5,22 +5,23 @@ Scope authority: [Sprint 4 detailed specification](../Movix-Sprint-04-Buyer-Proc
 
 ## Work ledger
 
-| Work item                                      | Owner  | Status                   | Verification / authority                                                                                  |
-| ---------------------------------------------- | ------ | ------------------------ | --------------------------------------------------------------------------------------------------------- |
-| Readiness and deployment inventory             | Elliot | Implemented              | Empty development skeleton inventory; [data and validation](data-and-validation.md#migration)             |
-| Shared domain contracts and errors             | Elliot | Implemented              | Domain tests; [data and validation](data-and-validation.md)                                               |
-| Canonical schema, indexes, migration inventory | Elliot | Implemented              | Schema tests and Convex code generation                                                                   |
-| Organization-derived authorization             | Elliot | Implemented              | Backend denial matrix; [API contract](api-contract.md)                                                    |
-| Exact supplier resolution                      | Elliot | Implemented              | Backend self/foreign/ineligible tests                                                                     |
-| Draft create and section/line commands         | Elliot | Implemented              | Backend idempotency/stale tests                                                                           |
-| Buyer dashboard/list/detail                    | Elliot | Implemented              | Web typecheck and accessibility surfaces                                                                  |
-| Five-section create/review and autosave        | Elliot | Implemented              | Web typecheck; [architecture](architecture.md#autosave-concurrency)                                       |
-| Atomic send and immutable revision             | Elliot | Implemented              | Backend replay/side-effect/immutability tests                                                             |
-| Versioned cancellation                         | Elliot | Implemented              | Backend eligible/foreign/replay tests                                                                     |
-| S4-11 URL list context                         | Elliot | Implemented              | Status/asset/date filters use URL parameters                                                              |
-| Documentation suite and evidence manifest      | Bri    | Implemented              | This directory and evidence manifest                                                                      |
-| Repository test/build/type/lint/format gates   | Elliot | Verified                 | Local commands green                                                                                      |
-| Dedicated authenticated Playwright journeys    | QA     | Pending external fixture | Requires test deployment/session seed; registry exists in [testing and evidence](testing-and-evidence.md) |
+| Work item                                      | Owner  | Status                   | Verification / authority                                                                                                                                                                                                           |
+| ---------------------------------------------- | ------ | ------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Readiness and deployment inventory             | Elliot | Implemented              | Empty development skeleton inventory; [data and validation](data-and-validation.md#migration)                                                                                                                                      |
+| Shared domain contracts and errors             | Elliot | Implemented              | Domain tests; [data and validation](data-and-validation.md)                                                                                                                                                                        |
+| Canonical schema, indexes, migration inventory | Elliot | Implemented              | Schema tests and Convex code generation                                                                                                                                                                                            |
+| Organization-derived authorization             | Elliot | Implemented              | Backend denial matrix; [API contract](api-contract.md)                                                                                                                                                                             |
+| Exact supplier resolution                      | Elliot | Implemented              | Backend self/foreign/ineligible tests                                                                                                                                                                                              |
+| Draft create and section/line commands         | Elliot | Implemented              | Backend idempotency/stale tests                                                                                                                                                                                                    |
+| Buyer dashboard/list/detail                    | Elliot | Implemented              | Web typecheck and accessibility surfaces                                                                                                                                                                                           |
+| Five-section create/review and autosave        | Elliot | Implemented              | Complete backend-projected Supplier, Details, Items, Terms, and Totals review; web tests/typecheck; [review architecture](architecture.md#review-projection-and-presentation) and [autosave](architecture.md#autosave-concurrency) |
+| Atomic send and immutable revision             | Elliot | Implemented              | Backend replay/side-effect/immutability tests                                                                                                                                                                                      |
+| Versioned cancellation                         | Elliot | Implemented              | Backend eligible/foreign/replay tests                                                                                                                                                                                              |
+| S4-11 URL list context                         | Elliot | Implemented              | Status/asset/date filters use URL parameters                                                                                                                                                                                       |
+| Documentation suite and evidence manifest      | Bri    | Implemented              | This directory and evidence manifest                                                                                                                                                                                               |
+| Repository test/build/type/lint gates          | Elliot | Verified                 | Local commands green                                                                                                                                                                                                               |
+| Repository format gate                         | Elliot | Pending active generator | Convex code generation rewrites three generated declaration files during the check                                                                                                                                                 |
+| Dedicated authenticated Playwright journeys    | QA     | Pending external fixture | Requires test deployment/session seed; registry exists in [testing and evidence](testing-and-evidence.md)                                                                                                                          |
 
 “Implemented” means code exists and has linked verification; it does not imply production release approval. The release decision remains pending until the closure commands and dedicated authenticated browser evidence are green.
 
@@ -47,6 +48,9 @@ Scope authority: [Sprint 4 detailed specification](../Movix-Sprint-04-Buyer-Proc
 - Development inventory selected direct schema replacement. Other environments are explicitly unclassified.
 - Draft refresh recovery uses an opaque order ID in the URL; the server remains authoritative.
 - Supplier notifications target the supplier organization, not an arbitrary member.
+- The send review renders each commercial group collected by the current five-step
+  flow from `orderDrafts.getReview`; buyer-only notes are visually separated from
+  supplier-visible terms.
 - No ADR was required: implementation did not alter a fixed Sprint 4 rule.
 - Sprint 3 organization sign-offs remain a release dependency but are not a runtime dependency.
 

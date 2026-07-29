@@ -76,6 +76,9 @@ const steps: Array<{ id: OnboardingStep; label: string }> = [
   { id: "review", label: "Review" },
 ];
 
+const nativeSelectClassName =
+  "h-10 w-full rounded-md border border-input bg-background px-3 text-sm text-foreground shadow-xs outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/20 [&>option]:bg-background [&>option]:text-foreground";
+
 const emptyAddress = (): AddressForm => ({
   recipientName: "",
   line1: "",
@@ -608,8 +611,8 @@ function Field({
 }) {
   const errorId = `${id}-error`;
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>
+    <div className="space-y-3">
+      <Label className="block" htmlFor={id}>
         {label}
         {required ? " *" : ""}
       </Label>
@@ -655,11 +658,13 @@ function IdentityStep({ form, update, firstField, errors = {} }: StepProps) {
         onChange={(value) => update("tradingName", value)}
         error={errors.tradingName}
       />
-      <div className="space-y-2">
-        <Label htmlFor="entity-type">Entity type</Label>
+      <div className="space-y-3">
+        <Label className="block" htmlFor="entity-type">
+          Entity type
+        </Label>
         <select
           id="entity-type"
-          className="h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+          className={nativeSelectClassName}
           value={form.entityType}
           onChange={(event) =>
             update("entityType", event.target.value as OnboardingForm["entityType"])
@@ -920,12 +925,14 @@ function AddressesStep({ form, update, firstField }: StepProps) {
 function PreferencesStep({ form, update, firstField }: StepProps) {
   return (
     <div className="grid gap-5 sm:grid-cols-2">
-      <div className="space-y-2">
-        <Label htmlFor="capability">Workspace capability *</Label>
+      <div className="space-y-3">
+        <Label className="block" htmlFor="capability">
+          Workspace capability *
+        </Label>
         <select
           ref={firstField as React.RefObject<HTMLSelectElement | null>}
           id="capability"
-          className="h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+          className={nativeSelectClassName}
           value={form.capability}
           onChange={(event) => update("capability", event.target.value as OrganizationCapability)}
         >
@@ -1024,11 +1031,13 @@ function CountrySelect({
 }) {
   const errorId = `${id}-error`;
   return (
-    <div className="space-y-2">
-      <Label htmlFor={id}>{label} *</Label>
+    <div className="space-y-3">
+      <Label className="block" htmlFor={id}>
+        {label} *
+      </Label>
       <select
         id={id}
-        className="h-9 w-full rounded-md border bg-transparent px-3 text-sm"
+        className={nativeSelectClassName}
         value={value}
         onChange={(event) => onChange(event.target.value)}
         required

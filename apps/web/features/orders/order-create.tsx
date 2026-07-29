@@ -102,8 +102,14 @@ export function OrderCreate() {
 
   const editable = draft.order.agreementStatus === "draft";
   const today = localDateValue(0);
-  const deadline = localDateTimeValue(86_400_000);
-  const funding = localDateTimeValue(172_800_000);
+  const deadline =
+    draft.revision.supplierAcceptanceDeadline === undefined
+      ? localDateTimeValue(86_400_000)
+      : localDateTimeFromTimestamp(draft.revision.supplierAcceptanceDeadline);
+  const funding =
+    draft.revision.fundingDeadline === undefined
+      ? localDateTimeValue(172_800_000)
+      : localDateTimeFromTimestamp(draft.revision.fundingDeadline);
   const delivery = localDateValue(604_800_000);
 
   return (
@@ -509,7 +515,11 @@ export function OrderCreate() {
             />
             <div className="sm:col-span-2">
               <Label htmlFor="acceptanceCriteria">Acceptance criteria</Label>
-              <Textarea id="acceptanceCriteria" name="acceptanceCriteria" />
+              <Textarea
+                id="acceptanceCriteria"
+                name="acceptanceCriteria"
+                defaultValue={draft.revision.acceptanceCriteria}
+              />
             </div>
             <Button type="button" variant="ghost" onClick={() => setActiveSection(2)}>
               Back
@@ -526,21 +536,163 @@ export function OrderCreate() {
           {!review ? (
             <p role="status">Preparing backend review…</p>
           ) : (
-            <div className="space-y-4">
-              <div className="grid gap-3 sm:grid-cols-3">
+            <div className="space-y-6">
+              <ReviewGroup title="Supplier and parties">
                 <Fact
                   label="Supplier"
+                  value={
+                    review.revision.supplierTradingName ??
+                    review.revision.supplierLegalName ??
+                    "Not selected"
+                  }
+                />
+                <Fact
+                  label="Supplier legal name"
                   value={review.revision.supplierLegalName ?? "Not selected"}
                 />
-                <Fact label="Timezone" value={review.revision.timezone ?? "Not set"} />
-                <Fact label="Network" value="Stellar Testnet" />
                 <Fact
-                  label="Total"
+                  label="Supplier contact"
+                  value={contactLabel(review.revision.supplierContact)}
+                />
+                <Fact label="Buyer" value={review.revision.buyerLegalName} />
+                <Fact label="Buyer contact" value={contactLabel(review.revision.buyerContact)} />
+              </ReviewGroup>
+
+              <ReviewGroup title="Order details">
+                <Fact
+                  label="PO number"
+                  value={review.revision.purchaseOrderNumber ?? "Not provided"}
+                />
+                <Fact label="Title" value={review.revision.title ?? "Not provided"} />
+                <Fact label="Description" value={review.revision.description ?? "Not provided"} />
+                <Fact label="Order date" value={review.revision.orderDate ?? "Not provided"} />
+                <Fact label="Issue date" value={review.revision.issueDate ?? "Not provided"} />
+                <Fact
+                  label="Requested delivery"
+                  value={review.revision.requestedDeliveryDate ?? "Not provided"}
+                />
+                <Fact
+                  label="Supplier acceptance deadline"
+                  value={dateTimeLabel(
+                    review.revision.supplierAcceptanceDeadline,
+                    review.revision.timezone,
+                  )}
+                />
+                <Fact
+                  label="Funding deadline"
+                  value={dateTimeLabel(review.revision.fundingDeadline, review.revision.timezone)}
+                />
+                <Fact label="Timezone" value={review.revision.timezone ?? "Not provided"} />
+                <Fact
+                  label="Settlement asset"
+                  value={
+                    review.revision.asset
+                      ? `${review.revision.asset.code} · Stellar Testnet`
+                      : "Not provided"
+                  }
+                />
+                <Fact
+                  label="Billing address"
+                  value={addressLabel(review.revision.billingAddress)}
+                />
+                <Fact
+                  label="Ship-to address"
+                  value={addressLabel(review.revision.shippingAddress)}
+                />
+              </ReviewGroup>
+
+              <ReviewItems lines={review.lines} assetCode={review.revision.asset?.code} />
+
+              <ReviewGroup title="Terms">
+                <Fact
+                  label="Delivery method"
+                  value={review.revision.deliveryMethod ?? "Not provided"}
+                />
+                <Fact
+                  label="Shipping responsibility"
+                  value={review.revision.shippingResponsibility ?? "Not provided"}
+                />
+                <Fact
+                  label="Freight treatment"
+                  value={review.revision.freightChargeTreatment ?? "Not provided"}
+                />
+                <Fact
+                  label="Inspection period"
+                  value={
+                    review.revision.inspectionPeriodHours === undefined
+                      ? "Not provided"
+                      : `${review.revision.inspectionPeriodHours.toString()} hours`
+                  }
+                />
+                <Fact
+                  label="Refund policy"
+                  value={review.revision.refundPolicy ?? "Not provided"}
+                />
+                <Fact
+                  label="Acceptance criteria"
+                  value={review.revision.acceptanceCriteria ?? "Not provided"}
+                />
+                <Fact
+                  label="Shipping amount"
+                  value={orderAmount(
+                    review.totals.shippingTotalBaseUnits,
+                    review.revision.asset?.code,
+                  )}
+                  mono
+                />
+              </ReviewGroup>
+
+              {review.revision.buyerInternalNotes ? (
+                <section className="rounded-lg border border-dashed p-4">
+                  <h3 className="font-semibold">Buyer-only notes</h3>
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    This content is not shared with the supplier or included in the terms hash.
+                  </p>
+                  <p className="mt-3 text-sm whitespace-pre-wrap">
+                    {review.revision.buyerInternalNotes}
+                  </p>
+                </section>
+              ) : null}
+
+              <ReviewGroup title="Totals">
+                <Fact
+                  label="Subtotal"
+                  value={orderAmount(review.totals.subtotalBaseUnits, review.revision.asset?.code)}
+                  mono
+                />
+                <Fact
+                  label="Discounts"
+                  value={orderAmount(
+                    review.totals.discountTotalBaseUnits,
+                    review.revision.asset?.code,
+                  )}
+                  mono
+                />
+                <Fact
+                  label="Tax"
+                  value={orderAmount(review.totals.taxTotalBaseUnits, review.revision.asset?.code)}
+                  mono
+                />
+                <Fact
+                  label="Shipping"
+                  value={orderAmount(
+                    review.totals.shippingTotalBaseUnits,
+                    review.revision.asset?.code,
+                  )}
+                  mono
+                />
+                <Fact
+                  label="Grand total"
                   value={orderAmount(
                     review.totals.grandTotalBaseUnits,
                     review.revision.asset?.code,
                   )}
+                  mono
                 />
+              </ReviewGroup>
+
+              <div className="grid gap-3 rounded-lg bg-muted/40 p-4 sm:grid-cols-2">
+                <Fact label="Network" value="Stellar Testnet" />
                 <Fact
                   label="Terms hash preview"
                   value={review.termsHash ? shortHash(review.termsHash) : "Available when complete"}
@@ -655,6 +807,153 @@ function Fact({ label, value, mono = false }: { label: string; value: string; mo
   );
 }
 
+function ReviewGroup({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <section className="rounded-lg border p-4">
+      <h3 className="font-semibold">{title}</h3>
+      <div className="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">{children}</div>
+    </section>
+  );
+}
+
+function ReviewItems({
+  lines,
+  assetCode,
+}: {
+  lines: Array<{
+    id: Id<"orderLines">;
+    lineNumber: bigint;
+    name: string;
+    quantityCoefficient: bigint;
+    quantityScale: bigint;
+    unitOfMeasure: string;
+    unitPriceBaseUnits: bigint;
+    discountBaseUnits: bigint;
+    taxBaseUnits: bigint;
+    requiresInspection: boolean;
+    lineTotalBaseUnits: bigint;
+  }>;
+  assetCode?: "XLM" | "USDC";
+}) {
+  return (
+    <section className="rounded-lg border p-4">
+      <h3 className="font-semibold">Items</h3>
+      <div className="mt-4 hidden overflow-x-auto md:block">
+        <table className="w-full min-w-[760px] text-left text-sm">
+          <thead className="border-b text-xs text-muted-foreground">
+            <tr>
+              <th className="px-2 py-3 font-medium">Item</th>
+              <th className="px-2 py-3 font-medium">Quantity</th>
+              <th className="px-2 py-3 font-medium">Unit price</th>
+              <th className="px-2 py-3 font-medium">Discount</th>
+              <th className="px-2 py-3 font-medium">Tax</th>
+              <th className="px-2 py-3 font-medium">Inspection</th>
+              <th className="px-2 py-3 text-right font-medium">Line total</th>
+            </tr>
+          </thead>
+          <tbody>
+            {lines.map((line) => (
+              <tr key={line.id} className="border-b last:border-0">
+                <td className="px-2 py-3">
+                  {line.lineNumber.toString()}. {line.name}
+                </td>
+                <td className="px-2 py-3">
+                  {quantityLabel(line.quantityCoefficient, line.quantityScale)} {line.unitOfMeasure}
+                </td>
+                <td className="px-2 py-3 font-mono">
+                  {orderAmount(line.unitPriceBaseUnits, assetCode)}
+                </td>
+                <td className="px-2 py-3 font-mono">
+                  {orderAmount(line.discountBaseUnits, assetCode)}
+                </td>
+                <td className="px-2 py-3 font-mono">{orderAmount(line.taxBaseUnits, assetCode)}</td>
+                <td className="px-2 py-3">{line.requiresInspection ? "Required" : "No"}</td>
+                <td className="px-2 py-3 text-right font-mono">
+                  {orderAmount(line.lineTotalBaseUnits, assetCode)}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+      <ul className="mt-4 grid gap-3 md:hidden">
+        {lines.map((line) => (
+          <li key={line.id} className="rounded-md bg-muted/40 p-4">
+            <p className="font-medium break-words">
+              {line.lineNumber.toString()}. {line.name}
+            </p>
+            <div className="mt-3 grid grid-cols-2 gap-3">
+              <Fact
+                label="Quantity"
+                value={`${quantityLabel(line.quantityCoefficient, line.quantityScale)} ${line.unitOfMeasure}`}
+              />
+              <Fact
+                label="Unit price"
+                value={orderAmount(line.unitPriceBaseUnits, assetCode)}
+                mono
+              />
+              <Fact label="Discount" value={orderAmount(line.discountBaseUnits, assetCode)} mono />
+              <Fact label="Tax" value={orderAmount(line.taxBaseUnits, assetCode)} mono />
+              <Fact label="Inspection" value={line.requiresInspection ? "Required" : "No"} />
+              <Fact
+                label="Line total"
+                value={orderAmount(line.lineTotalBaseUnits, assetCode)}
+                mono
+              />
+            </div>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
+
+function contactLabel(contact?: Record<string, string | null>) {
+  if (!contact) return "Not provided";
+  return [contact.name, contact.email, contact.phone].filter(Boolean).join(" · ") || "Not provided";
+}
+
+function addressLabel(address?: Record<string, string | null>) {
+  if (!address) return "Not provided";
+  return [
+    address.label,
+    address.recipientName,
+    address.line1,
+    address.line2,
+    address.city,
+    address.region,
+    address.postalCode,
+    address.countryCode,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function dateTimeLabel(timestamp?: number, timezone?: string) {
+  if (timestamp === undefined) return "Not provided";
+  try {
+    return new Intl.DateTimeFormat("en", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: timezone,
+    }).format(timestamp);
+  } catch {
+    return new Date(timestamp).toLocaleString();
+  }
+}
+
+function quantityLabel(coefficient: bigint, scale: bigint) {
+  if (scale === 0n) return coefficient.toString();
+  const digits = Number(scale);
+  const negative = coefficient < 0n;
+  const absolute = (negative ? -coefficient : coefficient).toString().padStart(digits + 1, "0");
+  const value = `${absolute.slice(0, -digits)}.${absolute.slice(-digits)}`.replace(
+    /(?:\.0+|(\.\d+?)0+)$/u,
+    "$1",
+  );
+  return negative ? `-${value}` : value;
+}
+
 function SaveStatus({
   state,
   failureMessage,
@@ -754,12 +1053,12 @@ function SendConfirmation({
           Sending freezes revision 1 and notifies the supplier. No funds move and no wallet
           signature is requested.
         </p>
-        <dl className="mt-5 grid gap-3 rounded-md bg-muted/40 p-4 sm:grid-cols-2">
+        <div className="mt-5 grid gap-3 rounded-md bg-muted/40 p-4 sm:grid-cols-2">
           <Fact label="Supplier" value={supplier} />
           <Fact label="PO number" value={po} />
           <Fact label="Total" value={total} mono />
           <Fact label="Network" value="Stellar Testnet" />
-        </dl>
+        </div>
         <div className="mt-6 flex justify-end gap-3">
           <Button type="button" variant="outline" disabled={sending} onClick={cancel}>
             Keep editing
@@ -783,7 +1082,11 @@ function optional(data: FormData, name: string) {
 }
 
 function localDateTimeValue(offset: number) {
-  const date = new Date(Date.now() + offset);
+  return localDateTimeFromTimestamp(Date.now() + offset);
+}
+
+function localDateTimeFromTimestamp(timestamp: number) {
+  const date = new Date(timestamp);
   return new Date(date.getTime() - date.getTimezoneOffset() * 60_000).toISOString().slice(0, 16);
 }
 

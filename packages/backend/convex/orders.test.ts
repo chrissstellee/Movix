@@ -218,6 +218,7 @@ async function completeDraft(fixture: Awaited<ReturnType<typeof createFixture>>)
     inspectionPeriodHours: 48n,
     refundPolicy: "Full refund before supplier acceptance.",
     shippingTotalBaseUnits: 5_000_000n,
+    acceptanceCriteria: "All parts match the approved specification.",
   });
   return { orderId: created.orderId, revisionId: created.revisionId, version: 6n };
 }
@@ -269,6 +270,29 @@ describe("Sprint 4 buyer procurement", () => {
     ).resolves.toMatchObject({
       complete: true,
       blockers: [],
+      revision: {
+        buyerLegalName: "buyer Incorporated",
+        supplierLegalName: "supplier Incorporated",
+        buyerContact: {
+          name: "buyer Contact",
+          email: "buyer.contact@example.com",
+        },
+        supplierContact: {
+          name: "supplier Contact",
+          email: "supplier.contact@example.com",
+        },
+        billingAddress: {
+          line1: "123 Main Street",
+          city: "Makati",
+          countryCode: "PH",
+        },
+        shippingAddress: {
+          line1: "123 Main Street",
+          city: "Makati",
+          countryCode: "PH",
+        },
+        acceptanceCriteria: "All parts match the approved specification.",
+      },
       totals: { grandTotalBaseUnits: 463_625_000n },
       termsHash: expect.stringMatching(/^[a-f0-9]{64}$/u),
     });

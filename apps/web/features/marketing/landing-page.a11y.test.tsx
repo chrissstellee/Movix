@@ -15,6 +15,8 @@ describe("LandingPage", () => {
       "aria-expanded",
       "false",
     );
+    expect(screen.queryByText("Agreement accepted")).not.toBeInTheDocument();
+    expect(screen.getByTestId("landing-hero-copy")).toHaveClass("text-center");
   });
 
   it("has no automated accessibility violations", async () => {

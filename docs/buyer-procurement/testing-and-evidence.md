@@ -7,19 +7,19 @@ Acceptance wording stays in the detailed specification. This document maps S4-01
 
 ## Acceptance registry
 
-| Story                | Evidence owner | Automated coverage                                                    |
-| -------------------- | -------------- | --------------------------------------------------------------------- |
-| S4-01 dashboard      | Elliot / QA    | Backend exact counts; buyer dashboard a11y test                       |
-| S4-02 list           | Elliot / QA    | Indexed pagination backend test; responsive list a11y test            |
-| S4-03 supplier       | Elliot         | Exact target, self-dealing, foreign/ineligible backend matrix         |
-| S4-04 header         | Elliot         | Snapshot, PO uniqueness, stale/ownership backend coverage             |
-| S4-05 items          | Elliot         | Line arithmetic, ownership, limit, edit/remove/reorder code paths     |
-| S4-06 totals         | Elliot         | Domain rounding/overflow/XLM/USDC tests; send recomputation           |
-| S4-07 draft/recovery | Elliot / QA    | Create replay/stale tests; serialized web queue; URL refresh identity |
-| S4-08 review         | Elliot / QA    | Backend blockers/hash preview; five-section UI                        |
-| S4-09 send           | Elliot         | Concurrent/replay, frozen mutation denial, exact side effects         |
-| S4-10 detail/cancel  | Elliot         | Authorized detail and eligible/foreign/replay cancel tests            |
-| S4-11 list context   | QA             | URL-backed filter implementation; browser back journey pending        |
+| Story                | Evidence owner | Automated coverage                                                                                                                         |
+| -------------------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| S4-01 dashboard      | Elliot / QA    | Backend exact counts; buyer dashboard a11y test                                                                                            |
+| S4-02 list           | Elliot / QA    | Indexed pagination backend test; responsive list a11y test                                                                                 |
+| S4-03 supplier       | Elliot         | Exact target, self-dealing, foreign/ineligible backend matrix                                                                              |
+| S4-04 header         | Elliot         | Snapshot, PO uniqueness, stale/ownership backend coverage                                                                                  |
+| S4-05 items          | Elliot         | Line arithmetic, ownership, limit, edit/remove/reorder code paths                                                                          |
+| S4-06 totals         | Elliot         | Domain rounding/overflow/XLM/USDC tests; send recomputation                                                                                |
+| S4-07 draft/recovery | Elliot / QA    | Create replay/stale tests; serialized web queue; URL refresh identity                                                                      |
+| S4-08 review         | Elliot / QA    | Backend-authoritative projection of fields collected by the five-step flow; grouped UI; buyer-only note distinction; blockers/hash preview |
+| S4-09 send           | Elliot         | Concurrent/replay, frozen mutation denial, exact side effects                                                                              |
+| S4-10 detail/cancel  | Elliot         | Authorized detail and eligible/foreign/replay cancel tests                                                                                 |
+| S4-11 list context   | QA             | URL-backed filter implementation; browser back journey pending                                                                             |
 
 ## Required matrices
 
@@ -80,4 +80,11 @@ Evidence lives under [Sprint 4 evidence](../evidence/sprint-04/README.md). Each 
 
 ## Current closure status
 
-The full repository test run is green: domain 20, backend 26, Stellar 54, and web 45 tests. The dedicated accessibility command is green (7 tests), as are typecheck, lint, formatting, production build, the 20-test escrow contract regression, and the existing four public/protected-route Playwright checks. Lint reports only non-blocking accessibility warnings. Dedicated authenticated Sprint 4 Playwright execution is not yet evidenced.
+The latest full regression is green: domain 20, Stellar 54, backend 29, and web 52
+tests passed (155 total). Backend/web typechecks passed; the production build
+compiled, typechecked, and generated routes; lint passed. This covers the expanded
+review projection and its grouped presentation. The format gate remains pending
+because active Convex code generation rewrites three generated declaration files
+during the check.
+These results do not constitute manual responsive, screenshot, screen-reader, or
+authenticated Playwright evidence; those release artifacts remain pending.

@@ -30,7 +30,7 @@ Do not format, regenerate, revert, or claim those diffs as Sprint 1 work without
 
 | Work item             | Required proof                                                                         | Status                                                                                                 |
 | --------------------- | -------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------ |
-| S1-01 landing         | Content contract, mobile/desktop screenshots, CTA/FAQ tests                            | Pass locally; CI artifact link pending                                                                 |
+| S1-01 landing         | Content contract, centered text-only hero, mobile/desktop screenshots, CTA/FAQ tests   | Centered one-column hero covered by web tests; screenshots and CI artifact link pending                |
 | S1-02 accessibility   | Keyboard, landmarks, focus, live regions, contrast, reduced motion, zoom               | Automated pass; manual screen-reader/zoom review pending                                               |
 | S1-03 wallet adapter  | Availability, connect/reject, network/address validation, sign/disconnect/change mocks | Unit pass; real Freighter smoke pending                                                                |
 | S1-04 challenge       | Shape, domains, time bounds, nonce/hash, supersession, rate limit, no-store            | Automated pass, including exact operation order, strict bounds, coarse/fine limits, and route controls |
@@ -87,6 +87,13 @@ Do not format, regenerate, revert, or claim those diffs as Sprint 1 work without
 - [x] Focus returns to the safe recovery control
 - [x] Redirect waits for Convex confirmation
 - [x] Landing navigation, CTA, FAQ, and mobile menu behavior
+- [x] Landing hero uses one centered text column with no illustrative side asset
+
+The latest full regression passed 155 tests: domain 20, Stellar 54, backend 29, and
+web 52. Backend/web typechecks, production build, and lint passed. The format gate
+is pending because an active Convex code-generation process rewrites three generated
+declaration files during the check. Manual responsive, contrast, zoom, screen-reader, and screenshot
+verification also remains pending.
 
 ## Required Playwright journeys
 

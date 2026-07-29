@@ -28,6 +28,21 @@ Every order read derives the active buyer organization from `ctx.auth`. Unknown 
 - `supplierDirectory.ts`, `orderAuthorization.ts`, and `orderAssets.ts` enforce trust boundaries.
 - `apps/web/features/orders` owns buyer views and autosave orchestration. Route files remain compositional.
 
+### Review projection and presentation
+
+`orderDrafts.getReview` is the browser's sole source for the send review. Its
+buyer-authorized projection includes buyer and supplier names, contact and address
+snapshots, all header and terms fields collected by the current five-step flow,
+canonical lines, exact totals, blockers, and the optional backend hash preview. The
+UI groups that projection as Supplier, Order details, Items, Terms, and Totals
+rather than rebuilding it from transient form state.
+
+Buyer internal notes are labeled as buyer-only and remain separate from
+supplier-visible terms and the canonical hash. The review also keeps Testnet and
+“No funds move when sending” visible. See the
+[API contract](api-contract.md#public-functions) and
+[data visibility rules](data-and-validation.md#review-visibility).
+
 ```mermaid
 stateDiagram-v2
   [*] --> draft: idempotent create

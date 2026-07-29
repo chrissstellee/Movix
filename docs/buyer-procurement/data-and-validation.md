@@ -14,6 +14,20 @@ Scope authority: [Sprint 4 detailed specification](../Movix-Sprint-04-Buyer-Proc
 - `notifications`: required recipient organization, optional user, safe route and event metadata.
 - `auditEvents`: bounded identifiers, action, changed field names, and correlation ID; no commercial payload.
 
+## Review visibility
+
+The buyer review projection contains the saved buyer and supplier names,
+contact/address snapshots, header and terms fields collected by the current
+five-step flow, canonical lines, exact totals, validation blockers, and optional
+backend hash preview. The browser displays these server-returned values; it does not
+recalculate a competing commercial snapshot.
+
+Buyer internal notes are visible only in the buyer-authorized review and are labeled
+buyer-only. They are excluded from supplier-visible terms and from the canonical
+hash. Contact and address snapshots are commercial data: they may be rendered to
+the authorized buyer but must not be copied into logs, analytics, documentation, or
+evidence.
+
 ## Normalization and dates
 
 PO numbers are NFKC-normalized, trimmed, internal whitespace collapsed, and compared case-insensitively. Display text preserves a normalized human form while uniqueness uses the comparison key. Bounded free text rejects control/format characters.

@@ -2,7 +2,13 @@
 
 ## Current automated result
 
-The implementation adds domain validation/readiness tests, Convex draft/completion/authorization/concurrency tests, and web route-policy tests. The repository-wide closure commands and browser evidence remain required before Sprint 2 can be marked complete.
+The implementation adds domain validation/readiness tests, Convex
+draft/completion/authorization/concurrency tests, and web route-policy and
+presentation tests. The latest full regression passed 155 tests: domain 20, Stellar
+54, backend 29, and web 52. Backend/web typechecks, production build, and lint
+passed. The format gate remains pending while active Convex code generation
+rewrites generated declarations. Browser evidence remains required before
+Sprint 2 can be marked complete.
 
 ## Acceptance identifier registry
 
@@ -28,9 +34,17 @@ Each public function must cover unauthenticated, inactive user/session, no membe
 
 ## UI and accessibility matrix
 
-Cover loading, saving, reviewing, completing, stale, retry, access-denied, and redirect states; error focus/live regions; review attestation; buyer/supplier/dual shells; mobile navigation focus restoration; edit/cancel/stale settings; wallet display; and logout.
+Cover loading, saving, reviewing, completing, stale, retry, access-denied, and
+redirect states; error focus/live regions; review attestation; native-select option
+contrast and 12 px label/control spacing; buyer/supplier/dual shells; expanded and
+collapsed desktop icon navigation with accessible names; unchanged mobile
+navigation focus restoration; tab keyboard behavior and responsive overflow in
+business settings; edit/cancel/stale settings; wallet display; and logout.
 
 Verify at 320px, tablet, desktop, 200% zoom, keyboard only, screen-reader smoke, reduced motion, focus restoration, and no horizontal scrolling. `test:a11y` must include onboarding, shell, and settings before closure.
+
+Automated coverage does not replace manual contrast, responsive, zoom,
+screen-reader, or screenshot evidence.
 
 ## Required browser evidence
 

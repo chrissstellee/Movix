@@ -132,21 +132,21 @@ export function LandingPage() {
         <section className="relative overflow-hidden border-b border-white/10">
           <div
             aria-hidden
-            className="absolute inset-0 bg-[radial-gradient(circle_at_70%_20%,#3559e832,transparent_42%)]"
+            className="absolute inset-0 bg-[radial-gradient(circle_at_50%_20%,#3559e832,transparent_46%)]"
           />
-          <div className="relative mx-auto grid min-h-[720px] max-w-7xl items-center gap-12 px-5 py-20 lg:grid-cols-[1.15fr_.85fr]">
-            <div>
+          <div className="relative mx-auto flex min-h-[620px] max-w-7xl items-center justify-center px-5 py-20">
+            <div data-testid="landing-hero-copy" className="mx-auto max-w-4xl text-center">
               <Badge variant="outline" className="border-primary/40 bg-primary/10 text-primary">
                 Stellar Testnet pilot
               </Badge>
-              <h1 className="mt-7 max-w-4xl text-5xl leading-[1.02] font-semibold tracking-[-0.05em] sm:text-7xl">
+              <h1 className="mt-7 text-5xl leading-[1.02] font-semibold tracking-[-0.05em] sm:text-7xl">
                 Procurement that settles with certainty.
               </h1>
-              <p className="mt-7 max-w-2xl text-lg leading-8 text-muted-foreground">
+              <p className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-muted-foreground">
                 Buyers commit agreed funds before fulfillment. Suppliers receive payment after
                 buyer-confirmed delivery—all through one shared, traceable workflow.
               </p>
-              <div className="mt-9 flex flex-col gap-3 sm:flex-row">
+              <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg" className="h-12 px-7">
                   <Link href="/login">Sign in with Freighter</Link>
                 </Button>
@@ -158,38 +158,6 @@ export function LandingPage() {
                 Signing in proves wallet control. It does not move funds.
               </p>
             </div>
-            <Card className="border-white/10 bg-card/70 shadow-2xl shadow-primary/10 backdrop-blur">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <Badge variant="success">Agreement accepted</Badge>
-                  <span className="text-xs text-muted-foreground">Testnet</span>
-                </div>
-                <CardTitle className="pt-4 text-2xl">PO-2048 · Packaging supply</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-5">
-                <div className="grid grid-cols-2 gap-4 rounded-xl bg-muted/35 p-4">
-                  <div>
-                    <p className="text-xs text-muted-foreground">Escrow value</p>
-                    <p className="mt-1 text-lg font-semibold">2,450 USDC</p>
-                  </div>
-                  <div>
-                    <p className="text-xs text-muted-foreground">Settlement</p>
-                    <p className="mt-1 text-lg font-semibold">Protected</p>
-                  </div>
-                </div>
-                {["Terms agreed", "Funds locked", "Fulfillment recorded", "Buyer review"].map(
-                  (label, index) => (
-                    <div key={label} className="flex items-center gap-3 text-sm">
-                      <span
-                        aria-hidden
-                        className={`size-2 rounded-full ${index < 2 ? "bg-primary" : "bg-muted-foreground/40"}`}
-                      />
-                      <span className={index < 2 ? "" : "text-muted-foreground"}>{label}</span>
-                    </div>
-                  ),
-                )}
-              </CardContent>
-            </Card>
           </div>
         </section>
 

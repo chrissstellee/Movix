@@ -92,6 +92,9 @@ export const orderAssetSummaryValidator = v.object({
   network: v.literal("testnet"),
 });
 
+const contactSnapshotValidator = v.record(v.string(), v.union(v.string(), v.null()));
+const addressSnapshotValidator = v.record(v.string(), v.union(v.string(), v.null()));
+
 export const publicOrderLineValidator = v.object({
   id: v.id("orderLines"),
   lineNumber: v.int64(),
@@ -119,10 +122,21 @@ export const publicDraftRevisionValidator = v.object({
   id: v.id("orderRevisions"),
   version: v.int64(),
   supplierOrganizationId: v.optional(v.id("organizations")),
+  buyerLegalName: v.string(),
+  buyerTradingName: v.optional(v.string()),
   supplierLegalName: v.optional(v.string()),
+  supplierTradingName: v.optional(v.string()),
+  buyerContact: v.optional(contactSnapshotValidator),
+  supplierContact: v.optional(contactSnapshotValidator),
+  billingAddress: v.optional(addressSnapshotValidator),
+  shippingAddress: v.optional(addressSnapshotValidator),
   purchaseOrderNumber: v.optional(v.string()),
   title: v.optional(v.string()),
   description: v.optional(v.string()),
+  buyerReference: v.optional(v.string()),
+  supplierReference: v.optional(v.string()),
+  costCenter: v.optional(v.string()),
+  projectCode: v.optional(v.string()),
   timezone: v.optional(v.string()),
   orderDate: v.optional(v.string()),
   issueDate: v.optional(v.string()),
@@ -135,6 +149,14 @@ export const publicDraftRevisionValidator = v.object({
   freightChargeTreatment: v.optional(v.string()),
   inspectionPeriodHours: v.optional(v.int64()),
   refundPolicy: v.optional(v.string()),
+  deliveryWindow: v.optional(v.string()),
+  incoterm: v.optional(v.string()),
+  namedLocation: v.optional(v.string()),
+  handlingInstructions: v.optional(v.string()),
+  acceptanceCriteria: v.optional(v.string()),
+  warrantyText: v.optional(v.string()),
+  returnTerms: v.optional(v.string()),
+  sharedNotes: v.optional(v.string()),
   buyerInternalNotes: v.optional(v.string()),
   totals: orderTotalsValidator,
   frozenAt: v.optional(v.number()),

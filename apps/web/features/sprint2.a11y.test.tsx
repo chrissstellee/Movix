@@ -1,4 +1,4 @@
-import { render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
 
@@ -118,6 +118,11 @@ describe("Sprint 2 accessible surfaces", () => {
     state.scenario = "onboarding";
     const { container } = render(<BusinessOnboarding />);
     await screen.findByRole("heading", { name: "Set up your Movix workspace" });
+    expect(screen.getByLabelText("Entity type")).toHaveClass("bg-background", "text-foreground");
+    expect(screen.getByLabelText(/Registration country/)).toHaveClass(
+      "bg-background",
+      "text-foreground",
+    );
     expect((await axe(container)).violations).toEqual([]);
   });
 
@@ -129,6 +134,13 @@ describe("Sprint 2 accessible surfaces", () => {
       </WorkspaceShell>,
     );
     expect(await screen.findByRole("heading", { name: "Buyer workspace" })).toBeVisible();
+    const toggle = screen.getByRole("button", { name: "Collapse sidebar" });
+    expect(toggle).toHaveAttribute("aria-expanded", "true");
+    fireEvent.click(toggle);
+    expect(screen.getByRole("button", { name: "Expand sidebar" })).toHaveAttribute(
+      "aria-expanded",
+      "false",
+    );
     expect((await axe(container)).violations).toEqual([]);
   });
 
@@ -138,6 +150,13 @@ describe("Sprint 2 accessible surfaces", () => {
     await waitFor(() =>
       expect(screen.getByRole("heading", { name: "Business settings" })).toBeVisible(),
     );
+    expect(screen.getByRole("tab", { name: "Business identity" })).toHaveAttribute(
+      "aria-selected",
+      "true",
+    );
+    expect(screen.getByRole("tab", { name: "Primary contact" })).toBeVisible();
+    expect(screen.getByRole("tab", { name: "Addresses" })).toBeVisible();
+    expect(screen.getByRole("tabpanel")).toBeVisible();
     expect((await axe(container)).violations).toEqual([]);
   });
 });

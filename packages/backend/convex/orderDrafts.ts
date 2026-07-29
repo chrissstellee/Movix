@@ -147,15 +147,34 @@ function publicRevision(revision: Doc<"orderRevisions">) {
   return {
     id: revision._id,
     version: revision.version,
+    buyerLegalName: revision.buyerLegalNameSnapshot,
+    ...(revision.buyerTradingNameSnapshot
+      ? { buyerTradingName: revision.buyerTradingNameSnapshot }
+      : {}),
     ...(revision.supplierOrganizationId
       ? { supplierOrganizationId: revision.supplierOrganizationId }
       : {}),
     ...(revision.supplierLegalNameSnapshot
       ? { supplierLegalName: revision.supplierLegalNameSnapshot }
       : {}),
+    ...(revision.supplierTradingNameSnapshot
+      ? { supplierTradingName: revision.supplierTradingNameSnapshot }
+      : {}),
+    ...(revision.buyerContactSnapshot ? { buyerContact: revision.buyerContactSnapshot } : {}),
+    ...(revision.supplierContactSnapshot
+      ? { supplierContact: revision.supplierContactSnapshot }
+      : {}),
+    ...(revision.billingAddressSnapshot ? { billingAddress: revision.billingAddressSnapshot } : {}),
+    ...(revision.shippingAddressSnapshot
+      ? { shippingAddress: revision.shippingAddressSnapshot }
+      : {}),
     ...(revision.purchaseOrderNumber ? { purchaseOrderNumber: revision.purchaseOrderNumber } : {}),
     ...(revision.title ? { title: revision.title } : {}),
     ...(revision.description ? { description: revision.description } : {}),
+    ...(revision.buyerReference ? { buyerReference: revision.buyerReference } : {}),
+    ...(revision.supplierReference ? { supplierReference: revision.supplierReference } : {}),
+    ...(revision.costCenter ? { costCenter: revision.costCenter } : {}),
+    ...(revision.projectCode ? { projectCode: revision.projectCode } : {}),
     ...(revision.timezone ? { timezone: revision.timezone } : {}),
     ...(revision.orderDate ? { orderDate: revision.orderDate } : {}),
     ...(revision.issueDate ? { issueDate: revision.issueDate } : {}),
@@ -180,6 +199,16 @@ function publicRevision(revision: Doc<"orderRevisions">) {
       ? { inspectionPeriodHours: revision.inspectionPeriodHours }
       : {}),
     ...(revision.refundPolicy ? { refundPolicy: revision.refundPolicy } : {}),
+    ...(revision.deliveryWindow ? { deliveryWindow: revision.deliveryWindow } : {}),
+    ...(revision.incoterm ? { incoterm: revision.incoterm } : {}),
+    ...(revision.namedLocation ? { namedLocation: revision.namedLocation } : {}),
+    ...(revision.handlingInstructions
+      ? { handlingInstructions: revision.handlingInstructions }
+      : {}),
+    ...(revision.acceptanceCriteria ? { acceptanceCriteria: revision.acceptanceCriteria } : {}),
+    ...(revision.warrantyText ? { warrantyText: revision.warrantyText } : {}),
+    ...(revision.returnTerms ? { returnTerms: revision.returnTerms } : {}),
+    ...(revision.sharedNotes ? { sharedNotes: revision.sharedNotes } : {}),
     ...(revision.buyerInternalNotes ? { buyerInternalNotes: revision.buyerInternalNotes } : {}),
     totals: {
       subtotalBaseUnits: revision.subtotalBaseUnits,

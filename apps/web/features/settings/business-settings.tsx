@@ -6,6 +6,7 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
 import { Input } from "@repo/ui/components/ui/input";
 import { Label } from "@repo/ui/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@repo/ui/components/ui/tabs";
 import { useMutation, useQuery } from "convex/react";
 import { FormEvent, useEffect, useState } from "react";
 
@@ -163,115 +164,131 @@ export function BusinessSettings() {
           </CardContent>
         </Card>
       ) : null}
-      <Card>
-        <CardHeader>
-          <CardTitle>Business identity</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <form className="grid gap-5 sm:grid-cols-2" onSubmit={saveIdentity}>
-            <SettingsField
-              id="settings-legal"
-              label="Legal name"
-              value={identity.legalName}
-              setValue={(legalName) => setIdentity({ ...identity, legalName })}
-              required
-            />
-            <SettingsField
-              id="settings-trading"
-              label="Trading name"
-              value={identity.tradingName}
-              setValue={(tradingName) => setIdentity({ ...identity, tradingName })}
-            />
-            <div className="sm:col-span-2">
-              <SettingsField
-                id="settings-email"
-                label="Business email"
-                type="email"
-                value={identity.businessEmail}
-                setValue={(businessEmail) => setIdentity({ ...identity, businessEmail })}
-                required
+      <Tabs defaultValue="identity" className="gap-5">
+        <div className="overflow-x-auto pb-1">
+          <TabsList aria-label="Business settings sections" className="min-w-max">
+            <TabsTrigger value="identity">Business identity</TabsTrigger>
+            <TabsTrigger value="contact" disabled={!contact || !settings.primaryContact}>
+              Primary contact
+            </TabsTrigger>
+            <TabsTrigger value="addresses">Addresses</TabsTrigger>
+          </TabsList>
+        </div>
+        <TabsContent value="identity">
+          <Card>
+            <CardHeader>
+              <CardTitle>Business identity</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <form className="grid gap-5 sm:grid-cols-2" onSubmit={saveIdentity}>
+                <SettingsField
+                  id="settings-legal"
+                  label="Legal name"
+                  value={identity.legalName}
+                  setValue={(legalName) => setIdentity({ ...identity, legalName })}
+                  required
+                />
+                <SettingsField
+                  id="settings-trading"
+                  label="Trading name"
+                  value={identity.tradingName}
+                  setValue={(tradingName) => setIdentity({ ...identity, tradingName })}
+                />
+                <div className="sm:col-span-2">
+                  <SettingsField
+                    id="settings-email"
+                    label="Business email"
+                    type="email"
+                    value={identity.businessEmail}
+                    setValue={(businessEmail) => setIdentity({ ...identity, businessEmail })}
+                    required
+                  />
+                </div>
+                <Actions
+                  busy={saving === "identity"}
+                  cancel={() =>
+                    setIdentity({
+                      legalName: settings.organization.legalName,
+                      tradingName: settings.organization.tradingName ?? "",
+                      businessEmail: settings.organization.businessEmail ?? "",
+                    })
+                  }
+                />
+              </form>
+            </CardContent>
+          </Card>
+        </TabsContent>
+        <TabsContent value="contact">
+          {contact && settings.primaryContact ? (
+            <Card>
+              <CardHeader>
+                <CardTitle>Primary contact</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <form className="grid gap-5 sm:grid-cols-2" onSubmit={saveContact}>
+                  <SettingsField
+                    id="settings-contact-name"
+                    label="Name"
+                    value={contact.name}
+                    setValue={(name) => setContact({ ...contact, name })}
+                    required
+                  />
+                  <SettingsField
+                    id="settings-contact-email"
+                    label="Email"
+                    type="email"
+                    value={contact.email}
+                    setValue={(email) => setContact({ ...contact, email })}
+                    required
+                  />
+                  <SettingsField
+                    id="settings-contact-phone"
+                    label="Phone"
+                    value={contact.phone}
+                    setValue={(phone) => setContact({ ...contact, phone })}
+                  />
+                  <SettingsField
+                    id="settings-job"
+                    label="Job title"
+                    value={contact.jobTitle}
+                    setValue={(jobTitle) => setContact({ ...contact, jobTitle })}
+                  />
+                  <SettingsField
+                    id="settings-department"
+                    label="Department"
+                    value={contact.department}
+                    setValue={(department) => setContact({ ...contact, department })}
+                  />
+                  <Actions
+                    busy={saving === "contact"}
+                    cancel={() =>
+                      setContact({
+                        name: settings.primaryContact!.name,
+                        email: settings.primaryContact!.email,
+                        phone: settings.primaryContact!.phone ?? "",
+                        jobTitle: settings.primaryContact!.jobTitle ?? "",
+                        department: settings.primaryContact!.department ?? "",
+                      })
+                    }
+                  />
+                </form>
+              </CardContent>
+            </Card>
+          ) : null}
+        </TabsContent>
+        <TabsContent value="addresses">
+          <div className="grid gap-4">
+            {settings.addresses.map((address) => (
+              <AddressEditor
+                key={address.id}
+                address={address}
+                organizationId={settings.organization.id}
+                updateAddress={updateAddress}
               />
-            </div>
-            <Actions
-              busy={saving === "identity"}
-              cancel={() =>
-                setIdentity({
-                  legalName: settings.organization.legalName,
-                  tradingName: settings.organization.tradingName ?? "",
-                  businessEmail: settings.organization.businessEmail ?? "",
-                })
-              }
-            />
-          </form>
-        </CardContent>
-      </Card>
-      {contact && settings.primaryContact ? (
-        <Card>
-          <CardHeader>
-            <CardTitle>Primary contact</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <form className="grid gap-5 sm:grid-cols-2" onSubmit={saveContact}>
-              <SettingsField
-                id="settings-contact-name"
-                label="Name"
-                value={contact.name}
-                setValue={(name) => setContact({ ...contact, name })}
-                required
-              />
-              <SettingsField
-                id="settings-contact-email"
-                label="Email"
-                type="email"
-                value={contact.email}
-                setValue={(email) => setContact({ ...contact, email })}
-                required
-              />
-              <SettingsField
-                id="settings-contact-phone"
-                label="Phone"
-                value={contact.phone}
-                setValue={(phone) => setContact({ ...contact, phone })}
-              />
-              <SettingsField
-                id="settings-job"
-                label="Job title"
-                value={contact.jobTitle}
-                setValue={(jobTitle) => setContact({ ...contact, jobTitle })}
-              />
-              <SettingsField
-                id="settings-department"
-                label="Department"
-                value={contact.department}
-                setValue={(department) => setContact({ ...contact, department })}
-              />
-              <Actions
-                busy={saving === "contact"}
-                cancel={() =>
-                  setContact({
-                    name: settings.primaryContact!.name,
-                    email: settings.primaryContact!.email,
-                    phone: settings.primaryContact!.phone ?? "",
-                    jobTitle: settings.primaryContact!.jobTitle ?? "",
-                    department: settings.primaryContact!.department ?? "",
-                  })
-                }
-              />
-            </form>
-          </CardContent>
-        </Card>
-      ) : null}
-      <div className="space-y-4">
-        <h2 className="text-xl font-semibold">Addresses</h2>
-        {settings.addresses.map((address) => (
-          <AddressEditor
-            key={address.id}
-            address={address}
-            organizationId={settings.organization.id}
-            updateAddress={updateAddress}
-          />
-        ))}
-      </div>
+            ))}
+          </div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
@@ -385,7 +402,9 @@ function AddressEditor({
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="capitalize">{address.type} address</CardTitle>
+        <CardTitle>
+          <h2 className="capitalize">{address.type} address</h2>
+        </CardTitle>
       </CardHeader>
       <CardContent>
         <form className="grid gap-5 sm:grid-cols-2" onSubmit={save}>

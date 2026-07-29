@@ -12,6 +12,24 @@ This is the living engineering ledger for the P0 Sprint 2 scope. The canonical p
 
 S2-10, autosave, analytics, and persisted view preference are deferred.
 
+## Verified UX refinements
+
+- Five-step onboarding native selects now use explicit foreground/background
+  contrast, and form labels maintain 12 px separation from their controls.
+- The desktop workspace navigation now has expanded and collapsed icon states with
+  centered brand and organization/wallet identity in expanded mode. Collapsed mode
+  hides identity text and centers the compact logo and icons. The mobile Sheet
+  behavior is unchanged.
+- Business settings now present identity, contact, and address editing in tabs while
+  retaining the existing section-scoped save, stale, cancel, and audit contracts.
+- The latest full regression passed 155 tests: domain 20, Stellar 54, backend 29,
+  and web 52. Backend/web typechecks, production build, and lint passed. The format
+  gate remains pending while active Convex code generation rewrites generated
+  declarations.
+
+These results do not replace the pending responsive screenshots, keyboard,
+screen-reader, zoom, contrast, or dedicated-deployment browser evidence.
+
 ## Execution ledger
 
 | Order | Work item                                                          | Dependency                | Owner  | Status                    | Evidence                                     |
