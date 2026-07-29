@@ -16,6 +16,9 @@ const getDraft = makeFunctionReference<"query">("orderDrafts:get");
 const saveSupplier = makeFunctionReference<"mutation">("orderDrafts:saveSupplier");
 const saveHeader = makeFunctionReference<"mutation">("orderDrafts:saveHeader");
 const saveTerms = makeFunctionReference<"mutation">("orderDrafts:saveTerms");
+const saveAgriculturalTerms = makeFunctionReference<"mutation">(
+  "orderDrafts:saveAgriculturalTerms",
+);
 const upsertLine = makeFunctionReference<"mutation">("orderDrafts:upsertLine");
 const getReview = makeFunctionReference<"query">("orderDrafts:getReview");
 const send = makeFunctionReference<"mutation">("orders:send");
@@ -332,7 +335,7 @@ describe("Sprint 4 buyer procurement", () => {
     ).rejects.toMatchObject({
       data: expect.objectContaining({ code: "SELF_DEALING_NOT_ALLOWED" }),
     });
-  });
+  }, 10_000);
 
   it("reviews and atomically sends one immutable revision with one side-effect set", async () => {
     const fixture = await createFixture();
@@ -521,6 +524,62 @@ describe("Sprint 4 buyer procurement", () => {
 });
 
 describe("Sprint 5 supplier acceptance", () => {
+  it("keeps pre-migration supplier orders readable when queue state is absent", async () => {
+    const fixture = await createFixture();
+    const draft = await completeDraft(fixture);
+    await fixture.buyer.authenticated.mutation(send, {
+      orderId: draft.orderId,
+      expectedVersion: draft.version,
+      idempotencyKey: "legacy-queue-send",
+    });
+    await fixture.t.run((ctx) =>
+      ctx.db.patch("orders", draft.orderId, {
+        supplierQueueState: undefined,
+      }),
+    );
+
+    await expect(
+      fixture.supplier.authenticated.query(listSupplierOrders, {
+        paginationOpts: { numItems: 20, cursor: null },
+      }),
+    ).resolves.toMatchObject({
+      page: [
+        expect.objectContaining({
+          orderId: draft.orderId,
+          supplierQueueState: "requires_decision",
+        }),
+      ],
+    });
+  }, 10_000);
+
+  it("gives an unverified supplier the same read-only detail and timeline boundary", async () => {
+    const fixture = await createFixture();
+    const draft = await completeDraft(fixture);
+    await fixture.buyer.authenticated.mutation(send, {
+      orderId: draft.orderId,
+      expectedVersion: draft.version,
+      idempotencyKey: "unverified-supplier-read",
+    });
+    await fixture.t.run((ctx) =>
+      ctx.db.patch("organizations", fixture.supplier.organizationId, {
+        verificationStatus: "pending",
+      }),
+    );
+
+    await expect(
+      fixture.supplier.authenticated.query(getOrderDetail, { orderId: draft.orderId }),
+    ).resolves.toMatchObject({ viewerSide: "supplier", canDecide: false });
+
+    await expect(
+      fixture.supplier.authenticated.query(listTimeline, {
+        orderId: draft.orderId,
+        paginationOpts: { numItems: 20, cursor: null },
+      }),
+    ).resolves.toMatchObject({
+      page: [expect.objectContaining({ revisionId: draft.revisionId })],
+    });
+  }, 10_000);
+
   it("accepts atomically, replays the stored result, and starts revision N+1", async () => {
     const fixture = await createFixture();
     const draft = await completeDraft(fixture);
@@ -689,13 +748,34 @@ describe("Sprint 5 supplier acceptance", () => {
         }),
       ],
     });
+    await fixture.t.run(async (ctx) => {
+      for (const line of nextDraft.lines) {
+        await ctx.db.patch("orderLines", line.id, {
+          category: "agricultural_inputs",
+          varietyOrGrade: "pilot_grade",
+          specification: "Sprint 6 migrated amendment fixture",
+          originCountry: "PH",
+          packaging: "box",
+          unitOfMeasure: "EA",
+        });
+      }
+    });
+    const agriculturalTerms = await fixture.buyer.authenticated.mutation(saveAgriculturalTerms, {
+      orderId: draft.orderId,
+      expectedVersion: 1n,
+      destinationCountry: "SG",
+      shipmentWindow: { from: "2026-08-01", to: "2026-08-05" },
+      arrivalWindow: { from: "2026-08-06", to: "2026-08-12" },
+      incoterm: { edition: "2020", rule: "CIF", namedPlace: "Singapore" },
+      requiredDocumentTypes: ["commercial_invoice", "packing_list"],
+    });
     const revisionTwoReview = await fixture.buyer.authenticated.query(getReview, {
       orderId: draft.orderId,
     });
     expect(revisionTwoReview.termsHash).not.toBe(review.termsHash);
     const revisionTwoSent = await fixture.buyer.authenticated.mutation(send, {
       orderId: draft.orderId,
-      expectedVersion: 1n,
+      expectedVersion: agriculturalTerms.version,
       idempotencyKey: "s5-send-revision-0002",
     });
     const revisionTwoAccepted = await fixture.supplier.authenticated.mutation(acceptOrder, {

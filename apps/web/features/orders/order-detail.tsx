@@ -29,6 +29,7 @@ import { Label } from "@repo/ui/components/ui/label";
 import { Textarea } from "@repo/ui/components/ui/textarea";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 
 import { orderAmount, orderStatusLabel } from "./order-format";
@@ -44,12 +45,18 @@ type RejectionReason =
 
 export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
   const orderId = rawOrderId as Id<"orders">;
+  const router = useRouter();
   const detail = useQuery(api.orderDetails.get, { orderId });
   const timeline = usePaginatedQuery(api.orderTimeline.list, { orderId }, { initialNumItems: 20 });
+  const shipment = useQuery(api.shipments.get, { orderId });
+  const documents = useQuery(api.tradeDocuments.list, { orderId });
+  const organizationVerification = useQuery(api.organizationVerification.current);
   const accept = useMutation(api.orderDecisions.accept);
   const reject = useMutation(api.orderDecisions.reject);
   const cancel = useMutation(api.orders.cancel);
   const startRevision = useMutation(api.orderRevisions.startFromCurrent);
+  const createDocumentUpload = useMutation(api.tradeDocuments.createUpload);
+  const completeDocumentUpload = useMutation(api.tradeDocuments.completeUpload);
   const [pendingDecision, setPendingDecision] = useState<DecisionCommand | null>(null);
   const [acceptOpen, setAcceptOpen] = useState(false);
   const [rejectOpen, setRejectOpen] = useState(false);
@@ -58,6 +65,12 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
   const [cancelReason, setCancelReason] = useState("");
   const [message, setMessage] = useState("");
   const [revisionPending, setRevisionPending] = useState(false);
+  const [documentType, setDocumentType] = useState("commercial_invoice");
+  const [documentVisibility, setDocumentVisibility] = useState<
+    "participants" | "importer" | "exporter"
+  >("participants");
+  const [documentFile, setDocumentFile] = useState<File | null>(null);
+  const [documentPending, setDocumentPending] = useState(false);
   const decisionAttempt = useRef<{ fingerprint: string; key: string } | null>(null);
 
   if (detail === undefined) return <p role="status">Loading order…</p>;
@@ -72,6 +85,7 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
     detail.viewerSide === "buyer" &&
     ["accepted", "rejected"].includes(detail.order.agreementStatus) &&
     detail.order.settlementStatus === "unfunded";
+  const canUploadDocuments = organizationVerification?.status === "verified";
 
   async function runDecision(command: DecisionCommand) {
     if (loadedDetail.viewerSide !== "supplier" || pendingDecision) return;
@@ -133,7 +147,7 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">
           <p className="text-sm font-medium text-primary">
-            {isSupplier ? "Supplier review" : "Purchase order"}
+            {isSupplier ? "Exporter review" : "Trade order"}
           </p>
           <h1 className="mt-1 text-3xl font-semibold break-words">
             {detail.revision.purchaseOrderNumber ?? "Untitled draft"}
@@ -141,17 +155,28 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
           <p className="mt-2 break-words text-muted-foreground">{detail.revision.title}</p>
         </div>
         <Button asChild variant="outline">
-          <Link href={`/orders?view=${detail.viewerSide}`}>Back to orders</Link>
+          <Link href={`/orders?view=${detail.viewerSide}`}>Back to trade orders</Link>
         </Button>
       </header>
 
-      <section aria-label="Order states" className="grid gap-4 min-[480px]:grid-cols-3">
-        <StateCard title="Agreement" value={orderStatusLabel(detail.order.agreementStatus)} />
+      <section
+        aria-label="Independent trade states"
+        className="grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-4"
+      >
+        <StateCard title="Trade Agreement" value={orderStatusLabel(detail.order.agreementStatus)} />
+        <StateCard title="Escrow" value={detail.order.settlementStatus.replaceAll("_", " ")} />
         <StateCard
-          title="Fulfillment"
-          value={detail.order.fulfillmentStatus.replaceAll("_", " ")}
+          title="Shipment Status"
+          value={shipment?.shipment.status.replaceAll("_", " ") ?? "not started"}
         />
-        <StateCard title="Settlement" value={detail.order.settlementStatus.replaceAll("_", " ")} />
+        <StateCard
+          title="Trade Documents"
+          value={
+            documents === undefined
+              ? "loading"
+              : `${documents.length.toString()} document${documents.length === 1 ? "" : "s"}`
+          }
+        />
       </section>
 
       {isSupplier ? (
@@ -162,15 +187,15 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Frozen commercial snapshot</CardTitle>
+          <CardTitle>Frozen agricultural trade agreement</CardTitle>
         </CardHeader>
         <CardContent className="grid gap-4 min-[480px]:grid-cols-2 lg:grid-cols-3">
           <Fact
-            label="Buyer"
+            label="Importer"
             value={detail.revision.buyerTradingName ?? detail.revision.buyerLegalName}
           />
           <Fact
-            label="Supplier"
+            label="Exporter"
             value={
               detail.revision.supplierTradingName ??
               detail.revision.supplierLegalName ??
@@ -193,8 +218,16 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
             mono
           />
           <Fact label="Network" value="Stellar Testnet" />
-          <Fact label="Funds moved" value="No — Sprint 5 decisions are off-chain" />
+          <Fact label="Funds moved" value="No — agreement decisions are off-chain" />
           <Fact label="Revision" value={detail.revision.revisionNumber.toString()} />
+          <Fact
+            label="Terms hash version"
+            value={detail.revision.termsHashVersion ?? "order-terms-v1"}
+          />
+          <Fact
+            label="Migration state"
+            value={detail.revision.migrationState?.replaceAll("_", " ") ?? "legacy"}
+          />
           <Fact
             label="Decision deadline"
             value={
@@ -207,20 +240,60 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
         </CardContent>
       </Card>
 
+      <Card>
+        <CardHeader>
+          <CardTitle>Route, delivery windows, and Incoterm</CardTitle>
+        </CardHeader>
+        <CardContent className="grid gap-4 min-[480px]:grid-cols-2">
+          <Fact
+            label="Destination country"
+            value={detail.revision.destinationCountry ?? "Not set"}
+          />
+          <Fact
+            label="Shipment window"
+            value={
+              detail.revision.shipmentWindowFrom && detail.revision.shipmentWindowTo
+                ? `${detail.revision.shipmentWindowFrom} to ${detail.revision.shipmentWindowTo}`
+                : "Not set"
+            }
+          />
+          <Fact
+            label="Expected arrival window"
+            value={
+              detail.revision.arrivalWindowFrom && detail.revision.arrivalWindowTo
+                ? `${detail.revision.arrivalWindowFrom} to ${detail.revision.arrivalWindowTo}`
+                : "Not set"
+            }
+          />
+          <Fact
+            label="Incoterm"
+            value={
+              detail.revision.incotermRule
+                ? `${detail.revision.incotermRule} ${detail.revision.incotermNamedPlace ?? ""} (${detail.revision.incotermEdition ?? "Incoterms 2020"})`
+                : "Not set"
+            }
+          />
+          <Fact
+            label="Required documents"
+            value={detail.revision.requiredDocumentTypes?.join(", ") || "None specified"}
+          />
+        </CardContent>
+      </Card>
+
       {isSupplier ? (
         <Card>
           <CardHeader>
-            <CardTitle>Identity, delivery, and terms</CardTitle>
+            <CardTitle>Participant identity and commercial terms</CardTitle>
           </CardHeader>
           <CardContent className="grid gap-4 min-[480px]:grid-cols-2">
             <Fact
-              label="Buyer contact"
+              label="Importer contact"
               value={String(
                 detail.revision.buyerContact.email ?? detail.revision.buyerContact.name,
               )}
             />
             <Fact
-              label="Supplier contact"
+              label="Exporter contact"
               value={String(
                 detail.revision.supplierContact.email ?? detail.revision.supplierContact.name,
               )}
@@ -268,14 +341,24 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
                   </div>
                   <div className="text-left text-sm min-[520px]:text-right">
                     <p>
-                      {line.quantityCoefficient.toString()} {line.unitOfMeasure}
+                      {formatExactQuantity(line.quantityCoefficient, line.quantityScale)}{" "}
+                      {line.unitOfMeasure}
                     </p>
                     <p className="font-mono">{line.lineTotalBaseUnits.toString()} base units</p>
                   </div>
                 </div>
-                {isSupplier && ("category" in line || "manufacturer" in line) ? (
+                {"category" in line ||
+                "varietyOrGrade" in line ||
+                "originCountry" in line ||
+                "packaging" in line ? (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {[line.category, line.manufacturer, line.brand, line.origin]
+                    {[
+                      line.category,
+                      line.varietyOrGrade,
+                      line.specification,
+                      line.originCountry,
+                      line.packaging,
+                    ]
                       .filter(Boolean)
                       .join(" · ")}
                   </p>
@@ -308,7 +391,7 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
       {isSupplier && detail.canDecide ? (
         <Card>
           <CardHeader>
-            <CardTitle>Record supplier decision</CardTitle>
+            <CardTitle>Record exporter decision</CardTitle>
           </CardHeader>
           <CardContent className="flex flex-col gap-3 min-[420px]:flex-row">
             <AlertDialog open={acceptOpen} onOpenChange={setAcceptOpen}>
@@ -379,7 +462,7 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
                       <option value="quantity_or_availability">Quantity or availability</option>
                       <option value="delivery_schedule">Delivery schedule</option>
                       <option value="commercial_terms">Commercial terms</option>
-                      <option value="supplier_capacity">Supplier capacity</option>
+                      <option value="supplier_capacity">Exporter capacity</option>
                       <option value="other">Other</option>
                     </select>
                   </div>
@@ -422,7 +505,7 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
           <CardContent>
             <p className="text-sm text-muted-foreground">
               Start revision {Number(detail.revision.revisionNumber) + 1} from the immutable current
-              revision. The supplier must accept the next sent revision again.
+              revision. The exporter must accept the next sent revision again.
             </p>
             <Button
               className="mt-4"
@@ -436,7 +519,10 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
                   expectedRevisionId: detail.revision.id,
                   idempotencyKey: crypto.randomUUID(),
                 })
-                  .then(() => setMessage("New draft revision started."))
+                  .then((result) => {
+                    setMessage("New draft revision started. Material terms require re-acceptance.");
+                    router.push(`/orders/new?orderId=${result.orderId}`);
+                  })
                   .catch(() => setMessage("Could not start a revision. Reload and retry."))
                   .finally(() => setRevisionPending(false));
               }}
@@ -446,6 +532,140 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
           </CardContent>
         </Card>
       ) : null}
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Trade Documents</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-5">
+          <p className="text-sm text-muted-foreground">
+            Each upload is immutable, digest-bound, access-controlled, and unavailable for download
+            until malware scanning marks it clean.
+          </p>
+          {organizationVerification !== undefined && !canUploadDocuments ? (
+            <div
+              role="alert"
+              className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm"
+            >
+              <span>Complete organization verification before uploading trade documents.</span>
+              <Button asChild size="sm" variant="outline">
+                <Link href="/settings/business#verification">Complete verification</Link>
+              </Button>
+            </div>
+          ) : null}
+          <form
+            className="grid gap-3 lg:grid-cols-[1fr_1fr_1fr_auto] lg:items-end"
+            onSubmit={(event) => {
+              event.preventDefault();
+              if (!documentFile || documentPending || !canUploadDocuments) return;
+              setDocumentPending(true);
+              setMessage("");
+              void (async () => {
+                const digest = await sha256Hex(await documentFile.arrayBuffer());
+                const { uploadUrl } = await createDocumentUpload({ orderId });
+                const response = await fetch(uploadUrl, {
+                  method: "POST",
+                  headers: { "Content-Type": documentFile.type || "application/octet-stream" },
+                  body: documentFile,
+                });
+                if (!response.ok) throw new Error("Storage upload failed");
+                const { storageId } = (await response.json()) as { storageId: Id<"_storage"> };
+                await completeDocumentUpload({
+                  orderId,
+                  storageId,
+                  documentType,
+                  digest,
+                  mimeType: documentFile.type || "application/octet-stream",
+                  sizeBytes: BigInt(documentFile.size),
+                  visibility: documentVisibility,
+                });
+              })()
+                .then(() => {
+                  setDocumentFile(null);
+                  setMessage(
+                    "Document uploaded. Download remains blocked until scanning is clean.",
+                  );
+                })
+                .catch(() =>
+                  setMessage(
+                    "Document upload failed. Confirm verification, file metadata, and participant access.",
+                  ),
+                )
+                .finally(() => setDocumentPending(false));
+            }}
+          >
+            <div>
+              <Label htmlFor="documentType">Document type</Label>
+              <Input
+                id="documentType"
+                value={documentType}
+                maxLength={64}
+                disabled={!canUploadDocuments}
+                onChange={(event) => setDocumentType(event.target.value)}
+              />
+            </div>
+            <div>
+              <Label htmlFor="documentVisibility">Visibility</Label>
+              <select
+                id="documentVisibility"
+                className="h-9 w-full rounded-md border bg-background px-3"
+                value={documentVisibility}
+                disabled={!canUploadDocuments}
+                onChange={(event) =>
+                  setDocumentVisibility(
+                    event.target.value as "participants" | "importer" | "exporter",
+                  )
+                }
+              >
+                <option value="participants">Both participants</option>
+                <option value="importer">Importer only</option>
+                <option value="exporter">Exporter only</option>
+              </select>
+            </div>
+            <div>
+              <Label htmlFor="documentFile">File (maximum 25 MB)</Label>
+              <Input
+                id="documentFile"
+                type="file"
+                disabled={!canUploadDocuments}
+                onChange={(event) => setDocumentFile(event.target.files?.[0] ?? null)}
+              />
+            </div>
+            <Button
+              type="submit"
+              disabled={!documentFile || documentPending || !canUploadDocuments}
+            >
+              {documentPending ? "Uploading…" : "Upload version"}
+            </Button>
+          </form>
+          {documents === undefined ? (
+            <p role="status">Loading documents…</p>
+          ) : documents.length === 0 ? (
+            <p className="text-sm text-muted-foreground">No trade documents uploaded.</p>
+          ) : (
+            <ul className="space-y-3" aria-label="Trade documents">
+              {documents.map((document) => {
+                const latest = document.versions.at(-1);
+                return (
+                  <li key={document.id} className="rounded-md border p-3">
+                    <div className="flex flex-wrap items-center justify-between gap-2">
+                      <strong>{document.documentType.replaceAll("_", " ")}</strong>
+                      <Badge variant="outline">{latest?.scanState ?? "pending"}</Badge>
+                    </div>
+                    <p className="mt-1 text-xs text-muted-foreground">
+                      Version {document.currentVersionNumber.toString()} · {document.visibility} ·{" "}
+                      {latest ? `${latest.sizeBytes.toString()} bytes` : "metadata pending"}
+                    </p>
+                    {latest ? (
+                      <p className="mt-1 font-mono text-xs break-all">SHA-256 {latest.digest}</p>
+                    ) : null}
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader>
@@ -551,4 +771,16 @@ function Fact({ label, value, mono = false }: { label: string; value: string; mo
       <span className={`block text-sm break-words ${mono ? "font-mono" : ""}`}>{value}</span>
     </div>
   );
+}
+
+function formatExactQuantity(coefficient: bigint, scale: bigint) {
+  if (scale === 0n) return coefficient.toString();
+  const digits = coefficient.toString().padStart(Number(scale) + 1, "0");
+  const split = digits.length - Number(scale);
+  return `${digits.slice(0, split)}.${digits.slice(split)}`;
+}
+
+async function sha256Hex(buffer: ArrayBuffer) {
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
 }

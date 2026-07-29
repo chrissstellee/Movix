@@ -18,17 +18,17 @@ export function BuyerDashboard() {
   );
 
   if (summary === undefined) {
-    return <p role="status">Loading buyer dashboard…</p>;
+    return <p role="status">Loading Importer dashboard…</p>;
   }
 
   return (
     <div className="space-y-8">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-primary">Buyer</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Buyer workspace</h1>
+          <p className="text-sm font-medium text-primary">Importer</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Importer workspace</h1>
           <p className="mt-2 text-muted-foreground">
-            Draft purchase orders and track supplier responses.
+            Create agricultural Trade Orders and track Exporter responses.
           </p>
         </div>
         {summary.canCreate ? (
@@ -38,7 +38,7 @@ export function BuyerDashboard() {
         ) : (
           <Button asChild variant="outline">
             <Link href={summary.blockers[0]?.settingsPath ?? "/settings/business"}>
-              Complete buyer profile
+              Complete importer profile
             </Link>
           </Button>
         )}
@@ -51,7 +51,7 @@ export function BuyerDashboard() {
           href="/orders?status=draft"
         />
         <AttentionCard
-          label="Awaiting supplier"
+          label="Awaiting exporter"
           count={summary.counts.sent}
           href="/orders?status=sent"
         />
@@ -59,20 +59,20 @@ export function BuyerDashboard() {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-4">
-          <CardTitle>Supplier decisions</CardTitle>
+          <CardTitle>Exporter decisions</CardTitle>
           <Button asChild size="sm" variant="ghost">
-            <Link href="/orders?view=buyer">View orders</Link>
+            <Link href="/orders?view=buyer">View Trade Orders</Link>
           </Button>
         </CardHeader>
         <CardContent>
           {notifications.status === "LoadingFirstPage" ? (
-            <p role="status">Loading supplier decisions…</p>
+            <p role="status">Loading Exporter decisions…</p>
           ) : notifications.results.filter((item) =>
               ["order.accepted", "order.rejected"].includes(item.eventType),
             ).length === 0 ? (
-            <p className="text-sm text-muted-foreground">No unread supplier decisions.</p>
+            <p className="text-sm text-muted-foreground">No unread Exporter decisions.</p>
           ) : (
-            <ul className="divide-y" aria-label="Unread supplier decisions">
+            <ul className="divide-y" aria-label="Unread Exporter decisions">
               {notifications.results
                 .filter((item) => ["order.accepted", "order.rejected"].includes(item.eventType))
                 .map((item) => (
@@ -97,17 +97,17 @@ export function BuyerDashboard() {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-4">
-          <CardTitle>Recent order activity</CardTitle>
+          <CardTitle>Recent Trade Order activity</CardTitle>
           <Button asChild size="sm" variant="ghost">
-            <Link href="/orders">View all orders</Link>
+            <Link href="/orders">View all Trade Orders</Link>
           </Button>
         </CardHeader>
         <CardContent>
           {summary.recent.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">No purchase orders yet</p>
+              <p className="font-medium">No Trade Orders yet</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                Create a server-side draft to begin your first order.
+                Create a server-side draft to begin your first agricultural trade.
               </p>
               {summary.canCreate ? (
                 <Button asChild className="mt-4">
@@ -128,7 +128,7 @@ export function BuyerDashboard() {
                         {order.purchaseOrderNumber ?? "Untitled draft"}
                       </span>
                       <span className="block text-sm text-muted-foreground">
-                        {order.supplierName ?? "Supplier not selected"}
+                        {order.supplierName ?? "Exporter not selected"}
                       </span>
                     </span>
                     <span className="text-right">

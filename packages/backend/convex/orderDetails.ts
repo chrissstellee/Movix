@@ -73,9 +73,15 @@ function mapSupplierRevision(revision: Doc<"orderRevisions">) {
     ...(revision.buyerTradingNameSnapshot
       ? { buyerTradingName: revision.buyerTradingNameSnapshot }
       : {}),
+    ...(revision.buyerWalletAddressSnapshot
+      ? { buyerWalletAddress: revision.buyerWalletAddressSnapshot }
+      : {}),
     supplierLegalName: revision.supplierLegalNameSnapshot,
     ...(revision.supplierTradingNameSnapshot
       ? { supplierTradingName: revision.supplierTradingNameSnapshot }
+      : {}),
+    ...(revision.supplierWalletAddressSnapshot
+      ? { supplierWalletAddress: revision.supplierWalletAddressSnapshot }
       : {}),
     buyerContact: revision.buyerContactSnapshot,
     supplierContact: revision.supplierContactSnapshot,
@@ -90,6 +96,11 @@ function mapSupplierRevision(revision: Doc<"orderRevisions">) {
     orderDate: revision.orderDate,
     issueDate: revision.issueDate,
     requestedDeliveryDate: revision.requestedDeliveryDate,
+    ...(revision.destinationCountry ? { destinationCountry: revision.destinationCountry } : {}),
+    ...(revision.shipmentWindowFrom ? { shipmentWindowFrom: revision.shipmentWindowFrom } : {}),
+    ...(revision.shipmentWindowTo ? { shipmentWindowTo: revision.shipmentWindowTo } : {}),
+    ...(revision.arrivalWindowFrom ? { arrivalWindowFrom: revision.arrivalWindowFrom } : {}),
+    ...(revision.arrivalWindowTo ? { arrivalWindowTo: revision.arrivalWindowTo } : {}),
     supplierAcceptanceDeadline: revision.supplierAcceptanceDeadline,
     fundingDeadline: revision.fundingDeadline,
     asset: {
@@ -108,6 +119,12 @@ function mapSupplierRevision(revision: Doc<"orderRevisions">) {
     ...(revision.deliveryWindow ? { deliveryWindow: revision.deliveryWindow } : {}),
     ...(revision.incoterm ? { incoterm: revision.incoterm } : {}),
     ...(revision.namedLocation ? { namedLocation: revision.namedLocation } : {}),
+    ...(revision.incotermEdition ? { incotermEdition: revision.incotermEdition } : {}),
+    ...(revision.incotermRule ? { incotermRule: revision.incotermRule } : {}),
+    ...(revision.incotermNamedPlace ? { incotermNamedPlace: revision.incotermNamedPlace } : {}),
+    ...(revision.requiredDocumentTypes
+      ? { requiredDocumentTypes: revision.requiredDocumentTypes }
+      : {}),
     ...(revision.handlingInstructions
       ? { handlingInstructions: revision.handlingInstructions }
       : {}),
@@ -124,6 +141,8 @@ function mapSupplierRevision(revision: Doc<"orderRevisions">) {
     },
     frozenAt: revision.frozenAt,
     termsHash: revision.termsHash,
+    ...(revision.termsHashVersion ? { termsHashVersion: revision.termsHashVersion } : {}),
+    ...(revision.migrationState ? { migrationState: revision.migrationState } : {}),
   };
 }
 
@@ -145,8 +164,7 @@ export const get = query({
       ["buyer", "buyer_supplier"].includes(context.organization.capability);
     const isSupplier =
       order?.supplierOrganizationId === context.organization._id &&
-      ["supplier", "buyer_supplier"].includes(context.organization.capability) &&
-      context.organization.verificationStatus === "verified";
+      ["supplier", "buyer_supplier"].includes(context.organization.capability);
     if (!order || (!isBuyer && !isSupplier) || !order.currentRevisionId) {
       throw businessError("ORDER_NOT_FOUND");
     }
@@ -213,6 +231,7 @@ export const get = query({
         canDecide:
           order.agreementStatus === "sent" &&
           order.supplierQueueState === "requires_decision" &&
+          context.organization.verificationStatus === "verified" &&
           roleCan(context.membership.role, "order:decide"),
         offChainNotice:
           "Acceptance records an off-chain agreement decision and moves no funds." as const,

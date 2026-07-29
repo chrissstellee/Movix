@@ -4,7 +4,7 @@ import { v } from "convex/values";
 import { mutation } from "./_generated/server";
 import { businessError } from "./lib/errors";
 import { adjustBuyerCounts, transitionSupplierCounts } from "./lib/orderCounts";
-import { hashOrderTermsV1 } from "./lib/orderTerms";
+import { hashOrderTerms } from "./lib/orderTerms";
 import { requireSupplierOrder } from "./lib/supplierOrderAuthorization";
 import { orderDecisionResultValidator } from "./orderValidators";
 import { orderRejectionReasonValidator } from "./validators";
@@ -156,7 +156,7 @@ async function decide(ctx: MutationCtx, command: Command, rawInput: DecisionInpu
     .query("orderLines")
     .withIndex("by_revisionId", (index) => index.eq("revisionId", revision._id))
     .take(101);
-  if (lines.length > 100 || (await hashOrderTermsV1(revision, lines)) !== revision.termsHash) {
+  if (lines.length > 100 || (await hashOrderTerms(revision, lines)) !== revision.termsHash) {
     throw businessError("ORDER_TERMS_HASH_MISMATCH");
   }
 

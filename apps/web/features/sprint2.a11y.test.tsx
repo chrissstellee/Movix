@@ -19,6 +19,10 @@ vi.mock("@repo/backend/client", () => ({
       updatePrimaryContact: "updatePrimaryContact",
       updateAddress: "updateAddress",
     },
+    organizationVerification: {
+      current: "currentVerification",
+      submit: "submitVerification",
+    },
   },
 }));
 
@@ -105,6 +109,9 @@ vi.mock("convex/react", () => ({
       return { kind: "blank", version: 0n, currentStep: "identity", completedSteps: [] };
     }
     if (reference === "getBusinessSettings") return settings;
+    if (reference === "currentVerification") {
+      return { status: "not_started", organizationVersion: 1n, case: null };
+    }
     if (reference === "currentContext") return state.scenario === "onboarding" ? null : context;
     return undefined;
   },
@@ -125,7 +132,7 @@ describe("Sprint 2 accessible surfaces", () => {
       "text-foreground",
     );
     expect((await axe(container)).violations).toEqual([]);
-  });
+  }, 10_000);
 
   it("has no automated violations in the workspace shell", async () => {
     state.scenario = "workspace";

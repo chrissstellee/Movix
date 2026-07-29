@@ -2,7 +2,9 @@ import { expect, test } from "@playwright/test";
 
 test("boots the Movix foundation and excludes starter routes", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("heading", { name: /Procurement that settles/ })).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: /ASEAN agricultural trade that settles/ }),
+  ).toBeVisible();
 
   await page.goto("/foundation");
   await expect(page.getByRole("heading", { name: "Movix design foundation" })).toBeVisible();

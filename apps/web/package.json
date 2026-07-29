@@ -11,7 +11,7 @@
     "lint:fix": "oxlint --fix app core features test && oxfmt --write app core features test",
     "start": "next start",
     "test": "vitest run --configLoader runner",
-    "test:a11y": "vitest run --configLoader runner features/foundation/foundation-showcase.a11y.test.tsx features/sprint2.a11y.test.tsx features/orders/sprint4.a11y.test.tsx features/orders/sprint5.a11y.test.tsx",
+    "test:a11y": "vitest run --configLoader runner features/foundation/foundation-showcase.a11y.test.tsx features/sprint2.a11y.test.tsx features/orders/sprint4.a11y.test.tsx features/orders/sprint5.a11y.test.tsx features/orders/sprint6.a11y.test.tsx",
     "typecheck": "next typegen && tsc --noEmit"
   },
   "dependencies": {

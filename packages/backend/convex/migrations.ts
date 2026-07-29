@@ -65,6 +65,151 @@ export const normalizeLegacyAddresses = migrations.define({
   }),
 });
 
+export const backfillSprint6Orders = migrations.define({
+  table: "orders",
+  migrateOne: (_ctx, order) => {
+    if (order.migrationState !== undefined) return {};
+    return {
+      migrationState:
+        order.agreementStatus === "draft" ? ("legacy_incomplete" as const) : ("current" as const),
+    };
+  },
+});
+
+export const backfillSprint6OrderRevisions = migrations.define({
+  table: "orderRevisions",
+  migrateOne: async (ctx, revision) => {
+    const order = await ctx.db.get("orders", revision.orderId);
+    if (!order) {
+      const existingReports = await ctx.db
+        .query("migrationFailureReports")
+        .withIndex("by_documentId", (index) => index.eq("documentId", revision._id))
+        .take(10);
+      if (
+        !existingReports.some(
+          (report) =>
+            report.migration === "backfillSprint6OrderRevisions" &&
+            report.code === "ORPHAN_REVISION",
+        )
+      ) {
+        await ctx.db.insert("migrationFailureReports", {
+          migration: "backfillSprint6OrderRevisions",
+          tableName: "orderRevisions",
+          documentId: revision._id,
+          code: "ORPHAN_REVISION",
+          occurredAt: Date.now(),
+        });
+      }
+      return {};
+    }
+    const patch: Record<string, unknown> = {};
+    if (revision.termsHashVersion === undefined) {
+      patch.termsHashVersion = "order-terms-v1";
+    }
+    if (revision.migrationState === undefined) {
+      patch.migrationState =
+        order.agreementStatus === "draft" && order.currentRevisionId === revision._id
+          ? "legacy_incomplete"
+          : "current";
+    }
+    return patch;
+  },
+});
+
+export const sprint6MigrationInventory = internalQuery({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(
+    v.object({
+      orderId: v.id("orders"),
+      revisionId: v.optional(v.id("orderRevisions")),
+      agreementStatus: agreementStatusValidator,
+      migrationState: v.optional(v.union(v.literal("current"), v.literal("legacy_incomplete"))),
+      projectedMigrationState: v.union(v.literal("current"), v.literal("legacy_incomplete")),
+      wouldWrite: v.boolean(),
+      termsHashVersion: v.optional(
+        v.union(v.literal("order-terms-v1"), v.literal("order-terms-v2")),
+      ),
+      termsHash: v.optional(v.string()),
+      actionableFailure: v.optional(v.string()),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const result = await ctx.db.query("orders").paginate(args.paginationOpts);
+    const page = await Promise.all(
+      result.page.map(async (order) => {
+        const revision = order.currentRevisionId
+          ? await ctx.db.get("orderRevisions", order.currentRevisionId)
+          : null;
+        return {
+          orderId: order._id,
+          ...(revision ? { revisionId: revision._id } : {}),
+          agreementStatus: order.agreementStatus,
+          ...(order.migrationState ? { migrationState: order.migrationState } : {}),
+          projectedMigrationState:
+            order.migrationState ??
+            (order.agreementStatus === "draft" ? "legacy_incomplete" : "current"),
+          wouldWrite: order.migrationState === undefined,
+          ...(revision?.termsHashVersion ? { termsHashVersion: revision.termsHashVersion } : {}),
+          ...(revision?.termsHash ? { termsHash: revision.termsHash } : {}),
+          ...(!revision && order.agreementStatus !== "cancelled"
+            ? { actionableFailure: "MISSING_CURRENT_REVISION" }
+            : {}),
+        };
+      }),
+    );
+    return { ...result, page };
+  },
+});
+
+export const sprint6RevisionMigrationInventory = internalQuery({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(
+    v.object({
+      revisionId: v.id("orderRevisions"),
+      orderId: v.id("orders"),
+      orderExists: v.boolean(),
+      termsHashVersion: v.optional(
+        v.union(v.literal("order-terms-v1"), v.literal("order-terms-v2")),
+      ),
+      projectedTermsHashVersion: v.union(v.literal("order-terms-v1"), v.literal("order-terms-v2")),
+      migrationState: v.optional(v.union(v.literal("current"), v.literal("legacy_incomplete"))),
+      projectedMigrationState: v.optional(
+        v.union(v.literal("current"), v.literal("legacy_incomplete")),
+      ),
+      wouldWrite: v.boolean(),
+      actionableFailure: v.optional(v.literal("ORPHAN_REVISION")),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const result = await ctx.db.query("orderRevisions").paginate(args.paginationOpts);
+    const page = await Promise.all(
+      result.page.map(async (revision) => {
+        const order = await ctx.db.get("orders", revision.orderId);
+        const projectedMigrationState = order
+          ? (revision.migrationState ??
+            (order.agreementStatus === "draft" && order.currentRevisionId === revision._id
+              ? ("legacy_incomplete" as const)
+              : ("current" as const)))
+          : undefined;
+        return {
+          revisionId: revision._id,
+          orderId: revision.orderId,
+          orderExists: Boolean(order),
+          ...(revision.termsHashVersion ? { termsHashVersion: revision.termsHashVersion } : {}),
+          projectedTermsHashVersion: revision.termsHashVersion ?? ("order-terms-v1" as const),
+          ...(revision.migrationState ? { migrationState: revision.migrationState } : {}),
+          ...(projectedMigrationState ? { projectedMigrationState } : {}),
+          wouldWrite:
+            Boolean(order) &&
+            (revision.termsHashVersion === undefined || revision.migrationState === undefined),
+          ...(!order ? { actionableFailure: "ORPHAN_REVISION" as const } : {}),
+        };
+      }),
+    );
+    return { ...result, page };
+  },
+});
+
 export const sprint4OrderInventory = internalQuery({
   args: {},
   returns: v.object({

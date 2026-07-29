@@ -20,8 +20,8 @@ export const metadata: Metadata = {
     default: "Movix",
     template: "%s | Movix",
   },
-  description: "Secure procurement and escrow workflows on Stellar.",
-  keywords: ["Movix", "Stellar", "procurement", "escrow"],
+  description: "Secure ASEAN agricultural Trade Orders and escrow workflows on Stellar.",
+  keywords: ["Movix", "Stellar", "agricultural trade", "Trade Orders", "escrow"],
   icons: {
     icon: [{ url: "/movix-logo.svg", type: "image/svg+xml" }],
     shortcut: "/movix-logo.svg",
@@ -30,7 +30,7 @@ export const metadata: Metadata = {
   openGraph: {
     siteName: "Movix",
     title: "Movix",
-    description: "Secure procurement and escrow workflows on Stellar.",
+    description: "Secure ASEAN agricultural Trade Orders and escrow workflows on Stellar.",
     images: [
       {
         url: "/movix-logo.png",
@@ -43,7 +43,7 @@ export const metadata: Metadata = {
   },
   twitter: {
     title: "Movix",
-    description: "Secure procurement and escrow workflows on Stellar.",
+    description: "Secure ASEAN agricultural Trade Orders and escrow workflows on Stellar.",
     card: "summary_large_image",
     images: ["/movix-logo.png"],
   },

@@ -936,9 +936,9 @@ function PreferencesStep({ form, update, firstField }: StepProps) {
           value={form.capability}
           onChange={(event) => update("capability", event.target.value as OrganizationCapability)}
         >
-          <option value="buyer">Buyer</option>
-          <option value="supplier">Supplier</option>
-          <option value="buyer_supplier">Buyer and supplier</option>
+          <option value="buyer">Importer</option>
+          <option value="supplier">Exporter</option>
+          <option value="buyer_supplier">Importer and Exporter</option>
         </select>
       </div>
       <Field

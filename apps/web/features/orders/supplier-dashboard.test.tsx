@@ -44,14 +44,14 @@ describe("SupplierDashboard authorization-aware query gating", () => {
     testState.queryCalls = [];
   });
 
-  it("does not request the protected summary for an unverified supplier", () => {
+  it("loads the read-only summary for an unverified Exporter", () => {
     render(<SupplierDashboard />);
 
     expect(testState.queryCalls).toContainEqual({
       reference: "supplierSummary",
-      args: "skip",
+      args: {},
     });
-    expect(screen.getByRole("heading", { name: "Supplier access unavailable" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Exporter workspace" })).toBeVisible();
   });
 
   it("loads the summary for a verified supplier", () => {
@@ -63,6 +63,6 @@ describe("SupplierDashboard authorization-aware query gating", () => {
       reference: "supplierSummary",
       args: {},
     });
-    expect(screen.getByRole("heading", { name: "Supplier workspace" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Exporter workspace" })).toBeVisible();
   });
 });

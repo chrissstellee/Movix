@@ -1,6 +1,7 @@
 import {
   calculateOrderLine,
   calculateOrderTotals,
+  normalizeCountryCode,
   normalizePurchaseOrderNumber,
   type OrderDiscount,
 } from "@repo/domain";
@@ -11,7 +12,7 @@ import { businessError } from "./lib/errors";
 import { resolveOrderAsset } from "./lib/orderAssets";
 import { requireBuyerCapability, requireBuyerOrder } from "./lib/orderAuthorization";
 import { adjustBuyerCounts } from "./lib/orderCounts";
-import { getOrderBlockers, hashOrderTermsV1 } from "./lib/orderTerms";
+import { getOrderBlockers, hashOrderTerms } from "./lib/orderTerms";
 import {
   draftMutationResultValidator,
   draftProjectionValidator,
@@ -20,6 +21,7 @@ import {
   supplierTargetValidator,
 } from "./orderValidators";
 import { resolveSupplierTarget } from "./supplierDirectory";
+import { orderTermsHashVersionValidator } from "./validators";
 
 import type { Doc, Id } from "./_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "./_generated/server";
@@ -45,6 +47,18 @@ function optionalText(
 ): string | undefined {
   if (value === undefined || value.trim() === "") return undefined;
   return boundedText(value, 1, maximum, field);
+}
+
+const supportedTradeUoms = new Set(["KG", "MT", "T", "LB", "L", "M3", "BAG", "BOX", "EA"]);
+
+function tradeCountry(value: string, field: string) {
+  try {
+    return normalizeCountryCode(value);
+  } catch {
+    throw businessError("TRADE_TERMS_INVALID", {
+      fields: { [field]: "Select a valid ISO country code." },
+    });
+  }
 }
 
 function snapshotContact(contact: Doc<"contacts">): Record<string, string | null> {
@@ -110,6 +124,11 @@ function publicLine(line: Doc<"orderLines">) {
     ...(line.sku ? { sku: line.sku } : {}),
     ...(line.supplierSku ? { supplierSku: line.supplierSku } : {}),
     ...(line.description ? { description: line.description } : {}),
+    ...(line.category ? { category: line.category } : {}),
+    ...(line.varietyOrGrade ? { varietyOrGrade: line.varietyOrGrade } : {}),
+    ...(line.specification ? { specification: line.specification } : {}),
+    ...(line.originCountry ? { originCountry: line.originCountry } : {}),
+    ...(line.packaging ? { packaging: line.packaging } : {}),
     quantityCoefficient: line.quantityCoefficient,
     quantityScale: line.quantityScale,
     unitOfMeasure: line.unitOfMeasure,
@@ -152,6 +171,9 @@ function publicRevision(revision: Doc<"orderRevisions">) {
     ...(revision.buyerTradingNameSnapshot
       ? { buyerTradingName: revision.buyerTradingNameSnapshot }
       : {}),
+    ...(revision.buyerWalletAddressSnapshot
+      ? { buyerWalletAddress: revision.buyerWalletAddressSnapshot }
+      : {}),
     ...(revision.supplierOrganizationId
       ? { supplierOrganizationId: revision.supplierOrganizationId }
       : {}),
@@ -160,6 +182,9 @@ function publicRevision(revision: Doc<"orderRevisions">) {
       : {}),
     ...(revision.supplierTradingNameSnapshot
       ? { supplierTradingName: revision.supplierTradingNameSnapshot }
+      : {}),
+    ...(revision.supplierWalletAddressSnapshot
+      ? { supplierWalletAddress: revision.supplierWalletAddressSnapshot }
       : {}),
     ...(revision.buyerContactSnapshot ? { buyerContact: revision.buyerContactSnapshot } : {}),
     ...(revision.supplierContactSnapshot
@@ -182,6 +207,11 @@ function publicRevision(revision: Doc<"orderRevisions">) {
     ...(revision.requestedDeliveryDate
       ? { requestedDeliveryDate: revision.requestedDeliveryDate }
       : {}),
+    ...(revision.destinationCountry ? { destinationCountry: revision.destinationCountry } : {}),
+    ...(revision.shipmentWindowFrom ? { shipmentWindowFrom: revision.shipmentWindowFrom } : {}),
+    ...(revision.shipmentWindowTo ? { shipmentWindowTo: revision.shipmentWindowTo } : {}),
+    ...(revision.arrivalWindowFrom ? { arrivalWindowFrom: revision.arrivalWindowFrom } : {}),
+    ...(revision.arrivalWindowTo ? { arrivalWindowTo: revision.arrivalWindowTo } : {}),
     ...(revision.supplierAcceptanceDeadline !== undefined
       ? { supplierAcceptanceDeadline: revision.supplierAcceptanceDeadline }
       : {}),
@@ -203,6 +233,12 @@ function publicRevision(revision: Doc<"orderRevisions">) {
     ...(revision.deliveryWindow ? { deliveryWindow: revision.deliveryWindow } : {}),
     ...(revision.incoterm ? { incoterm: revision.incoterm } : {}),
     ...(revision.namedLocation ? { namedLocation: revision.namedLocation } : {}),
+    ...(revision.incotermEdition ? { incotermEdition: revision.incotermEdition } : {}),
+    ...(revision.incotermRule ? { incotermRule: revision.incotermRule } : {}),
+    ...(revision.incotermNamedPlace ? { incotermNamedPlace: revision.incotermNamedPlace } : {}),
+    ...(revision.requiredDocumentTypes
+      ? { requiredDocumentTypes: revision.requiredDocumentTypes }
+      : {}),
     ...(revision.handlingInstructions
       ? { handlingInstructions: revision.handlingInstructions }
       : {}),
@@ -219,6 +255,8 @@ function publicRevision(revision: Doc<"orderRevisions">) {
       grandTotalBaseUnits: revision.grandTotalBaseUnits,
     },
     ...(revision.frozenAt !== undefined ? { frozenAt: revision.frozenAt } : {}),
+    ...(revision.termsHashVersion ? { termsHashVersion: revision.termsHashVersion } : {}),
+    ...(revision.migrationState ? { migrationState: revision.migrationState } : {}),
   };
 }
 
@@ -276,7 +314,10 @@ async function recalculateRevision(
 }
 
 export const create = mutation({
-  args: { idempotencyKey: v.string() },
+  args: {
+    idempotencyKey: v.string(),
+    termsHashVersion: v.optional(orderTermsHashVersionValidator),
+  },
   returns: v.object({
     orderId: v.id("orders"),
     revisionId: v.id("orderRevisions"),
@@ -287,6 +328,8 @@ export const create = mutation({
     if (args.idempotencyKey.length < 8 || args.idempotencyKey.length > 120) {
       throw businessError("ORDER_INVALID");
     }
+    const hashVersion = args.termsHashVersion ?? "order-terms-v1";
+    const requestFingerprint = `create:${hashVersion}`;
     const buyer = await requireBuyerCapability(ctx, "order:draft");
     const prior = await ctx.db
       .query("orderCommandReceipts")
@@ -299,7 +342,7 @@ export const create = mutation({
       .unique();
     if (prior?.resultRevisionId) {
       const revision = await ctx.db.get("orderRevisions", prior.resultRevisionId);
-      if (!revision || prior.requestFingerprint !== "create:v1") {
+      if (!revision || prior.requestFingerprint !== requestFingerprint) {
         throw businessError("IDEMPOTENCY_CONFLICT");
       }
       return {
@@ -319,6 +362,7 @@ export const create = mutation({
       fulfillmentStatus: "not_started",
       settlementStatus: "unfunded",
       supplierQueueState: "not_queued",
+      ...(hashVersion === "order-terms-v2" ? { migrationState: "current" as const } : {}),
       sortTimestamp: now,
       createdAt: now,
       updatedAt: now,
@@ -332,6 +376,9 @@ export const create = mutation({
       ...(buyer.organization.tradingName
         ? { buyerTradingNameSnapshot: buyer.organization.tradingName }
         : {}),
+      buyerWalletAddressSnapshot: buyer.principal.wallet.address,
+      termsHashVersion: hashVersion,
+      ...(hashVersion === "order-terms-v2" ? { migrationState: "current" as const } : {}),
       paymentMode: "escrow",
       autoReleasePolicy: "none",
       subtotalBaseUnits: 0n,
@@ -350,7 +397,7 @@ export const create = mutation({
       orderId,
       commandType: "create",
       idempotencyKey: args.idempotencyKey,
-      requestFingerprint: "create:v1",
+      requestFingerprint,
       resultRevisionId: revisionId,
       resultAgreementStatus: "draft",
       createdAt: now,
@@ -407,6 +454,7 @@ export const saveSupplier = mutation({
       relationshipId: relationship!._id,
       supplierLegalNameSnapshot: resolved.supplier.legalName,
       supplierTradingNameSnapshot: resolved.supplier.tradingName,
+      supplierWalletAddressSnapshot: resolved.walletAddress,
       supplierContactSnapshot: snapshotContact(resolved.primaryContact),
       shippingAddressSnapshot:
         records.revision.shippingAddressSnapshot ?? snapshotAddress(resolved.registeredAddress),
@@ -611,6 +659,25 @@ export const upsertLine = mutation({
       )
       .unique();
     const now = Date.now();
+    const unitOfMeasure = boundedText(
+      args.line.unitOfMeasure,
+      1,
+      40,
+      "unitOfMeasure",
+    ).toUpperCase();
+    if (records.revision.termsHashVersion === "order-terms-v2") {
+      if (
+        !args.line.originCountry ||
+        !supportedTradeUoms.has(unitOfMeasure) ||
+        !args.line.name.trim()
+      ) {
+        throw businessError("TRADE_TERMS_INVALID", {
+          fields: {
+            commodity: "Commodity, controlled UOM, and origin country are required.",
+          },
+        });
+      }
+    }
     const values = {
       lineNumber: args.line.lineNumber,
       name: boundedText(args.line.name, 1, 160, "lineName"),
@@ -621,9 +688,15 @@ export const upsertLine = mutation({
       manufacturer: optionalText(args.line.manufacturer, 120, "manufacturer"),
       brand: optionalText(args.line.brand, 120, "brand"),
       origin: optionalText(args.line.origin, 120, "origin"),
+      varietyOrGrade: optionalText(args.line.varietyOrGrade, 200, "varietyOrGrade"),
+      specification: optionalText(args.line.specification, 1_000, "specification"),
+      originCountry: args.line.originCountry
+        ? tradeCountry(args.line.originCountry, "originCountry")
+        : undefined,
+      packaging: optionalText(args.line.packaging, 200, "packaging"),
       quantityCoefficient: args.line.quantityCoefficient,
       quantityScale: args.line.quantityScale,
-      unitOfMeasure: boundedText(args.line.unitOfMeasure, 1, 40, "unitOfMeasure"),
+      unitOfMeasure,
       unitPriceBaseUnits: args.line.unitPriceBaseUnits,
       discountKind: args.line.discountKind,
       discountBaseUnitsInput: args.line.discountBaseUnits,
@@ -747,6 +820,136 @@ export const saveTerms = mutation({
   },
 });
 
+export const saveAgriculturalTerms = mutation({
+  args: {
+    orderId: v.id("orders"),
+    expectedVersion: v.int64(),
+    destinationCountry: v.string(),
+    shipmentWindow: v.object({ from: v.string(), to: v.string() }),
+    arrivalWindow: v.object({ from: v.string(), to: v.string() }),
+    incoterm: v.optional(
+      v.object({
+        edition: v.string(),
+        rule: v.string(),
+        namedPlace: v.string(),
+      }),
+    ),
+    requiredDocumentTypes: v.array(v.string()),
+  },
+  returns: draftMutationResultValidator,
+  handler: async (ctx, args) => {
+    const records = await requireMutableDraft(ctx, args.orderId, args.expectedVersion);
+    if (!["owner", "admin", "procurement"].includes(records.membership.role)) {
+      throw businessError("ORGANIZATION_FORBIDDEN");
+    }
+    const datePattern = /^\d{4}-\d{2}-\d{2}$/u;
+    if (
+      !datePattern.test(args.shipmentWindow.from) ||
+      !datePattern.test(args.shipmentWindow.to) ||
+      !datePattern.test(args.arrivalWindow.from) ||
+      !datePattern.test(args.arrivalWindow.to) ||
+      args.shipmentWindow.from > args.shipmentWindow.to ||
+      args.arrivalWindow.from > args.arrivalWindow.to ||
+      args.shipmentWindow.from > args.arrivalWindow.to
+    ) {
+      throw businessError("TRADE_TERMS_INVALID", {
+        fields: { windows: "Review the shipment and expected-arrival windows." },
+      });
+    }
+    const allowedIncoterms = new Set([
+      "EXW",
+      "FCA",
+      "CPT",
+      "CIP",
+      "DAP",
+      "DPU",
+      "DDP",
+      "FAS",
+      "FOB",
+      "CFR",
+      "CIF",
+    ]);
+    if (
+      args.incoterm &&
+      (args.incoterm.edition !== "2020" ||
+        !allowedIncoterms.has(args.incoterm.rule.toUpperCase()) ||
+        !args.incoterm.namedPlace.trim())
+    ) {
+      throw businessError("TRADE_TERMS_INVALID", {
+        fields: { incoterm: "Use Incoterms 2020 with a valid rule and named place." },
+      });
+    }
+    if (args.requiredDocumentTypes.length > 20) {
+      throw businessError("TRADE_TERMS_INVALID");
+    }
+    const requiredDocumentTypes = [
+      ...new Set(
+        args.requiredDocumentTypes.map((item) =>
+          boundedText(item, 2, 64, "requiredDocumentTypes").toLowerCase(),
+        ),
+      ),
+    ].sort();
+    if (requiredDocumentTypes.length !== args.requiredDocumentTypes.length) {
+      throw businessError("TRADE_TERMS_INVALID", {
+        fields: { requiredDocumentTypes: "Document requirements must be unique." },
+      });
+    }
+    const lines = await ctx.db
+      .query("orderLines")
+      .withIndex("by_revisionId", (index) => index.eq("revisionId", records.revision._id))
+      .take(101);
+    if (
+      lines.length === 0 ||
+      lines.length > 100 ||
+      lines.some(
+        (line) =>
+          !line.name ||
+          !line.originCountry ||
+          !supportedTradeUoms.has(line.unitOfMeasure) ||
+          line.quantityCoefficient <= 0n,
+      )
+    ) {
+      throw businessError("TRADE_TERMS_INCOMPLETE", {
+        fields: { commodity: "Complete each commodity, quantity, UOM, and origin." },
+      });
+    }
+    const now = Date.now();
+    const nextVersion = records.revision.version + 1n;
+    await ctx.db.patch("orderRevisions", records.revision._id, {
+      destinationCountry: tradeCountry(args.destinationCountry, "destinationCountry"),
+      shipmentWindowFrom: args.shipmentWindow.from,
+      shipmentWindowTo: args.shipmentWindow.to,
+      arrivalWindowFrom: args.arrivalWindow.from,
+      arrivalWindowTo: args.arrivalWindow.to,
+      incotermEdition: args.incoterm?.edition,
+      incotermRule: args.incoterm?.rule.toUpperCase(),
+      incotermNamedPlace: args.incoterm?.namedPlace.trim(),
+      requiredDocumentTypes,
+      termsHashVersion: "order-terms-v2",
+      migrationState: "current",
+      updatedAt: now,
+      version: nextVersion,
+    });
+    await ctx.db.patch("orders", records.order._id, {
+      migrationState: "current",
+      updatedAt: now,
+      sortTimestamp: now,
+    });
+    return {
+      orderId: records.order._id,
+      revisionId: records.revision._id,
+      version: nextVersion,
+      totals: {
+        subtotalBaseUnits: records.revision.subtotalBaseUnits,
+        discountTotalBaseUnits: records.revision.discountTotalBaseUnits,
+        taxTotalBaseUnits: records.revision.taxTotalBaseUnits,
+        shippingTotalBaseUnits: records.revision.shippingTotalBaseUnits,
+        grandTotalBaseUnits: records.revision.grandTotalBaseUnits,
+      },
+    };
+  },
+});
+
 export const removeLine = mutation({
   args: {
     orderId: v.id("orders"),
@@ -840,7 +1043,7 @@ export const getReview = query({
     const records = await loadDraftRecords(ctx, args.orderId);
     const blockers = getOrderBlockers(records.revision, records.lines);
     const termsHash =
-      blockers.length === 0 ? await hashOrderTermsV1(records.revision, records.lines) : undefined;
+      blockers.length === 0 ? await hashOrderTerms(records.revision, records.lines) : undefined;
     return {
       complete: blockers.length === 0,
       blockers,

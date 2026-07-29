@@ -11,7 +11,8 @@ import { mutation, query } from "./_generated/server";
 import { businessError } from "./lib/errors";
 import { requireBuyerOrder, getBuyerContext } from "./lib/orderAuthorization";
 import { adjustBuyerCounts, transitionSupplierCounts } from "./lib/orderCounts";
-import { getOrderBlockers, hashOrderTermsV1 } from "./lib/orderTerms";
+import { getOrderBlockers, hashOrderTerms, termsHashVersion } from "./lib/orderTerms";
+import { requireVerifiedOrganization } from "./lib/verification";
 import { loadDraftRecords, publicLine, publicRevision } from "./orderDrafts";
 import {
   draftProjectionValidator,
@@ -137,6 +138,7 @@ export const send = mutation({
   handler: async (ctx, args): Promise<OrderCommandResult> => {
     validIdempotencyKey(args.idempotencyKey);
     const authorized = await requireBuyerOrder(ctx, args.orderId, "order:send");
+    requireVerifiedOrganization(authorized.organization);
     const fingerprint = sendFingerprint(args.orderId, args.expectedVersion);
     const prior = await ctx.db
       .query("orderCommandReceipts")
@@ -193,12 +195,14 @@ export const send = mutation({
     if (supplier.supplier._id !== revision.supplierOrganizationId) {
       throw businessError("SUPPLIER_INELIGIBLE");
     }
+    requireVerifiedOrganization(supplier.supplier);
     await recomputeStoredTotals(revision, lines);
-    const termsHash = await hashOrderTermsV1(revision, lines);
+    const termsHash = await hashOrderTerms(revision, lines);
     const nextRevisionVersion = revision.version + 1n;
     const nextOrderVersion = authorized.order.version + 1n;
     await ctx.db.patch("orderRevisions", revision._id, {
       termsHash,
+      termsHashVersion: termsHashVersion(revision),
       frozenAt: now,
       updatedAt: now,
       version: nextRevisionVersion,

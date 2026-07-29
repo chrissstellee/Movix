@@ -67,12 +67,13 @@ export const list = query({
       );
     }
     const order = await ctx.db.get("orders", args.orderId);
-    const visible =
-      order &&
-      (order.buyerOrganizationId === context.organization._id ||
-        (order.supplierOrganizationId === context.organization._id &&
-          context.organization.verificationStatus === "verified"));
-    if (!order || !visible) throw businessError("ORDER_NOT_FOUND");
+    const isBuyer =
+      order?.buyerOrganizationId === context.organization._id &&
+      ["buyer", "buyer_supplier"].includes(context.organization.capability);
+    const isSupplier =
+      order?.supplierOrganizationId === context.organization._id &&
+      ["supplier", "buyer_supplier"].includes(context.organization.capability);
+    if (!order || (!isBuyer && !isSupplier)) throw businessError("ORDER_NOT_FOUND");
     const result = await ctx.db
       .query("orderRevisions")
       .withIndex("by_orderId_revisionNumber", (index) => index.eq("orderId", order._id))

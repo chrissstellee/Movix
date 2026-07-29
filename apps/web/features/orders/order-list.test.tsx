@@ -48,7 +48,7 @@ describe("OrderList authorization-aware query gating", () => {
   it("does not query either order projection before organization context resolves", () => {
     render(<OrderList />);
 
-    expect(screen.getByRole("status")).toHaveTextContent("Loading order view");
+    expect(screen.getByRole("status")).toHaveTextContent("Loading Trade Order view");
     expect(testState.paginatedCalls).toEqual([
       { reference: "listBuyerOrders", args: "skip" },
       { reference: "listSupplierOrders", args: "skip" },
@@ -74,7 +74,7 @@ describe("OrderList authorization-aware query gating", () => {
     });
   });
 
-  it("does not query supplier orders for an unverified supplier organization", () => {
+  it("allows read-only Exporter order access before organization verification", () => {
     testState.context = {
       kind: "ready",
       allowedViews: ["supplier"],
@@ -85,8 +85,8 @@ describe("OrderList authorization-aware query gating", () => {
 
     expect(testState.paginatedCalls).toEqual([
       { reference: "listBuyerOrders", args: "skip" },
-      { reference: "listSupplierOrders", args: "skip" },
+      { reference: "listSupplierOrders", args: {} },
     ]);
-    expect(screen.getByRole("heading", { name: "Supplier access unavailable" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Trade Orders" })).toBeVisible();
   });
 });

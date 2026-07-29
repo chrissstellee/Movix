@@ -87,7 +87,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
     <nav aria-label="Workspace" className="space-y-2">
       {context.allowedViews.includes("buyer") ? (
         <NavLink href="/buyer" active={pathname === "/buyer"} icon="buyer" compact={compact}>
-          Buyer workspace
+          Importer workspace
         </NavLink>
       ) : null}
       {context.allowedViews.includes("buyer") ? (
@@ -99,7 +99,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
           icon="orders"
           compact={compact}
         >
-          Buyer orders
+          Importer Trade Orders
         </NavLink>
       ) : null}
       {context.allowedViews.includes("supplier") ? (
@@ -109,7 +109,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
           icon="supplier"
           compact={compact}
         >
-          Supplier workspace
+          Exporter workspace
         </NavLink>
       ) : null}
       {context.allowedViews.includes("supplier") ? (
@@ -121,7 +121,7 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
           icon="orders"
           compact={compact}
         >
-          Supplier orders
+          Exporter Trade Orders
         </NavLink>
       ) : null}
       <NavLink
@@ -383,9 +383,11 @@ function breadcrumb(pathname: string, orderView: "buyer" | "supplier") {
   if (pathname === "/settings/business") return "Settings / Business";
   if (pathname === "/settings/wallet") return "Settings / Wallet";
   if (pathname === "/orders")
-    return orderView === "supplier" ? "Supplier / Orders" : "Buyer / Orders";
-  if (pathname === "/orders/new") return "Buyer / Orders / Create";
+    return orderView === "supplier" ? "Exporter / Trade Orders" : "Importer / Trade Orders";
+  if (pathname === "/orders/new") return "Importer / Trade Orders / Create";
   if (pathname.startsWith("/orders/"))
-    return orderView === "supplier" ? "Supplier / Orders / Detail" : "Buyer / Orders / Detail";
-  return pathname === "/supplier" ? "Supplier workspace" : "Buyer workspace";
+    return orderView === "supplier"
+      ? "Exporter / Trade Orders / Detail"
+      : "Importer / Trade Orders / Detail";
+  return pathname === "/supplier" ? "Exporter workspace" : "Importer workspace";
 }

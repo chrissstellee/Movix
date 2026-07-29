@@ -12,6 +12,7 @@
     "./contracts": "./src/contracts.ts",
     "./generated/escrow": "./generated/escrow/src/index.ts",
     "./events": "./src/events.ts",
+    "./evidence-manifests": "./src/evidence-manifests.ts",
     "./transactions": "./src/transactions.ts",
     "./wallet": "./src/wallet.ts",
     "./wallet/freighter": "./src/freighter-wallet-adapter.ts"

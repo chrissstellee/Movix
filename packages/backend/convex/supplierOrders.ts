@@ -9,19 +9,28 @@ import { supplierQueueStateValidator } from "./validators";
 import type { Doc } from "./_generated/dataModel";
 
 function mapSupplierOrder(order: Doc<"orders">, revision: Doc<"orderRevisions"> | null) {
-  if (!order.supplierQueueState) {
-    throw new Error("SUPPLIER_QUEUE_STATE_MISSING");
-  }
+  const supplierQueueState =
+    order.supplierQueueState ??
+    (order.agreementStatus === "sent"
+      ? revision?.frozenAt && revision.termsHash
+        ? revision.supplierAcceptanceDeadline !== undefined &&
+          Date.now() > revision.supplierAcceptanceDeadline
+          ? "expired"
+          : "requires_decision"
+        : "not_queued"
+      : order.agreementStatus === "accepted" || order.agreementStatus === "rejected"
+        ? order.agreementStatus
+        : "not_queued");
   return {
     orderId: order._id,
     ...(order.purchaseOrderNumber ? { purchaseOrderNumber: order.purchaseOrderNumber } : {}),
-    buyerName: revision?.buyerTradingNameSnapshot ?? revision?.buyerLegalNameSnapshot ?? "Buyer",
+    buyerName: revision?.buyerTradingNameSnapshot ?? revision?.buyerLegalNameSnapshot ?? "Importer",
     ...(order.title ? { title: order.title } : {}),
     revisionNumber: revision?.revisionNumber ?? order.currentRevisionNumber,
     grandTotalBaseUnits: order.grandTotalBaseUnits,
     ...(order.assetCode ? { assetCode: order.assetCode } : {}),
     agreementStatus: order.agreementStatus,
-    supplierQueueState: order.supplierQueueState,
+    supplierQueueState,
     ...(order.sentAt !== undefined ? { sentAt: order.sentAt } : {}),
     ...(order.decidedAt !== undefined ? { decidedAt: order.decidedAt } : {}),
     ...(revision?.supplierAcceptanceDeadline !== undefined

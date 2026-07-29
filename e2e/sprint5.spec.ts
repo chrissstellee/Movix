@@ -62,7 +62,7 @@ test.describe("Sprint 5 authenticated supplier acceptance", () => {
   }) => {
     const session = await authenticatedPage(browser, fixtures.storageStates.supplier);
     await session.page.goto("/supplier");
-    await expect(session.page.getByRole("heading", { name: "Supplier workspace" })).toBeVisible();
+    await expect(session.page.getByRole("heading", { name: "Exporter workspace" })).toBeVisible();
     await expect(session.page.getByText("Requires decision")).toBeVisible();
     await session.close();
   });

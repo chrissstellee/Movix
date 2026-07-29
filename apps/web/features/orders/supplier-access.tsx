@@ -12,12 +12,8 @@ type SupplierAccessContext =
       organization: { verificationStatus: string };
     };
 
-export function hasVerifiedSupplierAccess(context: SupplierAccessContext) {
-  return (
-    context?.kind === "ready" &&
-    context.allowedViews.includes("supplier") &&
-    context.organization.verificationStatus === "verified"
-  );
+export function hasExporterAccess(context: SupplierAccessContext) {
+  return context?.kind === "ready" && context.allowedViews.includes("supplier");
 }
 
 export function SupplierAccessUnavailable() {
@@ -25,13 +21,13 @@ export function SupplierAccessUnavailable() {
     <Card className="mx-auto max-w-xl border-amber-500/40">
       <CardHeader>
         <CardTitle>
-          <h1>Supplier access unavailable</h1>
+          <h1>Exporter access unavailable</h1>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
         <p className="text-sm text-muted-foreground">
-          Your organization must be verified before supplier orders and decision summaries can be
-          viewed.
+          This organization does not have the Exporter role. Organization verification is required
+          only before consequential actions such as accepting a revision.
         </p>
         <Button asChild size="sm" variant="outline">
           <Link href="/settings/business">Review business profile</Link>

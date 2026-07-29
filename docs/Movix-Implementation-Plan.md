@@ -1,5 +1,7 @@
 # Movix MVP Analysis and Implementation Plan
 
+> **Historical architecture baseline:** This plan describes the generic B2B procurement direction used to implement Sprints 0–5. Its technical decisions remain useful, but its product terminology and future delivery sequence were superseded after Sprint 5 by the [ASEAN Agricultural Trade Pivot](./Movix-ASEAN-Agricultural-Trade-Pivot.md), [Sprint Plan](./Movix-Sprint-Plan.md), and [Agricultural Trade Architecture and Migration](./agricultural-trade-architecture-and-migration.md). The body is preserved as implementation history.
+
 **Prepared:** July 27, 2026  
 **Planning basis:** `Movix-Idea.md`, current Movix repository, and the Nicole/Justin/Tyler/Kaan party-mode review  
 **Delivery target:** Testnet MVP / pilot

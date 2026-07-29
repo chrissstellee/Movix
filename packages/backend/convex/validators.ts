@@ -65,8 +65,62 @@ export const organizationCapabilityValidator = v.union(
 
 export const organizationVerificationStatusValidator = v.union(
   v.literal("unverified"),
+  v.literal("not_started"),
   v.literal("pending"),
   v.literal("verified"),
+  v.literal("rejected"),
+  v.literal("action_required"),
+);
+
+export const canonicalOrganizationVerificationStatusValidator = v.union(
+  v.literal("not_started"),
+  v.literal("pending"),
+  v.literal("verified"),
+  v.literal("action_required"),
+);
+
+export const exporterInvitationStatusValidator = v.union(
+  v.literal("issued"),
+  v.literal("accepted"),
+  v.literal("revoked"),
+  v.literal("expired"),
+);
+
+export const orderTermsHashVersionValidator = v.union(
+  v.literal("order-terms-v1"),
+  v.literal("order-terms-v2"),
+);
+
+export const orderMigrationStateValidator = v.union(
+  v.literal("current"),
+  v.literal("legacy_incomplete"),
+);
+
+export const shipmentStatusValidator = v.union(
+  v.literal("draft"),
+  v.literal("booked"),
+  v.literal("in_transit"),
+  v.literal("shipped"),
+  v.literal("arrived"),
+  v.literal("delivery_confirmed"),
+  v.literal("cancelled"),
+);
+
+export const tradeDocumentVisibilityValidator = v.union(
+  v.literal("participants"),
+  v.literal("importer"),
+  v.literal("exporter"),
+);
+
+export const tradeDocumentScanStateValidator = v.union(
+  v.literal("pending"),
+  v.literal("clean"),
+  v.literal("rejected"),
+);
+
+export const tradeDocumentReviewStateValidator = v.union(
+  v.literal("unreviewed"),
+  v.literal("accepted"),
   v.literal("rejected"),
 );
 

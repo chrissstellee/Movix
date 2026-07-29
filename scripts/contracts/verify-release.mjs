@@ -62,9 +62,16 @@ const sourceCommit = runGit([
   "contracts/escrow/Cargo.toml",
   "contracts/escrow/src/lib.rs",
 ]);
-const worktreeStatus = runGit(["status", "--porcelain"]);
+const worktreeStatus = runGit([
+  "status",
+  "--porcelain",
+  "--",
+  "contracts",
+  "packages/stellar/generated",
+  "deployments/stellar/testnet/escrow-v1.json",
+]);
 if (worktreeStatus) {
-  throw new Error("Release verification requires a clean worktree");
+  throw new Error("Release verification requires clean contract source, bindings, and manifest");
 }
 
 const mismatches = [];

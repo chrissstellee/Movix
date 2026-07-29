@@ -8,32 +8,28 @@ import { useQuery } from "convex/react";
 import Link from "next/link";
 
 import { orderAmount, orderStatusLabel } from "./order-format";
-import { hasVerifiedSupplierAccess, SupplierAccessUnavailable } from "./supplier-access";
+import { hasExporterAccess, SupplierAccessUnavailable } from "./supplier-access";
 
 export function SupplierDashboard() {
   const context = useQuery(api.organizations.currentContext, {});
-  const verifiedSupplierAccess = hasVerifiedSupplierAccess(context);
-  const summary = useQuery(api.supplierOrders.getSummary, verifiedSupplierAccess ? {} : "skip");
+  const exporterAccess = hasExporterAccess(context);
+  const summary = useQuery(api.supplierOrders.getSummary, exporterAccess ? {} : "skip");
 
-  if (context === undefined || (verifiedSupplierAccess && summary === undefined)) {
-    return <p role="status">Loading supplier dashboard…</p>;
+  if (context === undefined || (exporterAccess && summary === undefined)) {
+    return <p role="status">Loading Exporter dashboard…</p>;
   }
-  if (
-    context?.kind === "ready" &&
-    context.allowedViews.includes("supplier") &&
-    !verifiedSupplierAccess
-  ) {
+  if (context?.kind === "ready" && context.allowedViews.includes("supplier") && !exporterAccess) {
     return <SupplierAccessUnavailable />;
   }
-  if (!verifiedSupplierAccess || summary === undefined) return null;
+  if (!exporterAccess || summary === undefined) return null;
 
   return (
     <div className="space-y-8">
       <header>
-        <p className="text-sm font-medium text-primary">Supplier</p>
-        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Supplier workspace</h1>
+        <p className="text-sm font-medium text-primary">Exporter</p>
+        <h1 className="mt-1 text-3xl font-semibold tracking-tight">Exporter workspace</h1>
         <p className="mt-2 text-muted-foreground">
-          Review frozen purchase-order revisions and record off-chain decisions.
+          Review frozen agricultural Trade Order revisions and record off-chain decisions.
         </p>
       </header>
 
@@ -56,7 +52,7 @@ export function SupplierDashboard() {
       ) : null}
 
       <section
-        aria-label="Supplier order counts"
+        aria-label="Exporter Trade Order counts"
         className="grid gap-4 min-[420px]:grid-cols-2 lg:grid-cols-4"
       >
         <CountCard
@@ -83,7 +79,7 @@ export function SupplierDashboard() {
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-3">
-          <CardTitle>Recent incoming orders</CardTitle>
+          <CardTitle>Recent incoming Trade Orders</CardTitle>
           <Button asChild size="sm" variant="ghost">
             <Link href="/orders?view=supplier">View all</Link>
           </Button>
@@ -91,9 +87,9 @@ export function SupplierDashboard() {
         <CardContent>
           {summary.recentIncoming.length === 0 ? (
             <div className="rounded-lg border border-dashed p-8 text-center">
-              <p className="font-medium">No orders require a decision</p>
+              <p className="font-medium">No Trade Orders require a decision</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                New frozen revisions will appear here when a buyer sends them.
+                New frozen revisions will appear here when an Importer sends them.
               </p>
             </div>
           ) : (
@@ -106,7 +102,7 @@ export function SupplierDashboard() {
                   >
                     <span className="min-w-0">
                       <span className="block truncate font-medium">
-                        {order.purchaseOrderNumber ?? "Purchase order"}
+                        {order.purchaseOrderNumber ?? "Trade Order"}
                       </span>
                       <span className="block truncate text-sm text-muted-foreground">
                         {order.buyerName} · Revision {order.revisionNumber.toString()}

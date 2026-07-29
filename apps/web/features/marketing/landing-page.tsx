@@ -14,16 +14,16 @@ import Link from "next/link";
 import { useState } from "react";
 
 const stages = [
-  ["01", "Agree", "Create and accept one complete purchase order."],
+  ["01", "Agree", "Create a complete Trade Order and accept its exact Trade Agreement."],
   ["02", "Lock", "Lock the exact accepted value in Stellar escrow."],
-  ["03", "Fulfill", "Record fulfillment and let the buyer review delivery."],
+  ["03", "Ship", "Record Shipment Status and let the Importer provide Delivery Confirmation."],
   ["04", "Settle", "Release or mutually refund with a traceable record."],
 ];
 
 const faqs = [
   [
     "What does Movix protect?",
-    "Movix connects an agreed purchase order to explicit escrow and settlement steps, so both parties share one traceable commercial record.",
+    "Movix connects an accepted Trade Agreement to explicit escrow and settlement steps, so the Importer and Exporter share one traceable commercial record.",
   ],
   [
     "Does signing in move funds?",
@@ -35,7 +35,7 @@ const faqs = [
   ],
   [
     "Does Stellar prove that goods were delivered?",
-    "No. Stellar records settlement evidence; buyers and suppliers still record and confirm real-world fulfillment.",
+    "No. Stellar records settlement evidence; Importers and Exporters still record Shipment Status and Delivery Confirmation for real-world goods.",
   ],
   [
     "Which network and assets are supported?",
@@ -47,7 +47,7 @@ const faqs = [
   ],
   [
     "Is Movix ready for Mainnet?",
-    "No. Sprint 1 is a Testnet pilot; its assets have no production monetary value.",
+    "No. Movix is a Testnet pilot; its assets have no production monetary value.",
   ],
 ];
 
@@ -140,11 +140,11 @@ export function LandingPage() {
                 Stellar Testnet pilot
               </Badge>
               <h1 className="mt-7 text-5xl leading-[1.02] font-semibold tracking-[-0.05em] sm:text-7xl">
-                Procurement that settles with certainty.
+                ASEAN agricultural trade that settles with certainty.
               </h1>
               <p className="mx-auto mt-7 max-w-2xl text-lg leading-8 text-muted-foreground">
-                Buyers commit agreed funds before fulfillment. Suppliers receive payment after
-                buyer-confirmed delivery—all through one shared, traceable workflow.
+                Importers commit agreed funds before shipment. Exporters receive payment after
+                Delivery Confirmation—all through one shared, traceable workflow.
               </p>
               <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg" className="h-12 px-7">
@@ -155,7 +155,8 @@ export function LandingPage() {
                 </Button>
               </div>
               <p className="mt-4 text-xs text-muted-foreground">
-                Signing in proves wallet control. It does not move funds.
+                Built for known counterparties. Movix does not discover or match Importers,
+                Exporters, or commodities.
               </p>
             </div>
           </div>
@@ -207,8 +208,8 @@ export function LandingPage() {
                   "Funds move only after a separate review and approval flow.",
                 ],
                 [
-                  "Off-chain commerce",
-                  "Commercial details stay off-chain; settlement evidence is traceable.",
+                  "Off-chain trade",
+                  "Trade Order details stay off-chain; settlement evidence is traceable.",
                 ],
               ].map(([title, copy]) => (
                 <div key={title} className="rounded-xl border bg-background/55 p-5">
@@ -274,7 +275,7 @@ export function LandingPage() {
         <div className="mx-auto flex max-w-7xl flex-col gap-3 px-5 py-9 text-sm text-muted-foreground sm:flex-row sm:items-center sm:justify-between">
           <p className="flex items-center gap-2">
             <BrandLogo className="h-5 w-auto shrink-0" />
-            <span>Procurement settlement on Stellar</span>
+            <span>ASEAN agricultural trade settlement on Stellar</span>
           </p>
           <p>Testnet pilot · No production-value assets</p>
         </div>

@@ -84,18 +84,18 @@ export function FoundationShowcase() {
           </CardHeader>
           <CardContent>
             <Field data-invalid="true">
-              <FieldLabel htmlFor="purchase-order">Purchase order number</FieldLabel>
+              <FieldLabel htmlFor="trade-order">Trade Order reference</FieldLabel>
               <Input
-                id="purchase-order"
-                aria-describedby="purchase-order-help purchase-order-error"
+                id="trade-order"
+                aria-describedby="trade-order-help trade-order-error"
                 aria-invalid="true"
-                defaultValue="MOVIX-PO-0001"
+                defaultValue="MOVIX-TO-0001"
               />
-              <FieldDescription id="purchase-order-help">
-                Use the buyer’s immutable reference.
+              <FieldDescription id="trade-order-help">
+                Use the Importer’s immutable reference.
               </FieldDescription>
-              <FieldError id="purchase-order-error">
-                This reference already exists for the buyer.
+              <FieldError id="trade-order-error">
+                This reference already exists for the Importer.
               </FieldError>
             </Field>
           </CardContent>

@@ -75,6 +75,17 @@ export class EscrowContractClient {
     return this.generated.accept(args, options);
   }
 
+  /**
+   * Agricultural application name for the unchanged escrow-v1 `accept` method.
+   * This acknowledges a funded escrow; it is not off-chain Trade Agreement acceptance.
+   */
+  activateEscrow(
+    args: MethodArgs<GeneratedEscrowClient["accept"]>,
+    options?: MethodOptions,
+  ): MethodResult<GeneratedEscrowClient["accept"]> {
+    return this.generated.accept(args, options);
+  }
+
   markShipped(
     args: MethodArgs<GeneratedEscrowClient["mark_shipped"]>,
     options?: MethodOptions,

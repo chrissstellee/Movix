@@ -10,7 +10,7 @@ describe("FoundationShowcase", () => {
 
     expect(screen.getByRole("heading", { name: "Movix design foundation" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Primary action" })).toBeEnabled();
-    expect(screen.getByLabelText("Purchase order number")).toBeInvalid();
+    expect(screen.getByLabelText("Trade Order reference")).toBeInvalid();
     expect(screen.getByText("Success · Released")).toBeVisible();
   });
 

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { orderAmount, orderStatusLabel } from "./order-format";
-import { hasVerifiedSupplierAccess, SupplierAccessUnavailable } from "./supplier-access";
+import { hasExporterAccess, SupplierAccessUnavailable } from "./supplier-access";
 
 type AgreementFilter = "draft" | "sent" | "accepted" | "rejected" | "cancelled";
 type AssetFilter = "testnet:XLM" | "testnet:USDC";
@@ -37,18 +37,18 @@ export function OrderList() {
   const searchParams = useSearchParams();
   const context = useQuery(api.organizations.currentContext, {});
   const allowedViews = context?.kind === "ready" ? context.allowedViews : [];
-  const verifiedSupplierAccess = hasVerifiedSupplierAccess(context);
+  const exporterAccess = hasExporterAccess(context);
   const requestedView = searchParams.get("view");
   const view: "buyer" | "supplier" | undefined =
     context?.kind !== "ready"
       ? undefined
       : requestedView === "supplier" && allowedViews.includes("supplier")
-        ? verifiedSupplierAccess
+        ? exporterAccess
           ? "supplier"
           : undefined
         : allowedViews.includes("buyer")
           ? "buyer"
-          : verifiedSupplierAccess
+          : exporterAccess
             ? "supplier"
             : undefined;
   const rawStatus = searchParams.get("status");
@@ -91,11 +91,11 @@ export function OrderList() {
     router.replace(`/orders${next.size ? `?${next.toString()}` : ""}`);
   }
 
-  if (context === undefined) return <p role="status">Loading order view…</p>;
+  if (context === undefined) return <p role="status">Loading Trade Order view…</p>;
   if (
     context?.kind === "ready" &&
     context.allowedViews.includes("supplier") &&
-    !verifiedSupplierAccess &&
+    !exporterAccess &&
     view === undefined
   ) {
     return <SupplierAccessUnavailable />;
@@ -107,8 +107,8 @@ export function OrderList() {
       <div className="space-y-6">
         <header className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-sm font-medium text-primary">Supplier orders</p>
-            <h1 className="mt-1 text-3xl font-semibold tracking-tight">Orders</h1>
+            <p className="text-sm font-medium text-primary">Exporter</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight">Trade Orders</h1>
             <p className="mt-2 text-muted-foreground">
               Review frozen revisions and revisit canonical decisions.
             </p>
@@ -124,7 +124,7 @@ export function OrderList() {
             value={queueState ?? ""}
             onChange={(event) => setFilter("queue", event.target.value)}
           >
-            <option value="">All supplier orders</option>
+            <option value="">All Exporter Trade Orders</option>
             <option value="requires_decision">Requires decision</option>
             <option value="expired">Expired</option>
             <option value="accepted">Accepted</option>
@@ -133,18 +133,18 @@ export function OrderList() {
         </label>
 
         {supplierOrders.status === "LoadingFirstPage" ? (
-          <p role="status">Loading supplier orders…</p>
+          <p role="status">Loading Exporter Trade Orders…</p>
         ) : supplierOrders.results.length === 0 ? (
           <Card>
             <CardContent className="p-8 text-center">
-              <p className="font-medium">No supplier orders match this view.</p>
+              <p className="font-medium">No Exporter Trade Orders match this view.</p>
               <p className="mt-1 text-sm text-muted-foreground">
-                New revisions appear after a buyer sends and freezes them.
+                New revisions appear after an Importer sends and freezes them.
               </p>
             </CardContent>
           </Card>
         ) : (
-          <ul className="space-y-3" aria-label="Supplier orders">
+          <ul className="space-y-3" aria-label="Exporter Trade Orders">
             {supplierOrders.results.map((order) => (
               <li key={order.orderId}>
                 <Card>
@@ -154,7 +154,7 @@ export function OrderList() {
                         className="font-medium hover:underline"
                         href={`/orders/${order.orderId}?view=supplier`}
                       >
-                        {order.purchaseOrderNumber ?? "Purchase order"}
+                        {order.purchaseOrderNumber ?? "Trade Order"}
                       </Link>
                       <p className="mt-1 truncate text-sm text-muted-foreground">
                         {order.buyerName} · Revision {order.revisionNumber.toString()}
@@ -171,7 +171,7 @@ export function OrderList() {
                       <Button asChild className="mt-3" size="sm" variant="outline">
                         <Link href={`/orders/${order.orderId}?view=supplier`}>
                           {order.supplierQueueState === "requires_decision"
-                            ? "Review order"
+                            ? "Review Trade Order"
                             : "View decision"}
                         </Link>
                       </Button>
@@ -199,34 +199,34 @@ export function OrderList() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-primary">Buyer procurement</p>
-          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Orders</h1>
+          <p className="text-sm font-medium text-primary">Importer trade operations</p>
+          <h1 className="mt-1 text-3xl font-semibold tracking-tight">Trade Orders</h1>
           <p className="mt-2 text-muted-foreground">
-            Browse organization-scoped purchase orders and commercial states.
+            Browse organization-scoped agricultural trades and independent lifecycle states.
           </p>
         </div>
         <Button asChild>
-          <Link href="/orders/new">Create order</Link>
+          <Link href="/orders/new">Create Trade Order</Link>
         </Button>
         {allowedViews.length > 1 ? <ViewSwitch view="buyer" /> : null}
       </header>
 
       <section
-        aria-label="Order filters"
+        aria-label="Trade Order filters"
         className="grid gap-3 rounded-lg border p-4 sm:grid-cols-4"
       >
         <label htmlFor="order-status-filter" className="space-y-1 text-sm">
-          <span>Order status</span>
+          <span>Trade Agreement status</span>
           <select
             id="order-status-filter"
-            aria-label="Order status"
+            aria-label="Trade Agreement status"
             className="h-9 w-full rounded-md border bg-background px-3"
             value={status ?? ""}
             onChange={(event) => setFilter("status", event.target.value)}
           >
             <option value="">All statuses</option>
             <option value="draft">Draft</option>
-            <option value="sent">Awaiting supplier</option>
+            <option value="sent">Awaiting Exporter</option>
             <option value="accepted">Accepted</option>
             <option value="rejected">Rejected</option>
             <option value="cancelled">Cancelled</option>
@@ -267,13 +267,13 @@ export function OrderList() {
       </section>
 
       {orders.status === "LoadingFirstPage" ? (
-        <p role="status">Loading orders…</p>
+        <p role="status">Loading Trade Orders…</p>
       ) : orders.results.length === 0 ? (
         <Card>
           <CardContent className="p-8 text-center">
-            <p className="font-medium">No orders match these filters.</p>
+            <p className="font-medium">No Trade Orders match these filters.</p>
             <p className="mt-1 text-sm text-muted-foreground">
-              Clear filters or create a purchase order.
+              Clear filters or create a Trade Order.
             </p>
           </CardContent>
         </Card>
@@ -283,7 +283,7 @@ export function OrderList() {
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  {["PO number", "Supplier", "Title", "Issue date", "Total", "Status"].map(
+                  {["Trade Order", "Exporter", "Title", "Issue date", "Total", "Status"].map(
                     (heading) => (
                       <th key={heading} scope="col" className="px-4 py-3 font-medium">
                         {heading}
@@ -314,7 +314,7 @@ export function OrderList() {
               </tbody>
             </table>
           </div>
-          <ul className="space-y-3 md:hidden" aria-label="Orders">
+          <ul className="space-y-3 md:hidden" aria-label="Trade Orders">
             {orders.results.map((order) => (
               <li key={order.orderId}>
                 <Card>
@@ -328,7 +328,7 @@ export function OrderList() {
                       </Link>
                       <Badge variant="outline">{orderStatusLabel(order.agreementStatus)}</Badge>
                     </div>
-                    <OrderFact label="Supplier" value={order.supplierName ?? "Not selected"} />
+                    <OrderFact label="Exporter" value={order.supplierName ?? "Not selected"} />
                     <OrderFact label="Title" value={order.title ?? "—"} />
                     <OrderFact label="Issue date" value={order.issueDate ?? "—"} />
                     <OrderFact
@@ -359,12 +359,12 @@ export function OrderList() {
 
 function ViewSwitch({ view }: { view: "buyer" | "supplier" }) {
   return (
-    <div className="flex rounded-md border p-1" aria-label="Order view">
+    <div className="flex rounded-md border p-1" aria-label="Trade Order view">
       <Button asChild size="sm" variant={view === "buyer" ? "default" : "ghost"}>
-        <Link href="/orders?view=buyer">Buyer</Link>
+        <Link href="/orders?view=buyer">Importer</Link>
       </Button>
       <Button asChild size="sm" variant={view === "supplier" ? "default" : "ghost"}>
-        <Link href="/orders?view=supplier">Supplier</Link>
+        <Link href="/orders?view=supplier">Exporter</Link>
       </Button>
     </div>
   );

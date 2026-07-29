@@ -1,9 +1,14 @@
 # Movix
 
-Movix is a Testnet procurement pilot that uses Stellar for wallet-based authentication and traceable escrow settlement. Sprint 1 provides the secure wallet sign-in boundary, Sprint 2 adds tenant-safe business onboarding, and Sprint 3 defines the immutable escrow contract v1 lifecycle and release proof.
+Movix is a non-marketplace ASEAN agricultural trade escrow pilot. It helps an Importer and Exporter that already know one another agree on a Trade Order, secure payment on Stellar Testnet, record shipment evidence, confirm delivery, and release or refund funds with a shared audit trail.
+
+Sprints 0–5 delivered the generic procurement foundation: wallet authentication, tenant-safe business onboarding, escrow contract v1, order creation, and exact-revision counterparty acceptance. Sprint 6 adapts that brownfield implementation to agricultural trade while preserving historical records and the deployed escrow ABI.
 
 > [!IMPORTANT]
-> Movix currently supports Stellar Testnet only. Testnet assets have no production monetary value. Connecting or signing in with a wallet does not transfer funds and does not authorize a business to buy or supply.
+> Movix currently supports Stellar Testnet only. Testnet assets have no production monetary value. Connecting or signing in with a wallet does not transfer funds and does not verify or authorize an organization to trade.
+
+> [!NOTE]
+> Existing code may still use `buyer`, `supplier`, `order`, and `procurement` compatibility identifiers. Active product language is Importer, Exporter, Trade Order, and Agricultural Trade. Movix does not provide discovery, logistics, warehousing, customs, inspection, or legal/compliance certification.
 
 ## Prerequisites
 
@@ -75,6 +80,17 @@ PowerShell environments that block `pnpm.ps1` can invoke the same commands with 
 | `contracts`               | Stellar escrow contract, lifecycle, invariants, and native tests                |
 | `e2e`                     | Playwright journeys and deterministic wallet/auth fixtures                      |
 | `docs`                    | Sprint plans, architecture, decisions, operations, and review evidence          |
+
+## Current product documentation
+
+- [Documentation index](docs/README.md)
+- [ASEAN Agricultural Trade Pivot](docs/Movix-ASEAN-Agricultural-Trade-Pivot.md)
+- [Current Sprint Plan](docs/Movix-Sprint-Plan.md)
+- [Sprint 6 Detailed Plan](docs/Movix-Sprint-06-ASEAN-Agricultural-Trade-Pivot-Detailed.md)
+- [Architecture and Migration](docs/agricultural-trade-architecture-and-migration.md)
+- [API Compatibility Contract](docs/agricultural-trade-api-contract.md)
+- [Agricultural Trade User Guide](docs/agricultural-trade-user-guide.md)
+- [ADR-003: Agricultural trade compatibility boundary](docs/decisions/ADR-003-agricultural-trade-pivot-compatibility-boundary.md)
 
 ## Quality gates
 

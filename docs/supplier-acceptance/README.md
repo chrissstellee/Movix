@@ -1,5 +1,7 @@
 # Sprint 5 Supplier Acceptance
 
+> **Historical implementation record:** This directory preserves the locally implemented Sprint 5 Supplier acceptance slice. In current product language, Supplier means Exporter and the accepted purchase-order revision is a Trade Order revision. Technical identifiers and evidence remain unchanged. See the [current pivot authority](../Movix-ASEAN-Agricultural-Trade-Pivot.md).
+
 This suite documents the off-chain supplier-acceptance implementation for S5-01 through S5-08.
 
 - [Architecture](./architecture.md)

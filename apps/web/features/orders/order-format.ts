@@ -1,7 +1,7 @@
 export function orderStatusLabel(status: string) {
   const labels: Record<string, string> = {
     draft: "Draft",
-    sent: "Awaiting supplier",
+    sent: "Awaiting Exporter",
     accepted: "Accepted",
     rejected: "Rejected",
     cancelled: "Cancelled",

@@ -5,16 +5,31 @@ import { axe } from "vitest-axe";
 import { OrderDetail } from "./order-detail";
 import { SupplierDashboard } from "./supplier-dashboard";
 
+const testState = vi.hoisted(() => ({
+  verificationStatus: "verified" as "not_started" | "pending" | "verified" | "action_required",
+}));
+
 vi.mock("@repo/backend/client", () => ({
   api: {
     organizations: { currentContext: "currentContext" },
+    organizationVerification: { current: "organizationVerification" },
     supplierOrders: { getSummary: "supplierSummary" },
     orderDetails: { get: "orderDetail" },
     orderTimeline: { list: "timeline" },
+    shipments: { get: "shipment" },
+    tradeDocuments: {
+      list: "tradeDocuments",
+      createUpload: "createDocumentUpload",
+      completeUpload: "completeDocumentUpload",
+    },
     orderDecisions: { accept: "accept", reject: "reject" },
     orderRevisions: { startFromCurrent: "startRevision" },
     orders: { cancel: "cancel" },
   },
+}));
+
+vi.mock("next/navigation", () => ({
+  useRouter: () => ({ push: vi.fn() }),
 }));
 
 vi.mock("convex/react", () => ({
@@ -53,6 +68,11 @@ vi.mock("convex/react", () => ({
         ],
       };
     }
+    if (reference === "organizationVerification") {
+      return { status: testState.verificationStatus };
+    }
+    if (reference === "shipment") return null;
+    if (reference === "tradeDocuments") return [];
     return {
       viewerSide: "supplier",
       order: {
@@ -156,7 +176,7 @@ describe("Sprint 5 supplier acceptance surfaces", () => {
   it("renders an accessible supplier dashboard with exact queue counts", async () => {
     const { container } = render(<SupplierDashboard />);
 
-    expect(screen.getByRole("heading", { name: "Supplier workspace" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Exporter workspace" })).toBeVisible();
     expect(screen.getByText("Requires decision")).toBeVisible();
     expect(screen.getByText("PO-S5-001")).toBeVisible();
     expect((await axe(container)).violations).toEqual([]);
@@ -165,11 +185,28 @@ describe("Sprint 5 supplier acceptance surfaces", () => {
   it("renders the supplier-safe review and an accessible acceptance dialog", async () => {
     const { container } = render(<OrderDetail orderId="order-1" />);
 
-    expect(screen.getByText("No — Sprint 5 decisions are off-chain")).toBeVisible();
+    expect(screen.getByText("No — agreement decisions are off-chain")).toBeVisible();
     expect(screen.getByText("a".repeat(64))).toBeVisible();
     fireEvent.click(screen.getByRole("button", { name: "Accept revision" }));
     expect(screen.getByRole("alertdialog", { name: "Accept revision 2?" })).toBeVisible();
     expect(screen.getByRole("button", { name: "Accept revision 2" })).toBeVisible();
     expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it("blocks document uploads until organization verification is complete", () => {
+    testState.verificationStatus = "not_started";
+
+    render(<OrderDetail orderId="order-1" />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent(
+      "Complete organization verification before uploading trade documents.",
+    );
+    expect(screen.getByRole("link", { name: "Complete verification" })).toHaveAttribute(
+      "href",
+      "/settings/business#verification",
+    );
+    expect(screen.getByRole("button", { name: "Upload version" })).toBeDisabled();
+
+    testState.verificationStatus = "verified";
   });
 });

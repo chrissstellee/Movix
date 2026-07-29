@@ -99,9 +99,20 @@ export const startFromCurrent = mutation({
     void ignoredUpdatedAt;
     void ignoredVersion;
     const nextRevisionNumber = revision.revisionNumber + 1n;
+    const v2Complete = Boolean(
+      revision.destinationCountry &&
+      revision.shipmentWindowFrom &&
+      revision.shipmentWindowTo &&
+      revision.arrivalWindowFrom &&
+      revision.arrivalWindowTo &&
+      revision.buyerWalletAddressSnapshot &&
+      revision.supplierWalletAddressSnapshot,
+    );
     const nextRevisionId = await ctx.db.insert("orderRevisions", {
       ...commercialSnapshot,
       revisionNumber: nextRevisionNumber,
+      termsHashVersion: "order-terms-v2",
+      migrationState: v2Complete ? "current" : "legacy_incomplete",
       supersedesRevisionId: revision._id,
       createdByUserId: authorized.principal.user._id,
       createdAt: now,
@@ -141,6 +152,7 @@ export const startFromCurrent = mutation({
       currentRevisionId: nextRevisionId,
       currentRevisionNumber: nextRevisionNumber,
       agreementStatus: "draft",
+      migrationState: v2Complete ? "current" : "legacy_incomplete",
       acceptedRevisionId: undefined,
       currentDecisionId: undefined,
       decidedAt: undefined,

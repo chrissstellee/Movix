@@ -8,6 +8,7 @@ import {
   authSessionStateValidator,
   commonMutableFields,
   contactTypeValidator,
+  exporterInvitationStatusValidator,
   fulfillmentStatusValidator,
   membershipRoleValidator,
   membershipStatusValidator,
@@ -21,6 +22,8 @@ import {
   orderDecisionCommandTypeValidator,
   orderDecisionTypeValidator,
   orderRejectionReasonValidator,
+  orderMigrationStateValidator,
+  orderTermsHashVersionValidator,
   organizationEntityTypeValidator,
   organizationCapabilityValidator,
   organizationStatusValidator,
@@ -28,7 +31,11 @@ import {
   reconciliationStatusValidator,
   relationshipStatusValidator,
   settlementStatusValidator,
+  shipmentStatusValidator,
   supplierQueueStateValidator,
+  tradeDocumentReviewStateValidator,
+  tradeDocumentScanStateValidator,
+  tradeDocumentVisibilityValidator,
   transactionStatusValidator,
   userStatusValidator,
 } from "./validators";
@@ -133,6 +140,7 @@ export default defineSchema({
     defaultTimezone: v.optional(v.string()),
     status: organizationStatusValidator,
     verificationStatus: v.optional(organizationVerificationStatusValidator),
+    verificationCaseId: v.optional(v.id("organizationVerificationCases")),
     tradingName: v.optional(v.string()),
     entityType: v.optional(organizationEntityTypeValidator),
     registrationNumber: v.optional(v.string()),
@@ -150,6 +158,23 @@ export default defineSchema({
     .index("by_status", ["status"])
     .index("by_createdByUserId", ["createdByUserId"])
     .index("by_registrationFingerprint", ["registrationFingerprint"]),
+
+  organizationVerificationCases: defineTable({
+    organizationId: v.id("organizations"),
+    status: organizationVerificationStatusValidator,
+    evidenceDigest: v.optional(v.string()),
+    evidenceReference: v.optional(v.string()),
+    reasonCode: v.optional(v.string()),
+    recoveryUrl: v.optional(v.string()),
+    submittedByUserId: v.optional(v.id("users")),
+    reviewedBy: v.optional(v.string()),
+    submittedAt: v.optional(v.number()),
+    reviewedAt: v.optional(v.number()),
+    ...commonMutableFields,
+  })
+    .index("by_organizationId", ["organizationId"])
+    .index("by_organizationId_and_status", ["organizationId", "status"])
+    .index("by_status", ["status"]),
 
   businessOnboardingDrafts: defineTable({
     userId: v.id("users"),
@@ -302,6 +327,30 @@ export default defineSchema({
     ])
     .index("by_status", ["status"]),
 
+  exporterInvitations: defineTable({
+    importerOrganizationId: v.id("organizations"),
+    intendedExporterOrganizationId: v.optional(v.id("organizations")),
+    targetEmail: v.optional(v.string()),
+    targetWalletAddress: v.optional(v.string()),
+    tokenHash: v.string(),
+    status: exporterInvitationStatusValidator,
+    createdByUserId: v.id("users"),
+    acceptedByOrganizationId: v.optional(v.id("organizations")),
+    acceptedByUserId: v.optional(v.id("users")),
+    relationshipId: v.optional(v.id("relationships")),
+    expiresAt: v.number(),
+    acceptedAt: v.optional(v.number()),
+    revokedAt: v.optional(v.number()),
+    ...commonMutableFields,
+  })
+    .index("by_tokenHash", ["tokenHash"])
+    .index("by_importerOrganizationId_and_status", ["importerOrganizationId", "status"])
+    .index("by_targetWalletAddress_and_status", ["targetWalletAddress", "status"])
+    .index("by_intendedExporterOrganizationId_and_status", [
+      "intendedExporterOrganizationId",
+      "status",
+    ]),
+
   orders: defineTable({
     buyerOrganizationId: v.id("organizations"),
     supplierOrganizationId: v.optional(v.id("organizations")),
@@ -330,6 +379,7 @@ export default defineSchema({
     decisionSortTimestamp: v.optional(v.number()),
     decisionWindowExpiredAt: v.optional(v.number()),
     supplierQueueState: v.optional(supplierQueueStateValidator),
+    migrationState: v.optional(orderMigrationStateValidator),
     sortTimestamp: v.number(),
     ...commonMutableFields,
   })
@@ -397,6 +447,11 @@ export default defineSchema({
     orderDate: v.optional(v.string()),
     issueDate: v.optional(v.string()),
     requestedDeliveryDate: v.optional(v.string()),
+    destinationCountry: v.optional(v.string()),
+    shipmentWindowFrom: v.optional(v.string()),
+    shipmentWindowTo: v.optional(v.string()),
+    arrivalWindowFrom: v.optional(v.string()),
+    arrivalWindowTo: v.optional(v.string()),
     supplierAcceptanceDeadline: v.optional(v.number()),
     fundingDeadline: v.optional(v.number()),
     validUntil: v.optional(v.number()),
@@ -407,8 +462,10 @@ export default defineSchema({
     assetDecimals: v.optional(v.int64()),
     buyerLegalNameSnapshot: v.string(),
     buyerTradingNameSnapshot: v.optional(v.string()),
+    buyerWalletAddressSnapshot: v.optional(v.string()),
     supplierLegalNameSnapshot: v.optional(v.string()),
     supplierTradingNameSnapshot: v.optional(v.string()),
+    supplierWalletAddressSnapshot: v.optional(v.string()),
     buyerContactSnapshot: v.optional(v.record(v.string(), v.union(v.string(), v.null()))),
     supplierContactSnapshot: v.optional(v.record(v.string(), v.union(v.string(), v.null()))),
     billingAddressSnapshot: v.optional(v.record(v.string(), v.union(v.string(), v.null()))),
@@ -428,6 +485,10 @@ export default defineSchema({
     deliveryWindow: v.optional(v.string()),
     incoterm: v.optional(v.string()),
     namedLocation: v.optional(v.string()),
+    incotermEdition: v.optional(v.string()),
+    incotermRule: v.optional(v.string()),
+    incotermNamedPlace: v.optional(v.string()),
+    requiredDocumentTypes: v.optional(v.array(v.string())),
     handlingInstructions: v.optional(v.string()),
     acceptanceCriteria: v.optional(v.string()),
     warrantyText: v.optional(v.string()),
@@ -435,6 +496,8 @@ export default defineSchema({
     sharedNotes: v.optional(v.string()),
     buyerInternalNotes: v.optional(v.string()),
     termsHash: v.optional(v.string()),
+    termsHashVersion: v.optional(orderTermsHashVersionValidator),
+    migrationState: v.optional(orderMigrationStateValidator),
     frozenAt: v.optional(v.number()),
     supersedesRevisionId: v.optional(v.id("orderRevisions")),
     supersededAt: v.optional(v.number()),
@@ -456,6 +519,10 @@ export default defineSchema({
     manufacturer: v.optional(v.string()),
     brand: v.optional(v.string()),
     origin: v.optional(v.string()),
+    varietyOrGrade: v.optional(v.string()),
+    specification: v.optional(v.string()),
+    originCountry: v.optional(v.string()),
+    packaging: v.optional(v.string()),
     quantityCoefficient: v.int64(),
     quantityScale: v.int64(),
     unitOfMeasure: v.string(),
@@ -556,17 +623,45 @@ export default defineSchema({
 
   shipments: defineTable({
     orderId: v.id("orders"),
+    revisionId: v.optional(v.id("orderRevisions")),
+    buyerOrganizationId: v.optional(v.id("organizations")),
     supplierOrganizationId: v.id("organizations"),
-    status: v.union(v.literal("draft"), v.literal("shipped")),
+    status: shipmentStatusValidator,
     shipmentHash: v.string(),
+    escrowId: v.optional(v.id("escrows")),
+    network: v.optional(networkValidator),
+    contractId: v.optional(v.string()),
+    originCountry: v.optional(v.string()),
+    destinationCountry: v.optional(v.string()),
+    plannedShipmentFrom: v.optional(v.string()),
+    plannedShipmentTo: v.optional(v.string()),
+    expectedArrivalFrom: v.optional(v.string()),
+    expectedArrivalTo: v.optional(v.string()),
     carrier: v.optional(v.string()),
     trackingNumber: v.optional(v.string()),
+    evidenceManifestDigest: v.optional(v.string()),
+    createdByUserId: v.optional(v.id("users")),
     shippedAt: v.optional(v.number()),
+    arrivedAt: v.optional(v.number()),
+    deliveryConfirmedAt: v.optional(v.number()),
     ...commonMutableFields,
   })
     .index("by_orderId", ["orderId"])
     .index("by_supplierOrganizationId", ["supplierOrganizationId"])
     .index("by_status", ["status"]),
+
+  shipmentEvents: defineTable({
+    shipmentId: v.id("shipments"),
+    orderId: v.id("orders"),
+    status: shipmentStatusValidator,
+    actorOrganizationId: v.id("organizations"),
+    actorUserId: v.id("users"),
+    evidenceManifestDigest: v.optional(v.string()),
+    note: v.optional(v.string()),
+    occurredAt: v.number(),
+  })
+    .index("by_shipmentId_and_occurredAt", ["shipmentId", "occurredAt"])
+    .index("by_orderId_and_occurredAt", ["orderId", "occurredAt"]),
 
   shipmentLines: defineTable({
     shipmentId: v.id("shipments"),
@@ -575,6 +670,47 @@ export default defineSchema({
   })
     .index("by_shipmentId", ["shipmentId"])
     .index("by_orderLineId", ["orderLineId"]),
+
+  tradeDocuments: defineTable({
+    orderId: v.id("orders"),
+    importerOrganizationId: v.id("organizations"),
+    exporterOrganizationId: v.id("organizations"),
+    documentType: v.string(),
+    visibility: tradeDocumentVisibilityValidator,
+    currentVersionId: v.optional(v.id("tradeDocumentVersions")),
+    currentVersionNumber: v.int64(),
+    createdByUserId: v.id("users"),
+    ...commonMutableFields,
+  })
+    .index("by_orderId", ["orderId"])
+    .index("by_importerOrganizationId", ["importerOrganizationId"])
+    .index("by_exporterOrganizationId", ["exporterOrganizationId"]),
+
+  tradeDocumentVersions: defineTable({
+    documentId: v.id("tradeDocuments"),
+    orderId: v.id("orders"),
+    versionNumber: v.int64(),
+    storageId: v.id("_storage"),
+    digest: v.string(),
+    mimeType: v.string(),
+    sizeBytes: v.int64(),
+    uploaderOrganizationId: v.id("organizations"),
+    uploaderUserId: v.id("users"),
+    issuer: v.optional(v.string()),
+    issuedAt: v.optional(v.string()),
+    expiresAt: v.optional(v.string()),
+    visibility: tradeDocumentVisibilityValidator,
+    scanState: tradeDocumentScanStateValidator,
+    reviewState: tradeDocumentReviewStateValidator,
+    reviewedByUserId: v.optional(v.id("users")),
+    reviewedAt: v.optional(v.number()),
+    reviewNote: v.optional(v.string()),
+    supersedesVersionId: v.optional(v.id("tradeDocumentVersions")),
+    createdAt: v.number(),
+  })
+    .index("by_documentId_and_versionNumber", ["documentId", "versionNumber"])
+    .index("by_orderId", ["orderId"])
+    .index("by_digest", ["digest"]),
 
   escrows: defineTable({
     orderId: v.id("orders"),
@@ -678,4 +814,15 @@ export default defineSchema({
     lastLedger: v.int64(),
     ...commonMutableFields,
   }).index("by_network_contractId", ["network", "contractId"]),
+
+  migrationFailureReports: defineTable({
+    migration: v.string(),
+    tableName: v.string(),
+    documentId: v.string(),
+    code: v.string(),
+    details: v.optional(v.string()),
+    occurredAt: v.number(),
+  })
+    .index("by_migration_and_tableName", ["migration", "tableName"])
+    .index("by_documentId", ["documentId"]),
 });

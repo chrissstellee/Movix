@@ -16,19 +16,20 @@ import { orderAmount } from "./order-format";
 import { parseOrderMoney, parseTaxPercent } from "./order-input";
 import { useSerializedAutosave } from "./use-serialized-autosave";
 
-const orderSteps = ["Supplier", "Details", "Items", "Terms", "Review"] as const;
+const orderSteps = ["Exporter", "Details", "Commodity", "Trade terms", "Review"] as const;
 
 export function OrderCreate() {
   const router = useRouter();
   const search = useSearchParams();
   const rawOrderId = search.get("orderId");
   const orderId = rawOrderId as Id<"orders"> | null;
-  const create = useMutation(api.orderDrafts.create);
+  const create = useMutation(api.tradeOrders.createDraft);
   const saveSupplier = useMutation(api.orderDrafts.saveSupplier);
   const saveHeader = useMutation(api.orderDrafts.saveHeader);
   const upsertLine = useMutation(api.orderDrafts.upsertLine);
   const removeLine = useMutation(api.orderDrafts.removeLine);
   const saveTerms = useMutation(api.orderDrafts.saveTerms);
+  const saveAgriculturalTerms = useMutation(api.tradeOrders.saveTradeTerms);
   const send = useMutation(api.orders.send);
   const context = useQuery(api.organizations.currentContext, {});
   const settings = useQuery(
@@ -49,7 +50,10 @@ export function OrderCreate() {
   useEffect(() => {
     if (orderId || creating.current) return;
     creating.current = true;
-    void create({ idempotencyKey: crypto.randomUUID() })
+    void create({
+      idempotencyKey: crypto.randomUUID(),
+      termsHashVersion: "order-terms-v2",
+    })
       .then((result) => router.replace(`/orders/new?orderId=${result.orderId}`))
       .catch(() => {
         creating.current = false;
@@ -116,10 +120,10 @@ export function OrderCreate() {
     <div className="space-y-6">
       <header className="flex flex-wrap items-start justify-between gap-4">
         <div>
-          <p className="text-sm font-medium text-primary">Buyer procurement</p>
-          <h1 className="mt-1 text-3xl font-semibold">Create purchase order</h1>
+          <p className="text-sm font-medium text-primary">Importer trade operations</p>
+          <h1 className="mt-1 text-3xl font-semibold">Create Trade Order</h1>
           <p className="mt-2 text-muted-foreground">
-            Sending freezes these terms and notifies the supplier. It moves no funds.
+            Issuing freezes these terms and notifies the intended Exporter. It moves no funds.
           </p>
         </div>
         <SaveStatus
@@ -144,7 +148,13 @@ export function OrderCreate() {
                 draft.revision.purchaseOrderNumber && draft.revision.title && draft.revision.asset,
               ),
               draft.lines.length > 0,
-              Boolean(draft.revision.deliveryMethod && draft.revision.refundPolicy),
+              Boolean(
+                draft.revision.deliveryMethod &&
+                draft.revision.refundPolicy &&
+                draft.revision.destinationCountry &&
+                draft.revision.shipmentWindowFrom &&
+                draft.revision.arrivalWindowTo,
+              ),
               Boolean(review?.complete),
             ][index];
             return (
@@ -181,7 +191,7 @@ export function OrderCreate() {
       </nav>
 
       {activeSection === 0 ? (
-        <Section number="1" title="Supplier">
+        <Section number="1" title="Intended Exporter">
           <form
             className="grid gap-3 sm:grid-cols-[1fr_auto]"
             onSubmit={(event) => {
@@ -201,13 +211,13 @@ export function OrderCreate() {
             }}
           >
             <div>
-              <Label htmlFor="walletAddress">Supplier’s Stellar Testnet wallet address</Label>
+              <Label htmlFor="walletAddress">Exporter’s Stellar Testnet wallet address</Label>
               <Input
                 id="walletAddress"
                 name="walletAddress"
                 required
                 pattern="^G[A-Z2-7]{55}$"
-                placeholder="Paste the supplier address beginning with G"
+                placeholder="Paste the Exporter address beginning with G"
                 autoComplete="off"
                 disabled={!editable}
               />
@@ -216,14 +226,14 @@ export function OrderCreate() {
               </p>
             </div>
             <Button className="self-end" type="submit" disabled={!editable}>
-              Resolve supplier
+              Resolve registered Exporter
             </Button>
             {draft.revision.supplierLegalName ? (
               <div
                 role="status"
                 className="rounded-md border border-emerald-500/30 bg-emerald-500/10 p-3 text-sm sm:col-span-2"
               >
-                <span className="font-medium">Supplier selected</span>
+                <span className="font-medium">Exporter selected</span>
                 <span className="ml-2">{draft.revision.supplierLegalName}</span>
               </div>
             ) : null}
@@ -285,7 +295,7 @@ export function OrderCreate() {
               defaultValue={draft.revision.requestedDeliveryDate ?? delivery}
             />
             <Field
-              label="Supplier acceptance deadline"
+              label="Exporter acceptance deadline"
               name="supplierAcceptanceDeadline"
               type="datetime-local"
               required
@@ -319,7 +329,7 @@ export function OrderCreate() {
             </div>
             <div className="sm:col-span-2">
               <Label htmlFor="buyerInternalNotes">
-                Internal buyer notes (never included in supplier terms)
+                Internal Importer notes (never included in Exporter terms)
               </Label>
               <Textarea
                 id="buyerInternalNotes"
@@ -354,8 +364,12 @@ export function OrderCreate() {
                     line: {
                       lineNumber: BigInt(draft.lines.length + 1),
                       name: text(data, "name"),
-                      quantityCoefficient: BigInt(text(data, "quantity")),
-                      quantityScale: 0n,
+                      category: optional(data, "category"),
+                      varietyOrGrade: optional(data, "varietyOrGrade"),
+                      specification: optional(data, "specification"),
+                      originCountry: text(data, "originCountry"),
+                      packaging: optional(data, "packaging"),
+                      ...parseExactQuantity(text(data, "quantity")),
                       unitOfMeasure: text(data, "unitOfMeasure"),
                       unitPriceBaseUnits: parseOrderMoney(text(data, "unitPrice")),
                       discountKind: "none",
@@ -369,9 +383,38 @@ export function OrderCreate() {
               );
             }}
           >
-            <Field label="Item name" name="name" required />
-            <Field label="Quantity" name="quantity" type="number" min="1" required />
-            <Field label="Unit" name="unitOfMeasure" defaultValue="unit" required />
+            <Field label="Commodity" name="name" required />
+            <Field label="Category" name="category" placeholder="Rice, fruit, coffeeâ€¦" />
+            <Field label="Grade or variety" name="varietyOrGrade" />
+            <Field
+              label="Exact quantity"
+              name="quantity"
+              inputMode="decimal"
+              placeholder="1250.5"
+              required
+            />
+            <label className="space-y-1 text-sm">
+              <span>Controlled unit of measure</span>
+              <select
+                name="unitOfMeasure"
+                defaultValue="KG"
+                className="h-9 w-full rounded-md border bg-background px-3"
+              >
+                {["KG", "MT", "T", "LB", "L", "M3", "BAG", "BOX", "EA"].map((uom) => (
+                  <option key={uom} value={uom}>
+                    {uom}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <Field
+              label="Origin country (ISO code)"
+              name="originCountry"
+              defaultValue="PH"
+              required
+            />
+            <Field label="Packaging" name="packaging" placeholder="50 kg bags" />
+            <Field label="Quality specification" name="specification" />
             <Field
               label={`Unit price (${draft.revision.asset?.code ?? "asset"})`}
               name="unitPrice"
@@ -396,13 +439,13 @@ export function OrderCreate() {
               Add item
             </Button>
           </form>
-          <ul className="mt-5 grid gap-3" aria-label="Order items">
+          <ul className="mt-5 grid gap-3" aria-label="Trade Order commodity lines">
             {draft.lines.map((line) => (
               <li key={line.id} className="grid gap-3 rounded-md border p-4 sm:grid-cols-4">
                 <Fact label="Item" value={`${line.lineNumber.toString()}. ${line.name}`} />
                 <Fact
-                  label="Quantity"
-                  value={`${line.quantityCoefficient.toString()} ${line.unitOfMeasure}`}
+                  label="Exact quantity"
+                  value={`${formatExactQuantity(line.quantityCoefficient, line.quantityScale)} ${line.unitOfMeasure}`}
                 />
                 <Fact
                   label="Line total"
@@ -455,7 +498,7 @@ export function OrderCreate() {
               const data = new FormData(event.currentTarget);
               autosave.runNow(
                 perform(async (expectedVersion) => {
-                  const result = await saveTerms({
+                  const commercial = await saveTerms({
                     orderId,
                     expectedVersion,
                     deliveryMethod: text(data, "deliveryMethod"),
@@ -465,6 +508,30 @@ export function OrderCreate() {
                     refundPolicy: text(data, "refundPolicy"),
                     shippingTotalBaseUnits: parseOrderMoney(text(data, "shippingTotal"), true),
                     acceptanceCriteria: optional(data, "acceptanceCriteria"),
+                  });
+                  const result = await saveAgriculturalTerms({
+                    orderId,
+                    expectedVersion: commercial.version,
+                    destinationCountry: text(data, "destinationCountry"),
+                    shipmentWindow: {
+                      from: text(data, "shipmentWindowFrom"),
+                      to: text(data, "shipmentWindowTo"),
+                    },
+                    arrivalWindow: {
+                      from: text(data, "arrivalWindowFrom"),
+                      to: text(data, "arrivalWindowTo"),
+                    },
+                    incoterm: optional(data, "incotermRule")
+                      ? {
+                          edition: "2020",
+                          rule: text(data, "incotermRule"),
+                          namedPlace: text(data, "incotermNamedPlace"),
+                        }
+                      : undefined,
+                    requiredDocumentTypes: text(data, "requiredDocumentTypes")
+                      .split(",")
+                      .map((item) => item.trim())
+                      .filter(Boolean),
                   });
                   setActiveSection(4);
                   return result;
@@ -482,7 +549,7 @@ export function OrderCreate() {
               label="Shipping responsibility"
               name="shippingResponsibility"
               required
-              defaultValue={draft.revision.shippingResponsibility ?? "Buyer"}
+              defaultValue={draft.revision.shippingResponsibility ?? "Importer"}
             />
             <Field
               label="Freight treatment"
@@ -513,6 +580,70 @@ export function OrderCreate() {
               required
               defaultValue={draft.revision.refundPolicy ?? "Refund before acceptance"}
             />
+            <Field
+              label="Destination country (ISO code)"
+              name="destinationCountry"
+              required
+              defaultValue={draft.revision.destinationCountry ?? "SG"}
+            />
+            <Field
+              label="Shipment window start"
+              name="shipmentWindowFrom"
+              type="date"
+              required
+              defaultValue={draft.revision.shipmentWindowFrom ?? localDateValue(172_800_000)}
+            />
+            <Field
+              label="Shipment window end"
+              name="shipmentWindowTo"
+              type="date"
+              required
+              defaultValue={draft.revision.shipmentWindowTo ?? localDateValue(432_000_000)}
+            />
+            <Field
+              label="Expected arrival start"
+              name="arrivalWindowFrom"
+              type="date"
+              required
+              defaultValue={draft.revision.arrivalWindowFrom ?? localDateValue(604_800_000)}
+            />
+            <Field
+              label="Expected arrival end"
+              name="arrivalWindowTo"
+              type="date"
+              required
+              defaultValue={draft.revision.arrivalWindowTo ?? localDateValue(864_000_000)}
+            />
+            <label className="space-y-1 text-sm">
+              <span>Incoterms 2020 rule (optional)</span>
+              <select
+                name="incotermRule"
+                defaultValue={draft.revision.incotermRule ?? ""}
+                className="h-9 w-full rounded-md border bg-background px-3"
+              >
+                <option value="">No Incoterm selected</option>
+                {["EXW", "FCA", "CPT", "CIP", "DAP", "DPU", "DDP", "FAS", "FOB", "CFR", "CIF"].map(
+                  (rule) => (
+                    <option key={rule} value={rule}>
+                      {rule}
+                    </option>
+                  ),
+                )}
+              </select>
+            </label>
+            <Field
+              label="Incoterm named place"
+              name="incotermNamedPlace"
+              defaultValue={draft.revision.incotermNamedPlace}
+            />
+            <div className="sm:col-span-2">
+              <Field
+                label="Required Trade Document types (comma separated)"
+                name="requiredDocumentTypes"
+                defaultValue={draft.revision.requiredDocumentTypes?.join(", ")}
+                placeholder="commercial_invoice, packing_list, phytosanitary_certificate"
+              />
+            </div>
             <div className="sm:col-span-2">
               <Label htmlFor="acceptanceCriteria">Acceptance criteria</Label>
               <Textarea
@@ -537,9 +668,9 @@ export function OrderCreate() {
             <p role="status">Preparing backend review…</p>
           ) : (
             <div className="space-y-6">
-              <ReviewGroup title="Supplier and parties">
+              <ReviewGroup title="Exporter and parties">
                 <Fact
-                  label="Supplier"
+                  label="Exporter"
                   value={
                     review.revision.supplierTradingName ??
                     review.revision.supplierLegalName ??
@@ -547,18 +678,18 @@ export function OrderCreate() {
                   }
                 />
                 <Fact
-                  label="Supplier legal name"
+                  label="Exporter legal name"
                   value={review.revision.supplierLegalName ?? "Not selected"}
                 />
                 <Fact
-                  label="Supplier contact"
+                  label="Exporter contact"
                   value={contactLabel(review.revision.supplierContact)}
                 />
-                <Fact label="Buyer" value={review.revision.buyerLegalName} />
-                <Fact label="Buyer contact" value={contactLabel(review.revision.buyerContact)} />
+                <Fact label="Importer" value={review.revision.buyerLegalName} />
+                <Fact label="Importer contact" value={contactLabel(review.revision.buyerContact)} />
               </ReviewGroup>
 
-              <ReviewGroup title="Order details">
+              <ReviewGroup title="Trade Order details">
                 <Fact
                   label="PO number"
                   value={review.revision.purchaseOrderNumber ?? "Not provided"}
@@ -572,7 +703,7 @@ export function OrderCreate() {
                   value={review.revision.requestedDeliveryDate ?? "Not provided"}
                 />
                 <Fact
-                  label="Supplier acceptance deadline"
+                  label="Exporter acceptance deadline"
                   value={dateTimeLabel(
                     review.revision.supplierAcceptanceDeadline,
                     review.revision.timezone,
@@ -598,6 +729,41 @@ export function OrderCreate() {
                 <Fact
                   label="Ship-to address"
                   value={addressLabel(review.revision.shippingAddress)}
+                />
+              </ReviewGroup>
+
+              <ReviewGroup title="Agricultural route and documents">
+                <Fact
+                  label="Destination country"
+                  value={review.revision.destinationCountry ?? "Not provided"}
+                />
+                <Fact
+                  label="Shipment window"
+                  value={
+                    review.revision.shipmentWindowFrom && review.revision.shipmentWindowTo
+                      ? `${review.revision.shipmentWindowFrom} â€“ ${review.revision.shipmentWindowTo}`
+                      : "Not provided"
+                  }
+                />
+                <Fact
+                  label="Expected arrival window"
+                  value={
+                    review.revision.arrivalWindowFrom && review.revision.arrivalWindowTo
+                      ? `${review.revision.arrivalWindowFrom} â€“ ${review.revision.arrivalWindowTo}`
+                      : "Not provided"
+                  }
+                />
+                <Fact
+                  label="Incoterm"
+                  value={
+                    review.revision.incotermRule
+                      ? `${review.revision.incotermRule} ${review.revision.incotermNamedPlace ?? ""} (Incoterms ${review.revision.incotermEdition ?? "2020"})`
+                      : "Not selected"
+                  }
+                />
+                <Fact
+                  label="Required Trade Documents"
+                  value={review.revision.requiredDocumentTypes?.join(", ") || "None committed"}
                 />
               </ReviewGroup>
 
@@ -644,9 +810,9 @@ export function OrderCreate() {
 
               {review.revision.buyerInternalNotes ? (
                 <section className="rounded-lg border border-dashed p-4">
-                  <h3 className="font-semibold">Buyer-only notes</h3>
+                  <h3 className="font-semibold">Importer-only notes</h3>
                   <p className="mt-1 text-xs text-muted-foreground">
-                    This content is not shared with the supplier or included in the terms hash.
+                    This content is not shared with the Exporter or included in the terms hash.
                   </p>
                   <p className="mt-3 text-sm whitespace-pre-wrap">
                     {review.revision.buyerInternalNotes}
@@ -701,7 +867,7 @@ export function OrderCreate() {
               </div>
               {review.blockers.length ? (
                 <div role="alert" className="rounded-md border border-amber-500/40 p-4">
-                  <p className="font-medium">Resolve before sending</p>
+                  <p className="font-medium">Resolve before issuing the Trade Order</p>
                   <ul className="mt-2 list-disc pl-5 text-sm">
                     {review.blockers.map((blocker) => (
                       <li key={blocker.field}>
@@ -718,7 +884,7 @@ export function OrderCreate() {
                 </div>
               ) : null}
               <p className="text-sm text-muted-foreground">
-                Sending creates no Stellar transaction, signature request, escrow, or movement of
+                Issuing creates no Stellar transaction, signature request, escrow, or movement of
                 funds.
               </p>
               <div className="flex flex-wrap justify-between gap-3 border-t pt-4">
@@ -729,7 +895,7 @@ export function OrderCreate() {
                   disabled={!review.complete || !editable}
                   onClick={() => setConfirmSend(true)}
                 >
-                  Review and send
+                  Review and issue
                 </Button>
               </div>
             </div>
@@ -738,7 +904,7 @@ export function OrderCreate() {
       ) : null}
       {confirmSend && review ? (
         <SendConfirmation
-          supplier={review.revision.supplierLegalName ?? "Supplier"}
+          supplier={review.revision.supplierLegalName ?? "Exporter"}
           po={review.revision.purchaseOrderNumber ?? "Draft order"}
           total={orderAmount(review.totals.grandTotalBaseUnits, review.revision.asset?.code)}
           sending={sending}
@@ -1008,7 +1174,7 @@ function ProfileSnapshot({
   return (
     <div className="grid gap-3 rounded-md bg-muted/40 p-4 sm:col-span-2 sm:grid-cols-3">
       <Fact
-        label="Buyer contact"
+        label="Importer contact"
         value={settings.primaryContact?.name ?? "Complete in business settings"}
       />
       <Fact
@@ -1047,14 +1213,14 @@ function SendConfirmation({
         className="w-full max-w-lg rounded-lg border bg-background p-6 shadow-xl"
       >
         <h2 id="send-order-title" className="text-xl font-semibold">
-          Send this purchase order?
+          Issue this Trade Order?
         </h2>
         <p className="mt-2 text-sm text-muted-foreground">
-          Sending freezes revision 1 and notifies the supplier. No funds move and no wallet
+          Issuing freezes this exact revision and notifies the Exporter. No funds move and no wallet
           signature is requested.
         </p>
         <div className="mt-5 grid gap-3 rounded-md bg-muted/40 p-4 sm:grid-cols-2">
-          <Fact label="Supplier" value={supplier} />
+          <Fact label="Exporter" value={supplier} />
           <Fact label="PO number" value={po} />
           <Fact label="Total" value={total} mono />
           <Fact label="Network" value="Stellar Testnet" />
@@ -1064,7 +1230,7 @@ function SendConfirmation({
             Keep editing
           </Button>
           <Button type="button" disabled={sending} onClick={confirm}>
-            {sending ? "Sending…" : "Confirm and send"}
+            {sending ? "Issuing…" : "Confirm and issue"}
           </Button>
         </div>
       </div>
@@ -1079,6 +1245,24 @@ function text(data: FormData, name: string) {
 function optional(data: FormData, name: string) {
   const value = text(data, name);
   return value || undefined;
+}
+
+function parseExactQuantity(value: string) {
+  const normalized = value.trim();
+  if (!/^(?:0|[1-9]\d*)(?:\.\d{1,6})?$/u.test(normalized)) {
+    throw new Error("Enter an exact positive quantity with at most six decimal places.");
+  }
+  const [whole = "0", fraction = ""] = normalized.split(".");
+  const quantityCoefficient = BigInt(`${whole}${fraction}`);
+  if (quantityCoefficient <= 0n) throw new Error("Quantity must be positive.");
+  return { quantityCoefficient, quantityScale: BigInt(fraction.length) };
+}
+
+function formatExactQuantity(coefficient: bigint, scale: bigint) {
+  if (scale === 0n) return coefficient.toString();
+  const digits = coefficient.toString().padStart(Number(scale) + 1, "0");
+  const split = digits.length - Number(scale);
+  return `${digits.slice(0, split)}.${digits.slice(split)}`;
 }
 
 function localDateTimeValue(offset: number) {
@@ -1096,7 +1280,7 @@ function localDateValue(offset: number) {
 
 function sectionForBlocker(field: string) {
   if (field.startsWith("supplier")) return 0;
-  if (field === "lines" || field === "totals") return 2;
+  if (field === "lines" || field === "totals" || field.startsWith("line.")) return 2;
   if (
     [
       "deliveryMethod",
@@ -1104,6 +1288,15 @@ function sectionForBlocker(field: string) {
       "freightChargeTreatment",
       "inspectionPeriodHours",
       "refundPolicy",
+      "destinationCountry",
+      "shipmentWindow",
+      "shipmentWindowFrom",
+      "shipmentWindowTo",
+      "arrivalWindow",
+      "arrivalWindowFrom",
+      "arrivalWindowTo",
+      "incoterm",
+      "requiredDocumentTypes",
     ].includes(field)
   ) {
     return 3;

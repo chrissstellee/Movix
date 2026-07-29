@@ -13,6 +13,10 @@ vi.mock("@repo/backend/client", () => ({
     orderDashboard: { getBuyerSummary: "getBuyerSummary" },
     notifications: { listCurrentOrganization: "listNotifications" },
     supplierOrders: { list: "listSupplierOrders" },
+    tradeOrders: {
+      createDraft: "create",
+      saveTradeTerms: "saveAgriculturalTerms",
+    },
     orders: { listBuyerOrders: "listBuyerOrders", send: "send" },
     orderDrafts: {
       create: "create",
@@ -200,18 +204,18 @@ describe("Sprint 4 buyer surfaces", () => {
   it("renders an accessible buyer dashboard with exact attention labels", async () => {
     const { container } = render(<BuyerDashboard />);
 
-    expect(screen.getByRole("heading", { name: "Buyer workspace" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Importer workspace" })).toBeVisible();
     expect(screen.getByText("Drafts needing completion")).toBeVisible();
-    expect(screen.getAllByText("Awaiting supplier").length).toBeGreaterThan(0);
+    expect(screen.getAllByText("Awaiting exporter").length).toBeGreaterThan(0);
     expect((await axe(container)).violations).toEqual([]);
   });
 
   it("renders an accessible responsive order list", async () => {
     const { container } = render(<OrderList />);
 
-    expect(screen.getByRole("heading", { name: "Orders" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Trade Orders" })).toBeVisible();
     expect(screen.getAllByText("PO-001").length).toBeGreaterThan(0);
-    expect(screen.getByLabelText("Order status")).toBeVisible();
+    expect(screen.getByLabelText("Trade Agreement status")).toBeVisible();
     expect((await axe(container)).violations).toEqual([]);
   });
 
@@ -219,8 +223,8 @@ describe("Sprint 4 buyer surfaces", () => {
     navigationState.search = "orderId=order-1";
     const { container } = render(<OrderCreate />);
 
-    expect(screen.getByText("Step 1 of 5: Supplier")).toBeVisible();
-    expect(screen.getByRole("heading", { name: "1. Supplier" })).toBeVisible();
+    expect(screen.getByText("Step 1 of 5: Exporter")).toBeVisible();
+    expect(screen.getByRole("heading", { name: "1. Intended Exporter" })).toBeVisible();
     expect(screen.queryByRole("heading", { name: "2. Order details" })).not.toBeInTheDocument();
     expect((await axe(container)).violations).toEqual([]);
     navigationState.search = "";
@@ -232,8 +236,8 @@ describe("Sprint 4 buyer surfaces", () => {
 
     fireEvent.click(screen.getByRole("button", { name: /5\. Review/i }));
 
-    expect(screen.getByRole("heading", { name: "Supplier and parties" })).toBeVisible();
-    expect(screen.getByRole("heading", { name: "Order details" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Exporter and parties" })).toBeVisible();
+    expect(screen.getByRole("heading", { name: "Trade Order details" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Items" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Terms" })).toBeVisible();
     expect(screen.getByRole("heading", { name: "Totals" })).toBeVisible();

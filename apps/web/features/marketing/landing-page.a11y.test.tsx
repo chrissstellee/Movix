@@ -8,7 +8,9 @@ describe("LandingPage", () => {
   it("has working navigation and sign-in calls to action", () => {
     render(<LandingPage />);
     expect(
-      screen.getByRole("heading", { name: "Procurement that settles with certainty." }),
+      screen.getByRole("heading", {
+        name: "ASEAN agricultural trade that settles with certainty.",
+      }),
     ).toBeVisible();
     expect(screen.getAllByRole("link", { name: /sign in/i })[0]).toHaveAttribute("href", "/login");
     expect(screen.getByRole("button", { name: "What does Movix protect?" })).toHaveAttribute(

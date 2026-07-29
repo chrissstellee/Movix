@@ -2,6 +2,7 @@ import { computeProfileReadiness, roleCan, type Capability } from "@repo/domain"
 
 import { getSingleActiveOrganizationContext } from "./authorization";
 import { businessError } from "./errors";
+import { requireVerifiedOrganization } from "./verification";
 
 import type { Id } from "../_generated/dataModel";
 import type { MutationCtx, QueryCtx } from "../_generated/server";
@@ -17,10 +18,7 @@ export async function getSupplierContext(ctx: OrderCtx) {
         : "ORDER_DECISION_FORBIDDEN",
     );
   }
-  if (
-    !["supplier", "buyer_supplier"].includes(context.organization.capability) ||
-    context.organization.verificationStatus !== "verified"
-  ) {
+  if (!["supplier", "buyer_supplier"].includes(context.organization.capability)) {
     throw businessError("ORDER_DECISION_FORBIDDEN");
   }
   const [contacts, addresses] = await Promise.all([
@@ -59,6 +57,9 @@ export async function requireSupplierOrder(
   const context = await getSupplierContext(ctx);
   if (capability && !roleCan(context.membership.role, capability)) {
     throw businessError("ORDER_DECISION_FORBIDDEN");
+  }
+  if (capability) {
+    requireVerifiedOrganization(context.organization);
   }
   const order = await ctx.db.get("orders", orderId);
   if (!order || order.supplierOrganizationId !== context.organization._id) {

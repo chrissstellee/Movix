@@ -24,9 +24,30 @@ function mutationError(error: unknown) {
     typeof error === "object" && error !== null && "data" in error
       ? String((error as { data?: { code?: string } }).data?.code ?? "")
       : "";
-  return code === "PROFILE_STALE"
-    ? "This section changed elsewhere. The latest server values have been restored."
-    : "The update was not accepted. Review the values and try again.";
+  if (code === "PROFILE_STALE" || code === "ORGANIZATION_VERIFICATION_STALE") {
+    return "This section changed elsewhere. The latest server values have been restored.";
+  }
+  if (code === "ORGANIZATION_VERIFICATION_INVALID") {
+    return "The verification evidence was not accepted. Review it and try again.";
+  }
+  return "The update was not accepted. Review the values and try again.";
+}
+
+async function sha256(value: string) {
+  const bytes = new TextEncoder().encode(value);
+  const buffer = new ArrayBuffer(bytes.byteLength);
+  new Uint8Array(buffer).set(bytes);
+  const digest = await crypto.subtle.digest("SHA-256", buffer);
+  return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function verificationLabel(status: "not_started" | "pending" | "verified" | "action_required") {
+  return {
+    not_started: "Not started",
+    pending: "Pending",
+    verified: "Verified",
+    action_required: "Action required",
+  }[status];
 }
 
 export function BusinessSettings() {
@@ -36,13 +57,16 @@ export function BusinessSettings() {
     api.organizations.getBusinessSettings,
     organizationId ? { organizationId } : "skip",
   );
+  const verification = useQuery(api.organizationVerification.current, organizationId ? {} : "skip");
   const updateProfile = useMutation(api.organizations.updateProfile);
   const updateContact = useMutation(api.organizations.updatePrimaryContact);
   const updateAddress = useMutation(api.organizations.updateAddress);
+  const submitVerification = useMutation(api.organizationVerification.submit);
   const [identity, setIdentity] = useState<IdentityForm | null>(null);
   const [contact, setContact] = useState<ContactForm | null>(null);
   const [message, setMessage] = useState("");
   const [saving, setSaving] = useState("");
+  const [evidenceReference, setEvidenceReference] = useState("");
 
   useEffect(() => {
     if (!settings) return;
@@ -136,6 +160,29 @@ export function BusinessSettings() {
     }
   }
 
+  async function submitVerificationEvidence(event: FormEvent) {
+    event.preventDefault();
+    if (!settings || evidenceReference.trim().length < 8) {
+      setMessage("Enter the verification evidence reference supplied by the operator.");
+      return;
+    }
+    setSaving("verification");
+    setMessage("");
+    try {
+      await submitVerification({
+        organizationId: settings.organization.id,
+        expectedOrganizationVersion: settings.organization.version,
+        evidenceDigest: await sha256(evidenceReference.trim()),
+        evidenceReference: evidenceReference.trim(),
+      });
+      setEvidenceReference("");
+    } catch (error) {
+      setMessage(mutationError(error));
+    } finally {
+      setSaving("");
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div>
@@ -172,6 +219,7 @@ export function BusinessSettings() {
               Primary contact
             </TabsTrigger>
             <TabsTrigger value="addresses">Addresses</TabsTrigger>
+            <TabsTrigger value="verification">Verification</TabsTrigger>
           </TabsList>
         </div>
         <TabsContent value="identity">
@@ -275,6 +323,67 @@ export function BusinessSettings() {
               </CardContent>
             </Card>
           ) : null}
+        </TabsContent>
+        <TabsContent value="verification" id="verification">
+          <Card>
+            <CardHeader>
+              <CardTitle>Organization verification</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              <div aria-live="polite">
+                <p className="text-sm font-medium">
+                  Status: {verificationLabel(verification?.status ?? "not_started")}
+                </p>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Verification is separate from wallet ownership proof. Issuing or accepting a Trade
+                  Order is blocked until the organization is verified.
+                </p>
+              </div>
+              {verification?.status === "pending" ? (
+                <Alert>
+                  <AlertTitle>Review pending</AlertTitle>
+                  <AlertDescription>
+                    An operator is reviewing the submitted evidence. You can still inspect the
+                    workspace and save drafts.
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              {verification?.status === "action_required" ? (
+                <Alert variant="destructive">
+                  <AlertTitle>Action required</AlertTitle>
+                  <AlertDescription>
+                    {verification.reasonCode ??
+                      "Update the requested evidence before resubmitting."}{" "}
+                    {verification.recoveryUrl ? (
+                      <a className="underline" href={verification.recoveryUrl}>
+                        Open recovery instructions
+                      </a>
+                    ) : null}
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              {verification?.status !== "verified" && verification?.status !== "pending" ? (
+                <form className="space-y-3" onSubmit={submitVerificationEvidence}>
+                  <div className="space-y-2">
+                    <Label htmlFor="verification-evidence">Evidence reference</Label>
+                    <Input
+                      id="verification-evidence"
+                      value={evidenceReference}
+                      onChange={(event) => setEvidenceReference(event.target.value)}
+                      placeholder="Operator case or secure evidence reference"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Movix records a SHA-256 digest and audit event for this submission.
+                    </p>
+                  </div>
+                  <Button disabled={saving === "verification"} type="submit">
+                    {saving === "verification" ? "Submittingâ€¦" : "Submit for verification"}
+                  </Button>
+                </form>
+              ) : null}
+            </CardContent>
+          </Card>
         </TabsContent>
         <TabsContent value="addresses">
           <div className="grid gap-4">
