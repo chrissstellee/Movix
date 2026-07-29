@@ -1,10 +1,13 @@
 import { Migrations } from "@convex-dev/migrations";
 import { normalizeBusinessName } from "@repo/domain";
+import { paginationOptsValidator, paginationResultValidator } from "convex/server";
 import { v } from "convex/values";
 
 import { components } from "./_generated/api";
 import { internalQuery } from "./_generated/server";
+import { transitionSupplierCounts } from "./lib/orderCounts";
 import schema from "./schema";
+import { agreementStatusValidator, supplierQueueStateValidator } from "./validators";
 
 export const migrations = new Migrations(components.migrations, { schema });
 
@@ -87,6 +90,223 @@ export const sprint4OrderInventory = internalQuery({
     return {
       ...result,
       canonicalReplacementSafe: !Object.values(result).some(Boolean),
+    };
+  },
+});
+
+export const backfillSupplierQueueState = migrations.define({
+  table: "orders",
+  migrateOne: async (ctx, order) => {
+    if (order.supplierQueueState) return {};
+    const revision = order.currentRevisionId
+      ? await ctx.db.get("orderRevisions", order.currentRevisionId)
+      : null;
+    if (!revision && order.agreementStatus !== "cancelled") {
+      throw new Error(`SPRINT5_MIGRATION_ABORT_ORPHAN_REVISION:${order._id}`);
+    }
+
+    let supplierQueueState:
+      | "not_queued"
+      | "requires_decision"
+      | "expired"
+      | "accepted"
+      | "rejected" = "not_queued";
+    let decisionPatch: Record<string, unknown> = {};
+    if (order.agreementStatus === "sent") {
+      if (!order.supplierOrganizationId || !revision?.frozenAt || !revision.termsHash) {
+        throw new Error(`SPRINT5_MIGRATION_ABORT_INCOMPLETE_SENT_ORDER:${order._id}`);
+      }
+      supplierQueueState =
+        revision.supplierAcceptanceDeadline !== undefined &&
+        Date.now() > revision.supplierAcceptanceDeadline
+          ? "expired"
+          : "requires_decision";
+      if (supplierQueueState === "expired") {
+        decisionPatch = {
+          decisionWindowExpiredAt:
+            order.decisionWindowExpiredAt ?? revision.supplierAcceptanceDeadline! + 1,
+        };
+      }
+    }
+    if (order.agreementStatus === "accepted" || order.agreementStatus === "rejected") {
+      if (!order.supplierOrganizationId || !revision?.termsHash) {
+        throw new Error(`SPRINT5_MIGRATION_ABORT_INCOMPLETE_DECIDED_ORDER:${order._id}`);
+      }
+      const decisions = await ctx.db
+        .query("orderRevisionDecisions")
+        .withIndex("by_orderId_and_decidedAt", (index) => index.eq("orderId", order._id))
+        .take(2);
+      const decision = decisions[0];
+      if (
+        decisions.length !== 1 ||
+        !decision ||
+        decision.decision !== order.agreementStatus ||
+        decision.revisionId !== revision._id ||
+        decision.revisionNumber !== revision.revisionNumber ||
+        decision.buyerOrganizationId !== order.buyerOrganizationId ||
+        decision.supplierOrganizationId !== order.supplierOrganizationId ||
+        decision.termsHash !== revision.termsHash
+      ) {
+        throw new Error(`SPRINT5_MIGRATION_ABORT_MISSING_DECISION_IDENTITY:${order._id}`);
+      }
+      supplierQueueState = decision.decision;
+      decisionPatch = {
+        currentDecisionId: decision._id,
+        ...(decision.decision === "accepted" ? { acceptedRevisionId: revision._id } : {}),
+        decidedAt: decision.decidedAt,
+        decisionSortTimestamp: decision.decidedAt,
+      };
+    }
+    if (order.supplierOrganizationId) {
+      await transitionSupplierCounts(
+        ctx,
+        order.supplierOrganizationId,
+        undefined,
+        supplierQueueState,
+      );
+    }
+    return {
+      supplierQueueState,
+      ...decisionPatch,
+      updatedAt: Date.now(),
+    };
+  },
+});
+
+export const sprint5OrderInventory = internalQuery({
+  args: { paginationOpts: paginationOptsValidator },
+  returns: paginationResultValidator(
+    v.object({
+      orderId: v.id("orders"),
+      agreementStatus: agreementStatusValidator,
+      supplierOrganizationId: v.optional(v.id("organizations")),
+      currentRevisionId: v.optional(v.id("orderRevisions")),
+      acceptedRevisionId: v.optional(v.id("orderRevisions")),
+      currentDecisionId: v.optional(v.id("orderRevisionDecisions")),
+      supplierQueueState: v.optional(supplierQueueStateValidator),
+      revisionNumber: v.int64(),
+      termsHash: v.optional(v.string()),
+      supplierAcceptanceDeadline: v.optional(v.number()),
+      missingCurrentRevision: v.boolean(),
+      missingFrozenIdentity: v.boolean(),
+      missingDecisionIdentity: v.boolean(),
+      orphanDecisionReference: v.boolean(),
+    }),
+  ),
+  handler: async (ctx, args) => {
+    const result = await ctx.db.query("orders").paginate(args.paginationOpts);
+    const page = await Promise.all(
+      result.page.map(async (order) => {
+        const [revision, decision] = await Promise.all([
+          order.currentRevisionId
+            ? ctx.db.get("orderRevisions", order.currentRevisionId)
+            : Promise.resolve(null),
+          order.currentDecisionId
+            ? ctx.db.get("orderRevisionDecisions", order.currentDecisionId)
+            : Promise.resolve(null),
+        ]);
+        const decided =
+          order.agreementStatus === "accepted" || order.agreementStatus === "rejected";
+        return {
+          orderId: order._id,
+          agreementStatus: order.agreementStatus,
+          ...(order.supplierOrganizationId
+            ? { supplierOrganizationId: order.supplierOrganizationId }
+            : {}),
+          ...(order.currentRevisionId ? { currentRevisionId: order.currentRevisionId } : {}),
+          ...(order.acceptedRevisionId ? { acceptedRevisionId: order.acceptedRevisionId } : {}),
+          ...(order.currentDecisionId ? { currentDecisionId: order.currentDecisionId } : {}),
+          ...(order.supplierQueueState ? { supplierQueueState: order.supplierQueueState } : {}),
+          revisionNumber: order.currentRevisionNumber,
+          ...(revision?.termsHash ? { termsHash: revision.termsHash } : {}),
+          ...(revision?.supplierAcceptanceDeadline !== undefined
+            ? { supplierAcceptanceDeadline: revision.supplierAcceptanceDeadline }
+            : {}),
+          missingCurrentRevision: !revision,
+          missingFrozenIdentity:
+            ["sent", "accepted", "rejected"].includes(order.agreementStatus) &&
+            (!revision?.frozenAt || !revision.termsHash),
+          missingDecisionIdentity: decided && !decision,
+          orphanDecisionReference: Boolean(
+            decision &&
+            (decision.orderId !== order._id ||
+              decision.revisionId !== order.currentRevisionId ||
+              decision.decision !== order.agreementStatus),
+          ),
+        };
+      }),
+    );
+    return { ...result, page };
+  },
+});
+
+export const reconcileSupplierOrderCounts = internalQuery({
+  args: { supplierOrganizationId: v.id("organizations") },
+  returns: v.object({
+    projected: v.object({
+      requiresDecision: v.int64(),
+      expired: v.int64(),
+      accepted: v.int64(),
+      rejected: v.int64(),
+    }),
+    actual: v.object({
+      requiresDecision: v.int64(),
+      expired: v.int64(),
+      accepted: v.int64(),
+      rejected: v.int64(),
+    }),
+    exact: v.boolean(),
+    matches: v.boolean(),
+  }),
+  handler: async (ctx, args) => {
+    const states = ["requires_decision", "expired", "accepted", "rejected"] as const;
+    const pages = await Promise.all(
+      states.map((state) =>
+        ctx.db
+          .query("orders")
+          .withIndex("by_supplier_queue_sortTimestamp", (index) =>
+            index
+              .eq("supplierOrganizationId", args.supplierOrganizationId)
+              .eq("supplierQueueState", state),
+          )
+          .take(10_001),
+      ),
+    );
+    const projected = await ctx.db
+      .query("supplierOrderCounts")
+      .withIndex("by_supplierOrganizationId", (index) =>
+        index.eq("supplierOrganizationId", args.supplierOrganizationId),
+      )
+      .unique();
+    const [
+      requiresDecisionOrders = [],
+      expiredOrders = [],
+      acceptedOrders = [],
+      rejectedOrders = [],
+    ] = pages;
+    const actual = {
+      requiresDecision: BigInt(requiresDecisionOrders.length),
+      expired: BigInt(expiredOrders.length),
+      accepted: BigInt(acceptedOrders.length),
+      rejected: BigInt(rejectedOrders.length),
+    };
+    const expected = {
+      requiresDecision: projected?.requiresDecisionCount ?? 0n,
+      expired: projected?.expiredCount ?? 0n,
+      accepted: projected?.acceptedCount ?? 0n,
+      rejected: projected?.rejectedCount ?? 0n,
+    };
+    const exact = pages.every((page) => page.length <= 10_000);
+    return {
+      projected: expected,
+      actual,
+      exact,
+      matches:
+        exact &&
+        expected.requiresDecision === actual.requiresDecision &&
+        expected.expired === actual.expired &&
+        expected.accepted === actual.accepted &&
+        expected.rejected === actual.rejected,
     };
   },
 });

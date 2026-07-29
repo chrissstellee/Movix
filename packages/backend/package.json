@@ -10,7 +10,7 @@
     "build": "tsc -p convex/tsconfig.json --noEmit",
     "dashboard": "convex dashboard",
     "dev": "convex dev",
-    "format:check": "oxfmt --check convex",
+    "format:check": "oxfmt --check \"convex/**/*.ts\" \"!convex/_generated/**\"",
     "lint": "oxlint convex",
     "lint:fix": "oxlint --fix convex && oxfmt --write convex",
     "test": "vitest run --configLoader runner",

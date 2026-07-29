@@ -113,4 +113,4 @@ Any other deployment must repeat inventory. The empty-development result must no
 
 ## Sprint 5 handoff
 
-Sprint 5 may expose supplier organization notifications through active membership, accept/reject a frozen revision, and introduce funding. It must reuse the stored revision and terms hash. It must not select an arbitrary supplier user, rewrite Sprint 4 snapshots, or treat a notification as authorization.
+Sprint 5 exposes supplier organization notifications through active membership and accepts or rejects one frozen revision entirely off-chain. It reuses the stored revision and terms hash. It does not select an arbitrary supplier user, rewrite Sprint 4 snapshots, treat a notification as authorization, or introduce escrow funding.

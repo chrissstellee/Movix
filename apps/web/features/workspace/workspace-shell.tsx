@@ -8,8 +8,8 @@ import { Button } from "@repo/ui/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@repo/ui/components/ui/sheet";
 import { useConvexAuth, useQuery } from "convex/react";
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { ReactNode, useEffect, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { ReactNode, Suspense, useEffect, useState } from "react";
 
 import { routeForContext } from "./route-policy";
 
@@ -18,7 +18,22 @@ function walletLabel(address: string) {
 }
 
 export function WorkspaceShell({ children }: { children: ReactNode }) {
+  return (
+    <Suspense
+      fallback={
+        <main className="flex min-h-screen items-center justify-center">
+          <p role="status">Loading workspace…</p>
+        </main>
+      }
+    >
+      <WorkspaceShellContent>{children}</WorkspaceShellContent>
+    </Suspense>
+  );
+}
+
+function WorkspaceShellContent({ children }: { children: ReactNode }) {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const auth = useMovixAuth();
   const convexAuth = useConvexAuth();
@@ -60,6 +75,13 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
   const requestedView =
     pathname === "/supplier" ? "supplier" : pathname === "/buyer" ? "buyer" : null;
   if (requestedView && !context.allowedViews.includes(requestedView)) return null;
+  const orderView =
+    searchParams.get("view") === "supplier" && context.allowedViews.includes("supplier")
+      ? "supplier"
+      : context.allowedViews.includes("buyer")
+        ? "buyer"
+        : "supplier";
+  const homeHref = context.allowedViews.includes("buyer") ? "/buyer" : "/supplier";
 
   const navigation = (compact = false) => (
     <nav aria-label="Workspace" className="space-y-2">
@@ -70,12 +92,14 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
       ) : null}
       {context.allowedViews.includes("buyer") ? (
         <NavLink
-          href="/orders"
-          active={pathname === "/orders" || pathname.startsWith("/orders/")}
+          href="/orders?view=buyer"
+          active={
+            (pathname === "/orders" || pathname.startsWith("/orders/")) && orderView === "buyer"
+          }
           icon="orders"
           compact={compact}
         >
-          Orders
+          Buyer orders
         </NavLink>
       ) : null}
       {context.allowedViews.includes("supplier") ? (
@@ -86,6 +110,18 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
           compact={compact}
         >
           Supplier workspace
+        </NavLink>
+      ) : null}
+      {context.allowedViews.includes("supplier") ? (
+        <NavLink
+          href="/orders?view=supplier"
+          active={
+            (pathname === "/orders" || pathname.startsWith("/orders/")) && orderView === "supplier"
+          }
+          icon="orders"
+          compact={compact}
+        >
+          Supplier orders
         </NavLink>
       ) : null}
       <NavLink
@@ -123,6 +159,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
           name={context.organization.tradingName ?? context.organization.legalName}
           wallet={context.wallet.address}
           compact={sidebarCollapsed}
+          homeHref={homeHref}
         />
         <Button
           type="button"
@@ -166,6 +203,7 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
                   name={context.organization.tradingName ?? context.organization.legalName}
                   wallet={context.wallet.address}
                   compact={false}
+                  homeHref={homeHref}
                 />
                 <div className="mt-8" role="presentation" onClick={() => setMobileOpen(false)}>
                   {navigation()}
@@ -183,7 +221,9 @@ export function WorkspaceShell({ children }: { children: ReactNode }) {
               {context.organization.tradingName ?? context.organization.legalName}
             </span>
           </div>
-          <p className="hidden text-sm text-muted-foreground lg:block">{breadcrumb(pathname)}</p>
+          <p className="hidden text-sm text-muted-foreground lg:block">
+            {breadcrumb(pathname, orderView)}
+          </p>
           <div className="flex items-center gap-2">
             <Badge variant="outline">Testnet</Badge>
             <span className="hidden font-mono text-xs sm:inline">
@@ -211,14 +251,16 @@ function ShellIdentity({
   name,
   wallet,
   compact,
+  homeHref,
 }: {
   name: string;
   wallet: string;
   compact: boolean;
+  homeHref: string;
 }) {
   return (
     <div className="text-center">
-      <Link href="/buyer" aria-label="Movix home" className="inline-flex justify-center">
+      <Link href={homeHref} aria-label="Movix home" className="inline-flex justify-center">
         <BrandLogo className={compact ? "h-9 w-auto" : "h-11 w-auto"} />
       </Link>
       {compact ? null : (
@@ -337,11 +379,13 @@ function ShellIcon({ name }: { name: ShellIconName }) {
   );
 }
 
-function breadcrumb(pathname: string) {
+function breadcrumb(pathname: string, orderView: "buyer" | "supplier") {
   if (pathname === "/settings/business") return "Settings / Business";
   if (pathname === "/settings/wallet") return "Settings / Wallet";
-  if (pathname === "/orders") return "Buyer / Orders";
+  if (pathname === "/orders")
+    return orderView === "supplier" ? "Supplier / Orders" : "Buyer / Orders";
   if (pathname === "/orders/new") return "Buyer / Orders / Create";
-  if (pathname.startsWith("/orders/")) return "Buyer / Orders / Detail";
+  if (pathname.startsWith("/orders/"))
+    return orderView === "supplier" ? "Supplier / Orders / Detail" : "Buyer / Orders / Detail";
   return pathname === "/supplier" ? "Supplier workspace" : "Buyer workspace";
 }

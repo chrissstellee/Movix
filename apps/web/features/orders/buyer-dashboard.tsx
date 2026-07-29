@@ -4,13 +4,18 @@ import { api } from "@repo/backend/client";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
-import { useQuery } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import Link from "next/link";
 
 import { orderAmount, orderStatusLabel } from "./order-format";
 
 export function BuyerDashboard() {
   const summary = useQuery(api.orderDashboard.getBuyerSummary, {});
+  const notifications = usePaginatedQuery(
+    api.notifications.listCurrentOrganization,
+    { status: "unread" },
+    { initialNumItems: 5 },
+  );
 
   if (summary === undefined) {
     return <p role="status">Loading buyer dashboard…</p>;
@@ -51,6 +56,44 @@ export function BuyerDashboard() {
           href="/orders?status=sent"
         />
       </section>
+
+      <Card>
+        <CardHeader className="flex-row items-center justify-between gap-4">
+          <CardTitle>Supplier decisions</CardTitle>
+          <Button asChild size="sm" variant="ghost">
+            <Link href="/orders?view=buyer">View orders</Link>
+          </Button>
+        </CardHeader>
+        <CardContent>
+          {notifications.status === "LoadingFirstPage" ? (
+            <p role="status">Loading supplier decisions…</p>
+          ) : notifications.results.filter((item) =>
+              ["order.accepted", "order.rejected"].includes(item.eventType),
+            ).length === 0 ? (
+            <p className="text-sm text-muted-foreground">No unread supplier decisions.</p>
+          ) : (
+            <ul className="divide-y" aria-label="Unread supplier decisions">
+              {notifications.results
+                .filter((item) => ["order.accepted", "order.rejected"].includes(item.eventType))
+                .map((item) => (
+                  <li key={item.id}>
+                    <Link
+                      className="flex flex-wrap items-center justify-between gap-3 py-3 hover:underline"
+                      href={`${item.actionUrl}?view=buyer`}
+                    >
+                      <span>
+                        Order {item.eventType === "order.accepted" ? "accepted" : "rejected"}
+                      </span>
+                      <span className="text-xs text-muted-foreground">
+                        {new Date(item.createdAt).toLocaleString()}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+            </ul>
+          )}
+        </CardContent>
+      </Card>
 
       <Card>
         <CardHeader className="flex-row items-center justify-between gap-4">

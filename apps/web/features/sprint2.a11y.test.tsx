@@ -32,6 +32,7 @@ vi.mock("@/core/auth/auth-context", () => ({
 
 vi.mock("next/navigation", () => ({
   usePathname: () => "/buyer",
+  useSearchParams: () => new URLSearchParams(),
   useRouter: () => ({ replace, refresh: vi.fn() }),
 }));
 

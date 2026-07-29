@@ -407,6 +407,10 @@ Login:
 
 **Duration:** 2 weeks  
 **Sprint goal:** Enable the designated supplier to make an auditable decision on the exact order revision.  
+**Detailed implementation plan:** [Movix Sprint 5 — Supplier Acceptance Detailed Plan](./Movix-Sprint-05-Supplier-Acceptance-Detailed.md)
+
+**Technical documentation:** [Sprint 5 supplier acceptance documentation](./supplier-acceptance/README.md)
+
 **Pages:** `/supplier`, `/orders`, supplier view of `/orders/[orderId]`  
 **Dependencies:** Sent order and supplier binding from Sprint 4.
 
@@ -439,6 +443,7 @@ Login:
 - Only the designated supplier can accept the exact active revision.
 - Funding eligibility is derived only from confirmed acceptance.
 - Both parties share one defensible agreement history.
+- Authenticated QA storage states, deployment inventory, and immutable browser evidence are mandatory release inputs; their absence blocks closure rather than producing skipped green tests.
 
 ### Stretch
 

@@ -11,6 +11,8 @@ const navigationState = vi.hoisted(() => ({ search: "" }));
 vi.mock("@repo/backend/client", () => ({
   api: {
     orderDashboard: { getBuyerSummary: "getBuyerSummary" },
+    notifications: { listCurrentOrganization: "listNotifications" },
+    supplierOrders: { list: "listSupplierOrders" },
     orders: { listBuyerOrders: "listBuyerOrders", send: "send" },
     orderDrafts: {
       create: "create",
@@ -38,7 +40,11 @@ vi.mock("convex/react", () => ({
   useMutation: () => vi.fn(),
   useQuery: (reference: string) => {
     if (reference === "currentContext") {
-      return { kind: "ready", organization: { id: "organization-1" } };
+      return {
+        kind: "ready",
+        organization: { id: "organization-1" },
+        allowedViews: ["buyer"],
+      };
     }
     if (reference === "getBusinessSettings") {
       return {

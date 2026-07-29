@@ -1,0 +1,175 @@
+import { fireEvent, render, screen } from "@testing-library/react";
+import { describe, expect, it, vi } from "vitest";
+import { axe } from "vitest-axe";
+
+import { OrderDetail } from "./order-detail";
+import { SupplierDashboard } from "./supplier-dashboard";
+
+vi.mock("@repo/backend/client", () => ({
+  api: {
+    organizations: { currentContext: "currentContext" },
+    supplierOrders: { getSummary: "supplierSummary" },
+    orderDetails: { get: "orderDetail" },
+    orderTimeline: { list: "timeline" },
+    orderDecisions: { accept: "accept", reject: "reject" },
+    orderRevisions: { startFromCurrent: "startRevision" },
+    orders: { cancel: "cancel" },
+  },
+}));
+
+vi.mock("convex/react", () => ({
+  useMutation: () => vi.fn().mockResolvedValue({}),
+  useQuery: (reference: string) => {
+    if (reference === "currentContext") {
+      return {
+        kind: "ready",
+        allowedViews: ["supplier"],
+        organization: { verificationStatus: "verified" },
+      };
+    }
+    if (reference === "supplierSummary") {
+      return {
+        counts: {
+          requiresDecision: 1n,
+          expired: 2n,
+          accepted: 3n,
+          rejected: 4n,
+        },
+        blockers: [],
+        recentIncoming: [
+          {
+            orderId: "order-1",
+            purchaseOrderNumber: "PO-S5-001",
+            buyerName: "Buyer Incorporated",
+            title: "Long supplier-visible title",
+            revisionNumber: 2n,
+            grandTotalBaseUnits: 117_000_000n,
+            assetCode: "USDC",
+            agreementStatus: "sent",
+            supplierQueueState: "requires_decision",
+            supplierAcceptanceDeadline: Date.now() + 60_000,
+            sortTimestamp: Date.now(),
+          },
+        ],
+      };
+    }
+    return {
+      viewerSide: "supplier",
+      order: {
+        id: "order-1",
+        agreementStatus: "sent",
+        fulfillmentStatus: "not_started",
+        settlementStatus: "unfunded",
+        supplierQueueState: "requires_decision",
+        version: 4n,
+        fundingEligible: false,
+      },
+      revision: {
+        id: "revision-2",
+        version: 7n,
+        revisionNumber: 2n,
+        supplierOrganizationId: "supplier-1",
+        buyerLegalName: "Buyer Incorporated",
+        supplierLegalName: "Supplier Incorporated",
+        buyerContact: { name: "Buyer Contact", email: "buyer@example.com" },
+        supplierContact: { name: "Supplier Contact", email: "supplier@example.com" },
+        billingAddress: { line1: "1 Buyer Street", city: "Makati" },
+        shippingAddress: { line1: "2 Supplier Street", city: "Taguig" },
+        purchaseOrderNumber: "PO-S5-001",
+        title: "Machine parts",
+        timezone: "Asia/Manila",
+        orderDate: "2026-07-28",
+        issueDate: "2026-07-28",
+        requestedDeliveryDate: "2026-08-31",
+        supplierAcceptanceDeadline: Date.now() + 60_000,
+        fundingDeadline: Date.now() + 120_000,
+        asset: {
+          key: "testnet:USDC",
+          code: "USDC",
+          issuer: null,
+          contractId: "C".repeat(56),
+          decimals: 7n,
+          network: "testnet",
+        },
+        deliveryMethod: "Courier",
+        shippingResponsibility: "Buyer",
+        freightChargeTreatment: "Added to order",
+        inspectionPeriodHours: 24n,
+        refundPolicy: "Refund before acceptance.",
+        acceptanceCriteria: "Match the approved specification.",
+        sharedNotes: "Handle with care.",
+        totals: {
+          subtotalBaseUnits: 100_000_000n,
+          discountTotalBaseUnits: 0n,
+          taxTotalBaseUnits: 12_000_000n,
+          shippingTotalBaseUnits: 5_000_000n,
+          grandTotalBaseUnits: 117_000_000n,
+        },
+        frozenAt: Date.now(),
+        termsHash: "a".repeat(64),
+      },
+      lines: [
+        {
+          id: "line-1",
+          lineNumber: 1n,
+          name: "Machine bolt",
+          description: "Stainless steel",
+          category: "Hardware",
+          manufacturer: "Movix Parts",
+          quantityCoefficient: 2n,
+          quantityScale: 0n,
+          unitOfMeasure: "each",
+          unitPriceBaseUnits: 50_000_000n,
+          discountKind: "none",
+          taxBps: 1_200n,
+          requiresInspection: true,
+          grossBaseUnits: 100_000_000n,
+          discountBaseUnits: 0n,
+          taxBaseUnits: 12_000_000n,
+          lineTotalBaseUnits: 112_000_000n,
+        },
+      ],
+      canDecide: true,
+      offChainNotice: "Acceptance records an off-chain agreement decision and moves no funds.",
+    };
+  },
+  usePaginatedQuery: () => ({
+    results: [
+      {
+        revisionId: "revision-2",
+        revisionNumber: 2n,
+        events: [
+          {
+            id: "started:revision-2",
+            type: "revision_started",
+            timestamp: Date.now(),
+          },
+        ],
+      },
+    ],
+    status: "Exhausted",
+    loadMore: vi.fn(),
+  }),
+}));
+
+describe("Sprint 5 supplier acceptance surfaces", () => {
+  it("renders an accessible supplier dashboard with exact queue counts", async () => {
+    const { container } = render(<SupplierDashboard />);
+
+    expect(screen.getByRole("heading", { name: "Supplier workspace" })).toBeVisible();
+    expect(screen.getByText("Requires decision")).toBeVisible();
+    expect(screen.getByText("PO-S5-001")).toBeVisible();
+    expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it("renders the supplier-safe review and an accessible acceptance dialog", async () => {
+    const { container } = render(<OrderDetail orderId="order-1" />);
+
+    expect(screen.getByText("No — Sprint 5 decisions are off-chain")).toBeVisible();
+    expect(screen.getByText("a".repeat(64))).toBeVisible();
+    fireEvent.click(screen.getByRole("button", { name: "Accept revision" }));
+    expect(screen.getByRole("alertdialog", { name: "Accept revision 2?" })).toBeVisible();
+    expect(screen.getByRole("button", { name: "Accept revision 2" })).toBeVisible();
+    expect((await axe(container)).violations).toEqual([]);
+  });
+});

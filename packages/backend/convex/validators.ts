@@ -17,6 +17,24 @@ export const orderCommandTypeValidator = v.union(
   v.literal("create"),
   v.literal("send"),
   v.literal("cancel"),
+  v.literal("start_revision"),
+);
+export const orderDecisionTypeValidator = v.union(v.literal("accepted"), v.literal("rejected"));
+export const orderDecisionCommandTypeValidator = v.union(v.literal("accept"), v.literal("reject"));
+export const orderRejectionReasonValidator = v.union(
+  v.literal("pricing_or_totals"),
+  v.literal("quantity_or_availability"),
+  v.literal("delivery_schedule"),
+  v.literal("commercial_terms"),
+  v.literal("supplier_capacity"),
+  v.literal("other"),
+);
+export const supplierQueueStateValidator = v.union(
+  v.literal("not_queued"),
+  v.literal("requires_decision"),
+  v.literal("expired"),
+  v.literal("accepted"),
+  v.literal("rejected"),
 );
 
 export const authChallengeStateValidator = v.union(

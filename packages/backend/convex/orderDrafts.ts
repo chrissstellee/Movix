@@ -147,6 +147,7 @@ function publicRevision(revision: Doc<"orderRevisions">) {
   return {
     id: revision._id,
     version: revision.version,
+    revisionNumber: revision.revisionNumber,
     buyerLegalName: revision.buyerLegalNameSnapshot,
     ...(revision.buyerTradingNameSnapshot
       ? { buyerTradingName: revision.buyerTradingNameSnapshot }
@@ -317,6 +318,7 @@ export const create = mutation({
       agreementStatus: "draft",
       fulfillmentStatus: "not_started",
       settlementStatus: "unfunded",
+      supplierQueueState: "not_queued",
       sortTimestamp: now,
       createdAt: now,
       updatedAt: now,

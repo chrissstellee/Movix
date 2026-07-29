@@ -18,6 +18,9 @@ import {
   orderAssetKeyValidator,
   orderCommandTypeValidator,
   orderDiscountKindValidator,
+  orderDecisionCommandTypeValidator,
+  orderDecisionTypeValidator,
+  orderRejectionReasonValidator,
   organizationEntityTypeValidator,
   organizationCapabilityValidator,
   organizationStatusValidator,
@@ -25,6 +28,7 @@ import {
   reconciliationStatusValidator,
   relationshipStatusValidator,
   settlementStatusValidator,
+  supplierQueueStateValidator,
   transactionStatusValidator,
   userStatusValidator,
 } from "./validators";
@@ -303,6 +307,8 @@ export default defineSchema({
     supplierOrganizationId: v.optional(v.id("organizations")),
     relationshipId: v.optional(v.id("relationships")),
     currentRevisionId: v.optional(v.id("orderRevisions")),
+    acceptedRevisionId: v.optional(v.id("orderRevisions")),
+    currentDecisionId: v.optional(v.id("orderRevisionDecisions")),
     currentRevisionNumber: v.int64(),
     purchaseOrderNumber: v.optional(v.string()),
     normalizedPurchaseOrderNumber: v.optional(v.string()),
@@ -320,6 +326,10 @@ export default defineSchema({
     cancelledByUserId: v.optional(v.id("users")),
     cancelledAt: v.optional(v.number()),
     sentAt: v.optional(v.number()),
+    decidedAt: v.optional(v.number()),
+    decisionSortTimestamp: v.optional(v.number()),
+    decisionWindowExpiredAt: v.optional(v.number()),
+    supplierQueueState: v.optional(supplierQueueStateValidator),
     sortTimestamp: v.number(),
     ...commonMutableFields,
   })
@@ -329,6 +339,7 @@ export default defineSchema({
     ])
     .index("by_buyer_and_sortTimestamp", ["buyerOrganizationId", "sortTimestamp"])
     .index("by_supplierOrganizationId", ["supplierOrganizationId"])
+    .index("by_supplier_and_sortTimestamp", ["supplierOrganizationId", "sortTimestamp"])
     .index("by_buyer_and_agreementStatus_and_sortTimestamp", [
       "buyerOrganizationId",
       "agreementStatus",
@@ -361,6 +372,11 @@ export default defineSchema({
     .index("by_supplier_status_sortTimestamp", [
       "supplierOrganizationId",
       "agreementStatus",
+      "sortTimestamp",
+    ])
+    .index("by_supplier_queue_sortTimestamp", [
+      "supplierOrganizationId",
+      "supplierQueueState",
       "sortTimestamp",
     ]),
 
@@ -420,6 +436,8 @@ export default defineSchema({
     buyerInternalNotes: v.optional(v.string()),
     termsHash: v.optional(v.string()),
     frozenAt: v.optional(v.number()),
+    supersedesRevisionId: v.optional(v.id("orderRevisions")),
+    supersededAt: v.optional(v.number()),
     createdByUserId: v.id("users"),
     ...commonMutableFields,
   })
@@ -465,10 +483,55 @@ export default defineSchema({
     requestFingerprint: v.string(),
     resultRevisionId: v.optional(v.id("orderRevisions")),
     resultAgreementStatus: agreementStatusValidator,
+    resultOrderVersion: v.optional(v.int64()),
+    resultRevisionVersion: v.optional(v.int64()),
     createdAt: v.number(),
   })
     .index("by_buyer_command_idempotencyKey", [
       "buyerOrganizationId",
+      "commandType",
+      "idempotencyKey",
+    ])
+    .index("by_orderId_and_commandType", ["orderId", "commandType"]),
+
+  orderRevisionDecisions: defineTable({
+    orderId: v.id("orders"),
+    revisionId: v.id("orderRevisions"),
+    revisionNumber: v.int64(),
+    buyerOrganizationId: v.id("organizations"),
+    supplierOrganizationId: v.id("organizations"),
+    decision: orderDecisionTypeValidator,
+    termsHash: v.string(),
+    reasonCode: v.optional(orderRejectionReasonValidator),
+    reasonNote: v.optional(v.string()),
+    actorUserId: v.id("users"),
+    actorWalletAddress: v.string(),
+    decidedAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_revisionId", ["revisionId"])
+    .index("by_orderId_and_decidedAt", ["orderId", "decidedAt"])
+    .index("by_supplierOrganizationId_and_decidedAt", ["supplierOrganizationId", "decidedAt"]),
+
+  orderDecisionReceipts: defineTable({
+    supplierOrganizationId: v.id("organizations"),
+    orderId: v.id("orders"),
+    revisionId: v.id("orderRevisions"),
+    commandType: orderDecisionCommandTypeValidator,
+    idempotencyKey: v.string(),
+    requestFingerprint: v.string(),
+    decisionId: v.id("orderRevisionDecisions"),
+    resultOrderVersion: v.int64(),
+    resultRevisionVersion: v.int64(),
+    decidedAt: v.number(),
+    createdAt: v.number(),
+  })
+    .index("by_supplierOrganizationId_and_idempotencyKey", [
+      "supplierOrganizationId",
+      "idempotencyKey",
+    ])
+    .index("by_supplierOrganizationId_and_commandType_and_idempotencyKey", [
+      "supplierOrganizationId",
       "commandType",
       "idempotencyKey",
     ])
@@ -481,6 +544,15 @@ export default defineSchema({
     sentCount: v.int64(),
     ...commonMutableFields,
   }).index("by_organizationId_and_side", ["organizationId", "side"]),
+
+  supplierOrderCounts: defineTable({
+    supplierOrganizationId: v.id("organizations"),
+    requiresDecisionCount: v.int64(),
+    expiredCount: v.int64(),
+    acceptedCount: v.int64(),
+    rejectedCount: v.int64(),
+    ...commonMutableFields,
+  }).index("by_supplierOrganizationId", ["supplierOrganizationId"]),
 
   shipments: defineTable({
     orderId: v.id("orders"),
@@ -578,6 +650,7 @@ export default defineSchema({
     .index("by_recipientUserId_status", ["recipientUserId", "status"])
     .index("by_eventType_recipientUserId", ["eventType", "recipientUserId"])
     .index("by_recipientOrganizationId_and_status", ["recipientOrganizationId", "status"])
+    .index("by_recipientOrganizationId_and_createdAt", ["recipientOrganizationId", "createdAt"])
     .index("by_recipientOrganizationId_and_idempotencyKey", [
       "recipientOrganizationId",
       "idempotencyKey",

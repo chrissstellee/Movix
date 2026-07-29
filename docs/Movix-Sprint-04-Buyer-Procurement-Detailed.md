@@ -1371,6 +1371,10 @@ Use when any of the following remains:
 
 ## 34. Handoff to Sprint 5
 
+**Consumer contract:** [Movix Sprint 5 — Supplier Acceptance Detailed Plan](./Movix-Sprint-05-Supplier-Acceptance-Detailed.md)
+
+**Implementation runbook:** [Sprint 5 Supplier Acceptance](./supplier-acceptance/implementation-runbook.md)
+
 Sprint 5 may assume:
 
 - A sent order targets one active supplier organization.

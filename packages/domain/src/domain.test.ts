@@ -1,7 +1,14 @@
 import { describe, expect, it } from "vitest";
 
 import { draftOrder, invalidFixtures } from "./fixtures.js";
-import { isTerminalSettlementState, transitionAgreement } from "./lifecycles.js";
+import {
+  isFundingEligible,
+  isTerminalSettlementState,
+  normalizeRejectionNote,
+  rejectionReasonCodes,
+  supplierQueueStates,
+  transitionAgreement,
+} from "./lifecycles.js";
 import { roleCan } from "./permissions.js";
 
 describe("agreement lifecycle", () => {
@@ -13,7 +20,11 @@ describe("agreement lifecycle", () => {
     });
     expect(transitionAgreement("accepted", "revise")).toEqual({
       ok: true,
-      state: "sent",
+      state: "draft",
+    });
+    expect(transitionAgreement("rejected", "revise")).toEqual({
+      ok: true,
+      state: "draft",
     });
   });
 
@@ -26,6 +37,47 @@ describe("agreement lifecycle", () => {
       ok: false,
       reason: "terminal_state",
     });
+    expect(transitionAgreement("sent", "revise")).toEqual({
+      ok: false,
+      reason: "invalid_transition",
+    });
+  });
+});
+
+describe("supplier decision contracts", () => {
+  it("exposes the fixed queue and rejection taxonomies", () => {
+    expect(supplierQueueStates).toEqual([
+      "not_queued",
+      "requires_decision",
+      "expired",
+      "accepted",
+      "rejected",
+    ]);
+    expect(rejectionReasonCodes).toHaveLength(6);
+    expect(rejectionReasonCodes).toContain("pricing_or_totals");
+  });
+
+  it("normalizes bounded rejection notes", () => {
+    expect(normalizeRejectionNote("  Cannot   meet delivery  ")).toBe("Cannot meet delivery");
+    expect(normalizeRejectionNote("   ")).toBeUndefined();
+    expect(() => normalizeRejectionNote("x".repeat(501))).toThrow("ORDER_DECISION_REASON_INVALID");
+  });
+
+  it("derives funding eligibility from the exact accepted revision", () => {
+    const accepted = {
+      agreementStatus: "accepted" as const,
+      settlementStatus: "unfunded" as const,
+      currentRevisionId: "revision-2",
+      acceptedRevisionId: "revision-2",
+      decision: "accepted" as const,
+      decisionRevisionId: "revision-2",
+      decisionTermsHash: "a".repeat(64),
+      currentTermsHash: "a".repeat(64),
+    };
+    expect(isFundingEligible(accepted)).toBe(true);
+    expect(isFundingEligible({ ...accepted, acceptedRevisionId: "revision-1" })).toBe(false);
+    expect(isFundingEligible({ ...accepted, settlementStatus: "funded" })).toBe(false);
+    expect(isFundingEligible({ ...accepted, decision: "rejected" })).toBe(false);
   });
 });
 

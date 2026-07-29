@@ -20,15 +20,23 @@ import type * as lib_orderAssets from "../lib/orderAssets.js";
 import type * as lib_orderAuthorization from "../lib/orderAuthorization.js";
 import type * as lib_orderCounts from "../lib/orderCounts.js";
 import type * as lib_orderTerms from "../lib/orderTerms.js";
+import type * as lib_supplierOrderAuthorization from "../lib/supplierOrderAuthorization.js";
 import type * as migrations from "../migrations.js";
+import type * as notifications from "../notifications.js";
 import type * as onboarding from "../onboarding.js";
 import type * as orderDashboard from "../orderDashboard.js";
+import type * as orderDecisions from "../orderDecisions.js";
+import type * as orderDetails from "../orderDetails.js";
 import type * as orderDrafts from "../orderDrafts.js";
+import type * as orderRevisions from "../orderRevisions.js";
+import type * as orderTimeline from "../orderTimeline.js";
 import type * as orderValidators from "../orderValidators.js";
 import type * as orders from "../orders.js";
 import type * as organizationValidators from "../organizationValidators.js";
 import type * as organizations from "../organizations.js";
 import type * as supplierDirectory from "../supplierDirectory.js";
+import type * as supplierOrderDeadlines from "../supplierOrderDeadlines.js";
+import type * as supplierOrders from "../supplierOrders.js";
 import type * as validators from "../validators.js";
 
 import type {
@@ -50,15 +58,23 @@ declare const fullApi: ApiFromModules<{
   "lib/orderAuthorization": typeof lib_orderAuthorization;
   "lib/orderCounts": typeof lib_orderCounts;
   "lib/orderTerms": typeof lib_orderTerms;
+  "lib/supplierOrderAuthorization": typeof lib_supplierOrderAuthorization;
   migrations: typeof migrations;
+  notifications: typeof notifications;
   onboarding: typeof onboarding;
   orderDashboard: typeof orderDashboard;
+  orderDecisions: typeof orderDecisions;
+  orderDetails: typeof orderDetails;
   orderDrafts: typeof orderDrafts;
+  orderRevisions: typeof orderRevisions;
+  orderTimeline: typeof orderTimeline;
   orderValidators: typeof orderValidators;
   orders: typeof orders;
   organizationValidators: typeof organizationValidators;
   organizations: typeof organizations;
   supplierDirectory: typeof supplierDirectory;
+  supplierOrderDeadlines: typeof supplierOrderDeadlines;
+  supplierOrders: typeof supplierOrders;
   validators: typeof validators;
 }>;
 

@@ -1,11 +1,16 @@
 import { calculateOrderLine, calculateOrderTotals } from "@repo/domain";
-import { paginationOptsValidator, paginationResultValidator } from "convex/server";
+import {
+  makeFunctionReference,
+  paginationOptsValidator,
+  paginationResultValidator,
+  type FunctionReference,
+} from "convex/server";
 import { v } from "convex/values";
 
 import { mutation, query } from "./_generated/server";
 import { businessError } from "./lib/errors";
 import { requireBuyerOrder, getBuyerContext } from "./lib/orderAuthorization";
-import { adjustBuyerCounts } from "./lib/orderCounts";
+import { adjustBuyerCounts, transitionSupplierCounts } from "./lib/orderCounts";
 import { getOrderBlockers, hashOrderTermsV1 } from "./lib/orderTerms";
 import { loadDraftRecords, publicLine, publicRevision } from "./orderDrafts";
 import {
@@ -26,6 +31,15 @@ interface OrderCommandResult {
   revisionVersion: bigint;
   replay: boolean;
 }
+
+const expireSupplierDecision = makeFunctionReference<
+  "mutation",
+  { orderId: Id<"orders">; revisionId: Id<"orderRevisions"> }
+>("supplierOrderDeadlines:expire") as unknown as FunctionReference<
+  "mutation",
+  "internal",
+  { orderId: Id<"orders">; revisionId: Id<"orderRevisions"> }
+>;
 
 function mapListItem(order: Doc<"orders">) {
   return {
@@ -191,6 +205,14 @@ export const send = mutation({
     });
     await ctx.db.patch("orders", authorized.order._id, {
       agreementStatus: "sent",
+      supplierOrganizationId: supplier.supplier._id,
+      relationshipId: revision.relationshipId,
+      supplierQueueState: "requires_decision",
+      acceptedRevisionId: undefined,
+      currentDecisionId: undefined,
+      decidedAt: undefined,
+      decisionSortTimestamp: undefined,
+      decisionWindowExpiredAt: undefined,
       sentAt: now,
       sortTimestamp: now,
       updatedAt: now,
@@ -199,6 +221,16 @@ export const send = mutation({
     await adjustBuyerCounts(ctx, authorized.organization._id, {
       draft: -1n,
       sent: 1n,
+    });
+    await transitionSupplierCounts(
+      ctx,
+      supplier.supplier._id,
+      authorized.order.supplierQueueState,
+      "requires_decision",
+    );
+    await ctx.scheduler.runAt(revision.supplierAcceptanceDeadline! + 1, expireSupplierDecision, {
+      orderId: authorized.order._id,
+      revisionId: revision._id,
     });
     await ctx.db.insert("orderCommandReceipts", {
       buyerOrganizationId: authorized.organization._id,
@@ -437,6 +469,7 @@ export const cancel = mutation({
     const revision = await ctx.db.get("orderRevisions", authorized.order.currentRevisionId);
     if (!revision) throw businessError("ORDER_NOT_FOUND");
     const previousStatus = authorized.order.agreementStatus;
+    const previousSupplierQueueState = authorized.order.supplierQueueState;
     const now = Date.now();
     const nextOrderVersion = authorized.order.version + 1n;
     await ctx.db.patch("orders", authorized.order._id, {
@@ -445,6 +478,7 @@ export const cancel = mutation({
       cancellationReasonDetails: args.reasonDetails?.trim(),
       cancelledByUserId: authorized.principal.user._id,
       cancelledAt: now,
+      supplierQueueState: "not_queued",
       sortTimestamp: now,
       updatedAt: now,
       version: nextOrderVersion,
@@ -452,6 +486,14 @@ export const cancel = mutation({
     await adjustBuyerCounts(ctx, authorized.organization._id, {
       ...(previousStatus === "draft" ? { draft: -1n } : { sent: -1n }),
     });
+    if (authorized.order.supplierOrganizationId) {
+      await transitionSupplierCounts(
+        ctx,
+        authorized.order.supplierOrganizationId,
+        previousSupplierQueueState,
+        "not_queued",
+      );
+    }
     await ctx.db.insert("orderCommandReceipts", {
       buyerOrganizationId: authorized.organization._id,
       orderId: authorized.order._id,

@@ -5,14 +5,16 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { Input } from "@repo/ui/components/ui/input";
-import { usePaginatedQuery } from "convex/react";
+import { usePaginatedQuery, useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 
 import { orderAmount, orderStatusLabel } from "./order-format";
+import { hasVerifiedSupplierAccess, SupplierAccessUnavailable } from "./supplier-access";
 
 type AgreementFilter = "draft" | "sent" | "accepted" | "rejected" | "cancelled";
 type AssetFilter = "testnet:XLM" | "testnet:USDC";
+type SupplierQueueFilter = "not_queued" | "requires_decision" | "expired" | "accepted" | "rejected";
 
 const validStatuses = new Set<AgreementFilter>([
   "draft",
@@ -22,10 +24,33 @@ const validStatuses = new Set<AgreementFilter>([
   "cancelled",
 ]);
 const validAssets = new Set<AssetFilter>(["testnet:XLM", "testnet:USDC"]);
+const validSupplierQueues = new Set<SupplierQueueFilter>([
+  "not_queued",
+  "requires_decision",
+  "expired",
+  "accepted",
+  "rejected",
+]);
 
 export function OrderList() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const context = useQuery(api.organizations.currentContext, {});
+  const allowedViews = context?.kind === "ready" ? context.allowedViews : [];
+  const verifiedSupplierAccess = hasVerifiedSupplierAccess(context);
+  const requestedView = searchParams.get("view");
+  const view: "buyer" | "supplier" | undefined =
+    context?.kind !== "ready"
+      ? undefined
+      : requestedView === "supplier" && allowedViews.includes("supplier")
+        ? verifiedSupplierAccess
+          ? "supplier"
+          : undefined
+        : allowedViews.includes("buyer")
+          ? "buyer"
+          : verifiedSupplierAccess
+            ? "supplier"
+            : undefined;
   const rawStatus = searchParams.get("status");
   const rawAsset = searchParams.get("asset");
   const status =
@@ -36,14 +61,26 @@ export function OrderList() {
     rawAsset && validAssets.has(rawAsset as AssetFilter) ? (rawAsset as AssetFilter) : undefined;
   const dateFrom = safeDate(searchParams.get("from"));
   const dateTo = safeDate(searchParams.get("to"));
+  const rawQueue = searchParams.get("queue");
+  const queueState =
+    rawQueue && validSupplierQueues.has(rawQueue as SupplierQueueFilter)
+      ? (rawQueue as SupplierQueueFilter)
+      : undefined;
   const orders = usePaginatedQuery(
     api.orders.listBuyerOrders,
-    {
-      ...(status ? { status } : {}),
-      ...(assetKey ? { assetKey } : {}),
-      ...(dateFrom ? { dateFrom } : {}),
-      ...(dateTo ? { dateTo } : {}),
-    },
+    view === "buyer"
+      ? {
+          ...(status ? { status } : {}),
+          ...(assetKey ? { assetKey } : {}),
+          ...(dateFrom ? { dateFrom } : {}),
+          ...(dateTo ? { dateTo } : {}),
+        }
+      : "skip",
+    { initialNumItems: 20 },
+  );
+  const supplierOrders = usePaginatedQuery(
+    api.supplierOrders.list,
+    view === "supplier" ? { ...(queueState ? { queueState } : {}) } : "skip",
     { initialNumItems: 20 },
   );
 
@@ -52,6 +89,110 @@ export function OrderList() {
     if (value) next.set(name, value);
     else next.delete(name);
     router.replace(`/orders${next.size ? `?${next.toString()}` : ""}`);
+  }
+
+  if (context === undefined) return <p role="status">Loading order view…</p>;
+  if (
+    context?.kind === "ready" &&
+    context.allowedViews.includes("supplier") &&
+    !verifiedSupplierAccess &&
+    view === undefined
+  ) {
+    return <SupplierAccessUnavailable />;
+  }
+  if (context?.kind !== "ready" || view === undefined) return null;
+
+  if (view === "supplier") {
+    return (
+      <div className="space-y-6">
+        <header className="flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <p className="text-sm font-medium text-primary">Supplier orders</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight">Orders</h1>
+            <p className="mt-2 text-muted-foreground">
+              Review frozen revisions and revisit canonical decisions.
+            </p>
+          </div>
+          {allowedViews.length > 1 ? <ViewSwitch view="supplier" /> : null}
+        </header>
+
+        <label htmlFor="supplier-queue-filter" className="block max-w-sm space-y-1 text-sm">
+          <span>Decision state</span>
+          <select
+            id="supplier-queue-filter"
+            className="h-9 w-full rounded-md border bg-background px-3"
+            value={queueState ?? ""}
+            onChange={(event) => setFilter("queue", event.target.value)}
+          >
+            <option value="">All supplier orders</option>
+            <option value="requires_decision">Requires decision</option>
+            <option value="expired">Expired</option>
+            <option value="accepted">Accepted</option>
+            <option value="rejected">Rejected</option>
+          </select>
+        </label>
+
+        {supplierOrders.status === "LoadingFirstPage" ? (
+          <p role="status">Loading supplier orders…</p>
+        ) : supplierOrders.results.length === 0 ? (
+          <Card>
+            <CardContent className="p-8 text-center">
+              <p className="font-medium">No supplier orders match this view.</p>
+              <p className="mt-1 text-sm text-muted-foreground">
+                New revisions appear after a buyer sends and freezes them.
+              </p>
+            </CardContent>
+          </Card>
+        ) : (
+          <ul className="space-y-3" aria-label="Supplier orders">
+            {supplierOrders.results.map((order) => (
+              <li key={order.orderId}>
+                <Card>
+                  <CardContent className="grid gap-4 p-4 min-[560px]:grid-cols-[1fr_auto]">
+                    <div className="min-w-0">
+                      <Link
+                        className="font-medium hover:underline"
+                        href={`/orders/${order.orderId}?view=supplier`}
+                      >
+                        {order.purchaseOrderNumber ?? "Purchase order"}
+                      </Link>
+                      <p className="mt-1 truncate text-sm text-muted-foreground">
+                        {order.buyerName} · Revision {order.revisionNumber.toString()}
+                      </p>
+                      <p className="mt-1 text-sm">{order.title ?? "No title"}</p>
+                    </div>
+                    <div className="text-left min-[560px]:text-right">
+                      <Badge variant="outline">
+                        {order.supplierQueueState.replaceAll("_", " ")}
+                      </Badge>
+                      <p className="mt-2 font-mono text-sm tabular-nums">
+                        {orderAmount(order.grandTotalBaseUnits, order.assetCode)}
+                      </p>
+                      <Button asChild className="mt-3" size="sm" variant="outline">
+                        <Link href={`/orders/${order.orderId}?view=supplier`}>
+                          {order.supplierQueueState === "requires_decision"
+                            ? "Review order"
+                            : "View decision"}
+                        </Link>
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              </li>
+            ))}
+          </ul>
+        )}
+        {supplierOrders.status === "CanLoadMore" || supplierOrders.status === "LoadingMore" ? (
+          <Button
+            variant="outline"
+            disabled={supplierOrders.status === "LoadingMore"}
+            onClick={() => supplierOrders.loadMore(20)}
+          >
+            {supplierOrders.status === "LoadingMore" ? "Loading…" : "Load more"}
+          </Button>
+        ) : null}
+      </div>
+    );
   }
 
   return (
@@ -67,6 +208,7 @@ export function OrderList() {
         <Button asChild>
           <Link href="/orders/new">Create order</Link>
         </Button>
+        {allowedViews.length > 1 ? <ViewSwitch view="buyer" /> : null}
       </header>
 
       <section
@@ -211,6 +353,19 @@ export function OrderList() {
           {orders.status === "LoadingMore" ? "Loading…" : "Load more"}
         </Button>
       ) : null}
+    </div>
+  );
+}
+
+function ViewSwitch({ view }: { view: "buyer" | "supplier" }) {
+  return (
+    <div className="flex rounded-md border p-1" aria-label="Order view">
+      <Button asChild size="sm" variant={view === "buyer" ? "default" : "ghost"}>
+        <Link href="/orders?view=buyer">Buyer</Link>
+      </Button>
+      <Button asChild size="sm" variant={view === "supplier" ? "default" : "ghost"}>
+        <Link href="/orders?view=supplier">Supplier</Link>
+      </Button>
     </div>
   );
 }

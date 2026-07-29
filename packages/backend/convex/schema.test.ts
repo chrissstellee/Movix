@@ -97,7 +97,27 @@ describe("Movix schema", () => {
         updatedAt: FIXED_NOW,
         version: 1n,
       });
-      await ctx.db.patch(orderId, { currentRevisionId: revisionId });
+      const decisionId = await ctx.db.insert("orderRevisionDecisions", {
+        orderId,
+        revisionId,
+        revisionNumber: 1n,
+        buyerOrganizationId,
+        supplierOrganizationId,
+        decision: "accepted",
+        termsHash: "a".repeat(64),
+        actorUserId: supplierUserId,
+        actorWalletAddress: testnetUsdc.issuer,
+        decidedAt: FIXED_NOW,
+        createdAt: FIXED_NOW,
+      });
+      await ctx.db.patch(orderId, {
+        currentRevisionId: revisionId,
+        acceptedRevisionId: revisionId,
+        currentDecisionId: decisionId,
+        agreementStatus: "accepted",
+        supplierQueueState: "accepted",
+        decidedAt: FIXED_NOW,
+      });
       await ctx.db.insert("orderLines", {
         revisionId,
         lineNumber: 1n,
@@ -127,11 +147,34 @@ describe("Movix schema", () => {
         resultAgreementStatus: "sent",
         createdAt: FIXED_NOW,
       });
+      await ctx.db.insert("orderDecisionReceipts", {
+        supplierOrganizationId,
+        orderId,
+        revisionId,
+        commandType: "accept",
+        idempotencyKey: "fixture-accept",
+        requestFingerprint: "a".repeat(64),
+        decisionId,
+        resultOrderVersion: 2n,
+        resultRevisionVersion: 1n,
+        decidedAt: FIXED_NOW,
+        createdAt: FIXED_NOW,
+      });
       await ctx.db.insert("orderDashboardCounts", {
         organizationId: buyerOrganizationId,
         side: "buyer",
         draftCount: 0n,
         sentCount: 1n,
+        createdAt: FIXED_NOW,
+        updatedAt: FIXED_NOW,
+        version: 1n,
+      });
+      await ctx.db.insert("supplierOrderCounts", {
+        supplierOrganizationId,
+        requiresDecisionCount: 0n,
+        expiredCount: 0n,
+        acceptedCount: 1n,
+        rejectedCount: 0n,
         createdAt: FIXED_NOW,
         updatedAt: FIXED_NOW,
         version: 1n,

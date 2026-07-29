@@ -1,7 +1,9 @@
 import { defineConfig, devices } from "@playwright/test";
 
 const port = 3000;
-const baseURL = `http://127.0.0.1:${port}`;
+const localBaseURL = `http://127.0.0.1:${port}`;
+const baseURL = process.env.MOVIX_E2E_BASE_URL ?? localBaseURL;
+const useExternalDeployment = Boolean(process.env.MOVIX_E2E_BASE_URL);
 
 export default defineConfig({
   testDir: "./e2e",
@@ -20,14 +22,17 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
   ],
-  webServer: {
-    command: "pnpm --filter web dev",
-    url: baseURL,
-    reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
-    env: {
-      NEXT_PUBLIC_CONVEX_URL: process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://example.convex.cloud",
-      MOVIX_ENABLE_FOUNDATION_SAMPLE: "1",
-    },
-  },
+  webServer: useExternalDeployment
+    ? undefined
+    : {
+        command: "pnpm --filter web dev",
+        url: localBaseURL,
+        reuseExistingServer: !process.env.CI,
+        timeout: 120_000,
+        env: {
+          NEXT_PUBLIC_CONVEX_URL:
+            process.env.NEXT_PUBLIC_CONVEX_URL ?? "https://example.convex.cloud",
+          MOVIX_ENABLE_FOUNDATION_SAMPLE: "1",
+        },
+      },
 });
