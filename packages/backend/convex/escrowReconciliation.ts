@@ -1,4 +1,5 @@
 import { v } from "convex/values";
+
 import { internalMutation } from "./_generated/server";
 
 export const applyResult = internalMutation({
@@ -59,7 +60,9 @@ export const applyResult = internalMutation({
       const existingNotif = await ctx.db
         .query("notifications")
         .withIndex("by_recipientOrganizationId_and_idempotencyKey", (q) =>
-          q.eq("recipientOrganizationId", order.supplierOrganizationId!).eq("idempotencyKey", idempotencyKey),
+          q
+            .eq("recipientOrganizationId", order.supplierOrganizationId!)
+            .eq("idempotencyKey", idempotencyKey),
         )
         .first();
 
@@ -81,11 +84,7 @@ export const applyResult = internalMutation({
         entityId: escrow._id,
         organizationId: order.buyerOrganizationId,
         action: "escrow.funding_confirmed",
-        details: {
-          orderId: order._id,
-          escrowKey: escrow.escrowKey,
-          confirmedLedger: args.confirmedLedger?.toString(),
-        },
+        correlationId: `escrow_confirm_${escrow._id}`,
         occurredAt: now,
       });
     } else {
@@ -94,11 +93,8 @@ export const applyResult = internalMutation({
         entityId: escrow._id,
         organizationId: order.buyerOrganizationId,
         action: "escrow.reconciliation_required",
-        details: {
-          orderId: order._id,
-          escrowKey: escrow.escrowKey,
-          mismatchFields: args.mismatchFields ?? [],
-        },
+        correlationId: `escrow_reconcile_${escrow._id}`,
+        changedFields: args.mismatchFields,
         occurredAt: now,
       });
     }

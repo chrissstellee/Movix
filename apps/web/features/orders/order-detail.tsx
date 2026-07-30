@@ -32,9 +32,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
-import { orderAmount, orderStatusLabel } from "./order-format";
 import { EscrowFundingPanel } from "./escrow-funding-panel";
-
+import { orderAmount, orderStatusLabel } from "./order-format";
 
 type DecisionCommand = "accept" | "reject";
 type RejectionReason =
@@ -227,7 +226,6 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
       />
 
       {isSupplier ? (
-
         <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 text-sm">
           {detail.offChainNotice}
         </div>

@@ -29,12 +29,17 @@ export type WalletErrorCode =
   | "request_in_progress";
 
 export class WalletError extends Error {
+  readonly cause?: unknown;
+
   constructor(
     readonly code: WalletErrorCode,
     message: string,
-    options?: ErrorOptions,
+    options?: { cause?: unknown },
   ) {
-    super(message, options);
+    super(message);
+    if (options?.cause) {
+      this.cause = options.cause;
+    }
     this.name = "WalletError";
   }
 }

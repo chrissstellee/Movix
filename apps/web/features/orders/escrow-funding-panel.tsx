@@ -1,21 +1,23 @@
 "use client";
 
-import { useState } from "react";
-import { useMutation, useQuery } from "convex/react";
 import { api, type Id } from "@repo/backend/client";
+import { requestFreighterSignature } from "@repo/stellar";
+import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
-import { Badge } from "@repo/ui/components/ui/badge";
+import { useMutation, useQuery } from "convex/react";
+import { useState } from "react";
+
 import { TransactionReview } from "../transactions/transaction-review";
+
 import { orderAmount } from "./order-format";
-import { requestFreighterSignature } from "@repo/stellar";
 
 export interface EscrowFundingPanelProps {
   orderId: Id<"orders">;
   isBuyer: boolean;
   fundingEligible: boolean;
   grandTotalBaseUnits: bigint;
-  assetCode?: string;
+  assetCode?: "XLM" | "USDC";
   poNumber?: string;
   orderTitle?: string;
   revisionNumber: string;
@@ -97,7 +99,7 @@ export function EscrowFundingPanel({
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
           <CardTitle>Stellar Escrow Funding</CardTitle>
-          <p className="text-xs text-muted-foreground mt-1">
+          <p className="mt-1 text-xs text-muted-foreground">
             Soroban smart contract trade settlement
           </p>
         </div>
@@ -128,37 +130,40 @@ export function EscrowFundingPanel({
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs">
               <div>
-                <span className="text-muted-foreground block">Locked Amount</span>
-                <span className="font-mono font-medium">{amountFormatted} {assetCode}</span>
+                <span className="block text-muted-foreground">Locked Amount</span>
+                <span className="font-mono font-medium">
+                  {amountFormatted} {assetCode}
+                </span>
               </div>
               <div>
-                <span className="text-muted-foreground block">Network</span>
+                <span className="block text-muted-foreground">Network</span>
                 <span className="font-medium capitalize">Testnet</span>
               </div>
               <div className="col-span-2">
-                <span className="text-muted-foreground block">Transaction Hash</span>
+                <span className="block text-muted-foreground">Transaction Hash</span>
                 <a
                   href={`https://stellar.expert/explorer/testnet/tx/${escrowData.submittedTransactionHash}`}
                   target="_blank"
                   rel="noreferrer"
-                  className="font-mono text-primary underline truncate block"
+                  className="block truncate font-mono text-primary underline"
                 >
                   {escrowData.submittedTransactionHash}
                 </a>
               </div>
               <div className="col-span-2">
-                <span className="text-muted-foreground block">Escrow Contract ID</span>
-                <span className="font-mono text-xs truncate block">{escrowData.contractId}</span>
+                <span className="block text-muted-foreground">Escrow Contract ID</span>
+                <span className="block truncate font-mono text-xs">{escrowData.contractId}</span>
               </div>
             </div>
           </div>
         ) : status === "funding_submitted" ? (
-          <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 space-y-2">
+          <div className="space-y-2 rounded-lg border border-blue-500/30 bg-blue-500/5 p-4">
             <p className="font-medium text-blue-700 dark:text-blue-400">
               ⏳ Transaction Submitted to Stellar Testnet
             </p>
             <p className="text-xs text-muted-foreground">
-              Finality reconciliation in progress. Once confirmed by Soroban RPC, status will update to Funded.
+              Finality reconciliation in progress. Once confirmed by Soroban RPC, status will update
+              to Funded.
             </p>
             {escrowData?.submittedTransactionHash ? (
               <p className="font-mono text-xs text-muted-foreground">
@@ -167,7 +172,7 @@ export function EscrowFundingPanel({
             ) : null}
           </div>
         ) : status === "needs_reconciliation" ? (
-          <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
+          <div className="space-y-2 rounded-lg border border-amber-500/30 bg-amber-500/5 p-4">
             <p className="font-medium text-amber-700 dark:text-amber-400">
               ⚠️ Reconciliation Required
             </p>
@@ -178,7 +183,8 @@ export function EscrowFundingPanel({
         ) : (
           <div className="space-y-3">
             <p className="text-xs text-muted-foreground">
-              Once an accepted Trade Order revision is reached, the Importer can lock exact trade value in escrow.
+              Once an accepted Trade Order revision is reached, the Importer can lock exact trade
+              value in escrow.
             </p>
             {isBuyer ? (
               <Button

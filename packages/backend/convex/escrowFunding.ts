@@ -1,8 +1,8 @@
-import { v } from "convex/values";
 import { deriveEscrowKey } from "@repo/stellar";
+import { v } from "convex/values";
+
 import { mutation, query } from "./_generated/server";
-import { requireAuthSession } from "./helpers/auth";
-import { requireMembershipRole } from "./helpers/permissions";
+import { requireCurrentUser, requireRole } from "./lib/authorization";
 
 const VERIFIED_TESTNET_CONTRACT_ID = "CCEECHOGV6MXZANAOLJNDMA2GPEBDETPNWUR4XDEW32KHJUYN3V5ZAP5";
 const TESTNET_USDC_SAC = "CBIELTK6YBZJU5UP2WWQEUCYKLPU6AUNZ2BQ4WWFEIE3USCIHMXQDAMA";
@@ -13,21 +13,20 @@ export const prepare = mutation({
     orderId: v.id("orders"),
   },
   handler: async (ctx, args) => {
-    const auth = await requireAuthSession(ctx);
     const order = await ctx.db.get(args.orderId);
     if (!order) {
       throw new Error("Order not found");
     }
 
-    // Must be Importer (buyer)
-    await requireMembershipRole(ctx, auth, order.buyerOrganizationId, [
+    // Must be Importer (buyer) with owner, admin, or finance role
+    const authContext = await requireRole(ctx, order.buyerOrganizationId, [
       "owner",
       "admin",
       "finance",
     ]);
 
-    const buyerOrg = await ctx.db.get(order.buyerOrganizationId);
-    if (!buyerOrg || buyerOrg.verificationStatus !== "verified") {
+    const buyerOrg = authContext.organization;
+    if (buyerOrg.verificationStatus !== "verified") {
       throw new Error("Importer organization must be verified to prepare escrow funding");
     }
 
@@ -61,9 +60,7 @@ export const prepare = mutation({
     }
 
     const tokenContractId =
-      revision.assetCode === "XLM"
-        ? TESTNET_XLM_SAC
-        : revision.assetContractId || TESTNET_USDC_SAC;
+      revision.assetCode === "XLM" ? TESTNET_XLM_SAC : revision.assetContractId || TESTNET_USDC_SAC;
 
     const { keyHex } = deriveEscrowKey({
       verifiedContractId: VERIFIED_TESTNET_CONTRACT_ID,
@@ -104,7 +101,7 @@ export const prepare = mutation({
         assetCode: revision.assetCode ?? "USDC",
         feeBps: 0n,
         acceptBy: BigInt(Math.floor(revision.fundingDeadline / 1000)),
-        preparedByUserId: auth.user._id,
+        preparedByUserId: authContext.principal.user._id,
         preparedAt: now,
         createdAt: now,
         updatedAt: now,
@@ -116,14 +113,10 @@ export const prepare = mutation({
       entityType: "escrow",
       entityId: escrowId!,
       organizationId: order.buyerOrganizationId,
-      actorUserId: auth.user._id,
-      actorWalletAddress: auth.wallet.address,
+      actorUserId: authContext.principal.user._id,
+      actorWalletAddress: authContext.principal.wallet.address,
       action: "escrow.funding_intent_prepared",
-      details: {
-        orderId: order._id,
-        escrowKey: keyHex,
-        amountBaseUnits: revision.grandTotalBaseUnits.toString(),
-      },
+      correlationId: `escrow_prepare_${escrowId}`,
       occurredAt: now,
     });
 
@@ -149,13 +142,12 @@ export const recordSubmission = mutation({
     transactionHash: v.string(),
   },
   handler: async (ctx, args) => {
-    const auth = await requireAuthSession(ctx);
     const order = await ctx.db.get(args.orderId);
     if (!order) {
       throw new Error("Order not found");
     }
 
-    await requireMembershipRole(ctx, auth, order.buyerOrganizationId, [
+    const authContext = await requireRole(ctx, order.buyerOrganizationId, [
       "owner",
       "admin",
       "finance",
@@ -195,8 +187,8 @@ export const recordSubmission = mutation({
       organizationId: order.buyerOrganizationId,
       action: "escrow.create_and_fund",
       status: "submitted",
-      actorUserId: auth.user._id,
-      actorWalletAddress: auth.wallet.address,
+      actorUserId: authContext.principal.user._id,
+      actorWalletAddress: authContext.principal.wallet.address,
       contractId: escrow.contractId,
       tokenContractId: escrow.tokenContractId,
       amountBaseUnits: escrow.amountBaseUnits,
@@ -207,14 +199,10 @@ export const recordSubmission = mutation({
       entityType: "escrow",
       entityId: escrow._id,
       organizationId: order.buyerOrganizationId,
-      actorUserId: auth.user._id,
-      actorWalletAddress: auth.wallet.address,
+      actorUserId: authContext.principal.user._id,
+      actorWalletAddress: authContext.principal.wallet.address,
       action: "escrow.funding_submitted",
-      details: {
-        orderId: order._id,
-        escrowKey: args.escrowKey,
-        transactionHash: args.transactionHash,
-      },
+      correlationId: `escrow_submit_${args.transactionHash}`,
       occurredAt: now,
     });
 
@@ -227,15 +215,24 @@ export const getForOrder = query({
     orderId: v.id("orders"),
   },
   handler: async (ctx, args) => {
-    const auth = await requireAuthSession(ctx);
+    const principal = await requireCurrentUser(ctx);
     const order = await ctx.db.get(args.orderId);
     if (!order) {
       return null;
     }
 
+    const userMemberships = await ctx.db
+      .query("memberships")
+      .withIndex("by_userId_and_status", (q) =>
+        q.eq("userId", principal.user._id).eq("status", "active"),
+      )
+      .collect();
+
     // Participant authorization
-    const isBuyer = auth.userMemberships.some((m) => m.organizationId === order.buyerOrganizationId);
-    const isSupplier = order.supplierOrganizationId && auth.userMemberships.some((m) => m.organizationId === order.supplierOrganizationId);
+    const isBuyer = userMemberships.some((m) => m.organizationId === order.buyerOrganizationId);
+    const isSupplier =
+      order.supplierOrganizationId &&
+      userMemberships.some((m) => m.organizationId === order.supplierOrganizationId);
 
     if (!isBuyer && !isSupplier) {
       return null;

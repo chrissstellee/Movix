@@ -1,5 +1,4 @@
-import { createHash } from "node:crypto";
-import { StrKey } from "@stellar/stellar-sdk";
+import { hash, StrKey } from "@stellar/stellar-sdk";
 
 export interface DerivedEscrowKey {
   keyBytes: Uint8Array;
@@ -46,11 +45,11 @@ export function deriveEscrowKey(params: {
   }
 
   const rawString = `movix:escrow:v1\0testnet\0${params.verifiedContractId}\0${params.orderId}\0${params.acceptedRevisionId}`;
-  const hash = createHash("sha256").update(Buffer.from(rawString, "utf-8")).digest();
+  const digest = hash(Buffer.from(rawString, "utf-8"));
 
   return {
-    keyBytes: new Uint8Array(hash),
-    keyHex: hash.toString("hex"),
+    keyBytes: new Uint8Array(digest),
+    keyHex: digest.toString("hex"),
   };
 }
 

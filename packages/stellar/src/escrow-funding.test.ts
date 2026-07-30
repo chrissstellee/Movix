@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+
 import { validateDeploymentManifest } from "./deployment-manifest.js";
 import {
   deriveEscrowKey,
@@ -84,11 +85,22 @@ describe("escrow-funding", () => {
       networkPassphrase: "Test SDF Network ; September 2015",
       rpcEnvironment: "SDF public testnet RPC",
       source: { commit: "abc" },
-      toolchain: { rust: "1.97", sorobanSdk: "27.0", stellarCli: "27.0", stellarXdr: "27.0", protocol: 27 },
+      toolchain: {
+        rust: "1.97",
+        sorobanSdk: "27.0",
+        stellarCli: "27.0",
+        stellarXdr: "27.0",
+        protocol: 27,
+      },
       artifact: { path: "wasm", sizeBytes: 100, sha256: "abc", optimized: true },
       bindings: { path: "bindings", command: "cmd", sha256: "def" },
       deployment: { contractId: sampleContractId, transactionHash: "tx", ledger: 100 },
-      constructor: { treasury: sampleBuyer, maxFeeBps: 0, pilotFeeBps: 0, ttl: { threshold: 1, extendTo: 2, networkLimitReference: "ref" } },
+      constructor: {
+        treasury: sampleBuyer,
+        maxFeeBps: 0,
+        pilotFeeBps: 0,
+        ttl: { threshold: 1, extendTo: 2, networkLimitReference: "ref" },
+      },
       assets: {
         XLM: { code: "XLM", issuer: null, sac: sampleToken },
         USDC: { code: "USDC", issuer: sampleBuyer, sac: sampleToken },

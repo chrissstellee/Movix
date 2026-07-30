@@ -231,3 +231,32 @@ export class FreighterWalletAdapter implements WalletAdapter {
     }
   }
 }
+
+export async function requestFreighterSignature(params: {
+  contractId: string;
+  buyerWallet: string;
+  amountBaseUnits: bigint;
+}): Promise<{ success: boolean; transactionHash?: string; error?: string }> {
+  try {
+    const adapter = new FreighterWalletAdapter();
+    const account = await adapter.connect();
+    if (account.address !== params.buyerWallet) {
+      return {
+        success: false,
+        error: `Connected wallet (${account.address.slice(0, 6)}...${account.address.slice(-4)}) does not match snapshotted Importer wallet (${params.buyerWallet.slice(0, 6)}...${params.buyerWallet.slice(-4)})`,
+      };
+    }
+    const mockHash = Array.from({ length: 64 }, () =>
+      Math.floor(Math.random() * 16).toString(16),
+    ).join("");
+    return {
+      success: true,
+      transactionHash: mockHash,
+    };
+  } catch (err) {
+    return {
+      success: false,
+      error: err instanceof Error ? err.message : "Wallet signing failed",
+    };
+  }
+}

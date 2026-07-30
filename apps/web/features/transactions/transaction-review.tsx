@@ -1,5 +1,6 @@
 "use client";
 
+import { Button } from "@repo/ui/components/ui/button";
 import {
   Dialog,
   DialogContent,
@@ -8,7 +9,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@repo/ui/components/ui/dialog";
-import { Button } from "@repo/ui/components/ui/button";
 
 export interface TransactionReviewProps {
   open: boolean;
@@ -49,15 +49,18 @@ export function TransactionReview({
         <DialogHeader>
           <DialogTitle>Review and authorize escrow funding</DialogTitle>
           <DialogDescription>
-            You are authorizing an immutable Soroban smart contract transaction to lock funds in escrow.
+            You are authorizing an immutable Soroban smart contract transaction to lock funds in
+            escrow.
           </DialogDescription>
         </DialogHeader>
 
-        <div className="space-y-4 text-sm my-2">
-          <div className="rounded-lg border p-4 bg-muted/30 space-y-2">
-            <div className="flex justify-between items-baseline">
-              <span className="text-muted-foreground text-xs uppercase font-medium">Trade Amount</span>
-              <span className="text-2xl font-bold font-mono">
+        <div className="my-2 space-y-4 text-sm">
+          <div className="space-y-2 rounded-lg border bg-muted/30 p-4">
+            <div className="flex items-baseline justify-between">
+              <span className="text-xs font-medium text-muted-foreground uppercase">
+                Trade Amount
+              </span>
+              <span className="font-mono text-2xl font-bold">
                 {amountFormatted} {assetCode}
               </span>
             </div>
@@ -69,48 +72,51 @@ export function TransactionReview({
 
           <div className="grid grid-cols-2 gap-3 text-xs">
             <div>
-              <span className="text-muted-foreground block">Order</span>
-              <span className="font-medium">{poNumber ?? "Draft"} ({orderTitle ?? "Untitled"})</span>
+              <span className="block text-muted-foreground">Order</span>
+              <span className="font-medium">
+                {poNumber ?? "Draft"} ({orderTitle ?? "Untitled"})
+              </span>
             </div>
             <div>
-              <span className="text-muted-foreground block">Accepted Revision</span>
+              <span className="block text-muted-foreground">Accepted Revision</span>
               <span className="font-medium">Revision {revisionNumber}</span>
             </div>
             <div>
-              <span className="text-muted-foreground block">Network</span>
+              <span className="block text-muted-foreground">Network</span>
               <span className="font-medium capitalize">{network}</span>
             </div>
             <div>
-              <span className="text-muted-foreground block">Verified Contract</span>
-              <span className="font-mono truncate block" title={contractId}>
+              <span className="block text-muted-foreground">Verified Contract</span>
+              <span className="block truncate font-mono" title={contractId}>
                 {contractId.slice(0, 8)}...{contractId.slice(-8)}
               </span>
             </div>
           </div>
 
-          <div className="border-t pt-3 space-y-2 text-xs">
+          <div className="space-y-2 border-t pt-3 text-xs">
             <div>
-              <span className="text-muted-foreground block">Importer Wallet (Source)</span>
-              <span className="font-mono block truncate" title={importerWallet}>
+              <span className="block text-muted-foreground">Importer Wallet (Source)</span>
+              <span className="block truncate font-mono" title={importerWallet}>
                 {importerWallet}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block">Exporter Wallet (Beneficiary)</span>
-              <span className="font-mono block truncate" title={exporterWallet}>
+              <span className="block text-muted-foreground">Exporter Wallet (Beneficiary)</span>
+              <span className="block truncate font-mono" title={exporterWallet}>
                 {exporterWallet}
               </span>
             </div>
             <div>
-              <span className="text-muted-foreground block">Terms Hash</span>
-              <span className="font-mono block break-all text-[11px] bg-muted p-1.5 rounded">
+              <span className="block text-muted-foreground">Terms Hash</span>
+              <span className="block rounded bg-muted p-1.5 font-mono text-[11px] break-all">
                 {termsHash}
               </span>
             </div>
           </div>
 
-          <div className="rounded bg-blue-500/10 border border-blue-500/20 p-3 text-xs text-blue-800 dark:text-blue-300">
-            🔒 On-chain funding confirms trade value is locked in escrow. Delivery confirmation and payment release follow shipment acceptance.
+          <div className="rounded border border-blue-500/20 bg-blue-500/10 p-3 text-xs text-blue-800 dark:text-blue-300">
+            🔒 On-chain funding confirms trade value is locked in escrow. Delivery confirmation and
+            payment release follow shipment acceptance.
           </div>
         </div>
 

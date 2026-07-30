@@ -746,9 +746,7 @@ export default defineSchema({
     submittedAt: v.optional(v.number()),
     confirmedAt: v.optional(v.number()),
     lastReconciledAt: v.optional(v.number()),
-    lastReconciliationCode: v.optional(v.string()),
     mismatchFields: v.optional(v.array(v.string())),
-    version: v.optional(v.int64()),
     ...commonMutableFields,
   })
     .index("by_orderId", ["orderId"])
@@ -811,7 +809,6 @@ export default defineSchema({
     ])
     .index("by_escrowKey", ["escrowKey"])
     .index("by_processingStatus", ["processingStatus"]),
-
 
   refundRequests: defineTable({
     escrowId: v.id("escrows"),

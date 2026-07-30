@@ -10,4 +10,3 @@ export * from "./evidence-manifests.js";
 export * from "./freighter-wallet-adapter.js";
 export * from "./transactions.js";
 export * from "./wallet.js";
-

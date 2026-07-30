@@ -80,11 +80,15 @@ export function validateDeploymentManifest(manifest: unknown): DeploymentManifes
   }
 
   const deployment = m.deployment as Record<string, unknown> | undefined;
-  if (!deployment || typeof deployment.contractId !== "string" || !StrKey.isValidContract(deployment.contractId)) {
+  if (
+    !deployment ||
+    typeof deployment.contractId !== "string" ||
+    !StrKey.isValidContract(deployment.contractId)
+  ) {
     throw new Error("Invalid deployment manifest: missing or invalid contractId");
   }
 
-  const ctor = m.constructor as Record<string, unknown> | undefined;
+  const ctor = m["constructor" as keyof typeof m] as unknown as Record<string, unknown> | undefined;
   if (!ctor || ctor.maxFeeBps !== 0 || ctor.pilotFeeBps !== 0) {
     throw new Error("Invalid deployment manifest: fee must be zero");
   }
@@ -94,7 +98,10 @@ export function validateDeploymentManifest(manifest: unknown): DeploymentManifes
     throw new Error("Invalid deployment manifest: missing XLM or USDC asset mappings");
   }
 
-  if (!StrKey.isValidContract(String(assets.XLM.sac)) || !StrKey.isValidContract(String(assets.USDC.sac))) {
+  if (
+    !StrKey.isValidContract(String(assets.XLM.sac)) ||
+    !StrKey.isValidContract(String(assets.USDC.sac))
+  ) {
     throw new Error("Invalid deployment manifest: invalid XLM or USDC SAC contract address");
   }
 
