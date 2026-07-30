@@ -725,6 +725,30 @@ export default defineSchema({
     reconciliationStatus: reconciliationStatusValidator,
     submittedTransactionHash: v.optional(v.string()),
     confirmedLedger: v.optional(v.int64()),
+    acceptedRevisionId: v.optional(v.id("orderRevisions")),
+    termsHash: v.optional(v.string()),
+    termsHashVersion: v.optional(orderTermsHashVersionValidator),
+    buyerWalletAddress: v.optional(v.string()),
+    supplierWalletAddress: v.optional(v.string()),
+    assetCode: v.optional(v.string()),
+    assetIssuer: v.optional(v.string()),
+    assetDecimals: v.optional(v.int64()),
+    feeBps: v.optional(v.int64()),
+    feeAmountBaseUnits: v.optional(v.int64()),
+    acceptBy: v.optional(v.int64()),
+    contractVersion: v.optional(v.int64()),
+    escrowSchemaVersion: v.optional(v.int64()),
+    wasmSha256: v.optional(v.string()),
+    bindingsSha256: v.optional(v.string()),
+    intentIdempotencyKey: v.optional(v.string()),
+    preparedByUserId: v.optional(v.id("users")),
+    preparedAt: v.optional(v.number()),
+    submittedAt: v.optional(v.number()),
+    confirmedAt: v.optional(v.number()),
+    lastReconciledAt: v.optional(v.number()),
+    lastReconciliationCode: v.optional(v.string()),
+    mismatchFields: v.optional(v.array(v.string())),
+    version: v.optional(v.int64()),
     ...commonMutableFields,
   })
     .index("by_orderId", ["orderId"])
@@ -745,12 +769,49 @@ export default defineSchema({
     ledger: v.optional(v.int64()),
     submittedAt: v.number(),
     confirmedAt: v.optional(v.number()),
+    idempotencyKey: v.optional(v.string()),
+    intentId: v.optional(v.string()),
+    actorUserId: v.optional(v.id("users")),
+    actorWalletAddress: v.optional(v.string()),
+    contractId: v.optional(v.string()),
+    assetCode: v.optional(v.string()),
+    tokenContractId: v.optional(v.string()),
+    amountBaseUnits: v.optional(v.int64()),
+    errorCode: v.optional(v.string()),
+    errorCategory: v.optional(v.string()),
+    lastCheckedAt: v.optional(v.number()),
+    attemptCount: v.optional(v.int64()),
+    resultXdrHash: v.optional(v.string()),
   })
     .index("by_hash_network", ["hash", "network"])
     .index("by_orderId", ["orderId"])
     .index("by_escrowId", ["escrowId"])
     .index("by_organizationId", ["organizationId"])
     .index("by_status", ["status"]),
+
+  contractEventReceipts: defineTable({
+    network: networkValidator,
+    contractId: v.string(),
+    transactionHash: v.string(),
+    ledger: v.int64(),
+    eventIndex: v.int64(),
+    eventType: v.string(),
+    escrowKey: v.string(),
+    payloadHash: v.optional(v.string()),
+    observedAt: v.number(),
+    processedAt: v.optional(v.number()),
+    processingStatus: v.union(v.literal("pending"), v.literal("processed"), v.literal("error")),
+    processingErrorCode: v.optional(v.string()),
+  })
+    .index("by_network_contract_tx_event", [
+      "network",
+      "contractId",
+      "transactionHash",
+      "eventIndex",
+    ])
+    .index("by_escrowKey", ["escrowKey"])
+    .index("by_processingStatus", ["processingStatus"]),
+
 
   refundRequests: defineTable({
     escrowId: v.id("escrows"),

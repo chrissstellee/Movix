@@ -33,6 +33,8 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { orderAmount, orderStatusLabel } from "./order-format";
+import { EscrowFundingPanel } from "./escrow-funding-panel";
+
 
 type DecisionCommand = "accept" | "reject";
 type RejectionReason =
@@ -213,7 +215,19 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
         />
       </section>
 
+      <EscrowFundingPanel
+        orderId={orderId}
+        isBuyer={!isSupplier}
+        fundingEligible={detail.order.fundingEligible}
+        grandTotalBaseUnits={detail.revision.totals.grandTotalBaseUnits}
+        assetCode={detail.revision.asset?.code}
+        poNumber={detail.revision.purchaseOrderNumber}
+        orderTitle={detail.revision.title}
+        revisionNumber={detail.revision.revisionNumber.toString()}
+      />
+
       {isSupplier ? (
+
         <div className="rounded-lg border border-blue-500/30 bg-blue-500/5 p-4 text-sm">
           {detail.offChainNotice}
         </div>

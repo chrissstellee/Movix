@@ -4,7 +4,10 @@ export * from "./config.js";
 export * from "./contract-errors.js";
 export * from "./contracts.js";
 export * from "./events.js";
+export * from "./deployment-manifest.js";
+export * from "./escrow-funding.js";
 export * from "./evidence-manifests.js";
 export * from "./freighter-wallet-adapter.js";
 export * from "./transactions.js";
 export * from "./wallet.js";
+

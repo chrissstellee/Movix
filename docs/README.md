@@ -5,6 +5,7 @@
 - [ASEAN Agricultural Trade Pivot](./Movix-ASEAN-Agricultural-Trade-Pivot.md) — product, market, personas, requirements, domain, and business rules
 - [Sprint Plan](./Movix-Sprint-Plan.md) — delivery sequence and release gates
 - [Sprint 6 Detailed Plan](./Movix-Sprint-06-ASEAN-Agricultural-Trade-Pivot-Detailed.md) — pivot implementation scope
+- [Sprint 7 Detailed Plan](./Movix-Sprint-07-Escrow-Funding-Detailed.md) — escrow funding, submission, reconciliation, recovery, and Elliot handoff
 - [Architecture and Migration](./agricultural-trade-architecture-and-migration.md) — system, API, contract, UX, and migration delta
 - [API Compatibility Contract](./agricultural-trade-api-contract.md) — canonical aliases, v2 fields, document APIs, and deprecation gates
 - [User Guide](./agricultural-trade-user-guide.md) — development Importer/Exporter workflow, Sprint 7 boundary, and recovery states
