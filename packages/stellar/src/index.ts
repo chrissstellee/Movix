@@ -8,5 +8,9 @@ export * from "./deployment-manifest.js";
 export * from "./escrow-funding.js";
 export * from "./evidence-manifests.js";
 export * from "./freighter-wallet-adapter.js";
+export * from "./fulfillment.js";
+export * from "./hashes.js";
 export * from "./transactions.js";
 export * from "./wallet.js";
+
+

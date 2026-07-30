@@ -671,6 +671,28 @@ export default defineSchema({
     .index("by_shipmentId", ["shipmentId"])
     .index("by_orderLineId", ["orderLineId"]),
 
+  deliveryConfirmations: defineTable({
+    orderId: v.id("orders"),
+    revisionId: v.optional(v.id("orderRevisions")),
+    buyerOrganizationId: v.id("organizations"),
+    supplierOrganizationId: v.id("organizations"),
+    escrowId: v.optional(v.id("escrows")),
+    receivedDate: v.string(),
+    receivingLocation: v.string(),
+    inspectionCertificateNumber: v.optional(v.string()),
+    inspectionResult: v.union(v.literal("accepted_full"), v.literal("accepted_conditional")),
+    inspectorName: v.string(),
+    deliveryHash: v.string(),
+    notes: v.optional(v.string()),
+    status: v.union(v.literal("pending_onchain"), v.literal("confirmed_onchain")),
+    confirmedTransactionHash: v.optional(v.string()),
+    createdByUserId: v.id("users"),
+    ...commonMutableFields,
+  })
+    .index("by_orderId", ["orderId"])
+    .index("by_buyerOrganizationId", ["buyerOrganizationId"])
+    .index("by_status", ["status"]),
+
   tradeDocuments: defineTable({
     orderId: v.id("orders"),
     importerOrganizationId: v.id("organizations"),

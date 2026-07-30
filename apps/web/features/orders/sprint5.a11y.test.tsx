@@ -26,6 +26,12 @@ vi.mock("@repo/backend/client", () => ({
     orderDecisions: { accept: "accept", reject: "reject" },
     orderRevisions: { startFromCurrent: "startRevision" },
     orders: { cancel: "cancel" },
+    escrowFunding: {
+      getForOrder: "escrowFundingGetForOrder",
+      prepare: "escrowFundingPrepare",
+      recordSubmission: "escrowFundingRecordSubmission",
+      confirmReceipt: "escrowFundingConfirmReceipt",
+    },
   },
 }));
 

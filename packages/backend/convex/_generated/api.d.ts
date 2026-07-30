@@ -15,6 +15,7 @@ import type * as businessValidators from "../businessValidators.js";
 import type * as crons from "../crons.js";
 import type * as developmentFixtures from "../developmentFixtures.js";
 import type * as escrowEvents from "../escrowEvents.js";
+import type * as escrowFulfillment from "../escrowFulfillment.js";
 import type * as escrowFunding from "../escrowFunding.js";
 import type * as escrowReconciliation from "../escrowReconciliation.js";
 import type * as exporterDirectory from "../exporterDirectory.js";
@@ -68,6 +69,7 @@ declare const fullApi: ApiFromModules<{
   crons: typeof crons;
   developmentFixtures: typeof developmentFixtures;
   escrowEvents: typeof escrowEvents;
+  escrowFulfillment: typeof escrowFulfillment;
   escrowFunding: typeof escrowFunding;
   escrowReconciliation: typeof escrowReconciliation;
   exporterDirectory: typeof exporterDirectory;
