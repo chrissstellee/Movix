@@ -12,5 +12,3 @@ export * from "./fulfillment.js";
 export * from "./hashes.js";
 export * from "./transactions.js";
 export * from "./wallet.js";
-
-

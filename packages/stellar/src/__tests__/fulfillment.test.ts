@@ -16,7 +16,6 @@ const VALID_BUYER = Keypair.random().publicKey();
 const TEST_ESCROW_KEY = "11".repeat(32);
 const TEST_TERMS_HASH = "22".repeat(32);
 
-
 describe("Fulfillment Hashes & Contract Arguments", () => {
   describe("computeShipmentHash", () => {
     const validEvidence: ShipmentEvidence = {
@@ -62,7 +61,9 @@ describe("Fulfillment Hashes & Contract Arguments", () => {
 
     it("throws error when required fields are missing", () => {
       const invalidEvidence = { ...validEvidence, carrierName: "" };
-      expect(() => computeShipmentHash(invalidEvidence)).toThrow("carrierName and trackingOrDocumentNumber are required");
+      expect(() => computeShipmentHash(invalidEvidence)).toThrow(
+        "carrierName and trackingOrDocumentNumber are required",
+      );
     });
   });
 
@@ -89,7 +90,9 @@ describe("Fulfillment Hashes & Contract Arguments", () => {
 
     it("throws error when required fields are missing", () => {
       const invalidConfirmation = { ...validConfirmation, receivingLocation: "" };
-      expect(() => computeDeliveryHash(invalidConfirmation)).toThrow("receivedDate and receivingLocation are required");
+      expect(() => computeDeliveryHash(invalidConfirmation)).toThrow(
+        "receivedDate and receivingLocation are required",
+      );
     });
   });
 
@@ -112,7 +115,7 @@ describe("Fulfillment Hashes & Contract Arguments", () => {
           escrowKeyHex: TEST_ESCROW_KEY,
           supplierWalletAddress: "INVALID_ADDRESS",
           termsHashHex: TEST_TERMS_HASH,
-        })
+        }),
       ).toThrow("Invalid supplier wallet address");
     });
   });

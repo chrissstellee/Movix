@@ -213,7 +213,7 @@ describe("Escrow Fulfillment Authorization & State Machine Tests", () => {
       session_family_id: "family-importer",
     });
     await expect(
-      asImporter.mutation(api.escrowFulfillment.prepareAcceptIntent, { orderId })
+      asImporter.mutation(api.escrowFulfillment.prepareAcceptIntent, { orderId }),
     ).rejects.toThrow("ORGANIZATION_FORBIDDEN");
 
     // 6. Exporter accepting escrow succeeds
@@ -221,7 +221,9 @@ describe("Escrow Fulfillment Authorization & State Machine Tests", () => {
       tokenIdentifier: "https://movix.test|exporter",
       session_family_id: "family-exporter",
     });
-    const acceptIntent = await asExporter.mutation(api.escrowFulfillment.prepareAcceptIntent, { orderId });
+    const acceptIntent = await asExporter.mutation(api.escrowFulfillment.prepareAcceptIntent, {
+      orderId,
+    });
     expect(acceptIntent.escrowKey).toBe("b".repeat(64));
     expect(acceptIntent.supplierWalletAddress).toBe(exporterWalletAddr);
 
@@ -234,7 +236,7 @@ describe("Escrow Fulfillment Authorization & State Machine Tests", () => {
         portOfLoading: "Port Klang",
         portOfDischarge: "Jakarta",
         shippedDate: "2026-08-01",
-      })
+      }),
     ).rejects.toThrow("expected accepted before recording shipment");
 
     // Move escrow status to 'accepted'
@@ -261,7 +263,7 @@ describe("Escrow Fulfillment Authorization & State Machine Tests", () => {
         receivingLocation: "Warehouse A, Jakarta",
         inspectionResult: "accepted_full",
         inspectorName: "Budi",
-      })
+      }),
     ).rejects.toThrow("expected shipped before confirming delivery");
 
     // Move escrow status to 'shipped'

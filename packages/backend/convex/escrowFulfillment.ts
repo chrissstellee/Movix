@@ -113,7 +113,9 @@ export const recordShipmentIntent = mutation({
     }
 
     if (escrow.status !== "accepted") {
-      throw new Error(`Escrow status is ${escrow.status}, expected accepted before recording shipment`);
+      throw new Error(
+        `Escrow status is ${escrow.status}, expected accepted before recording shipment`,
+      );
     }
 
     if (!order.acceptedRevisionId) {
@@ -201,7 +203,9 @@ export const confirmDeliveryIntent = mutation({
     }
 
     if (escrow.status !== "shipped") {
-      throw new Error(`Escrow status is ${escrow.status}, expected shipped before confirming delivery`);
+      throw new Error(
+        `Escrow status is ${escrow.status}, expected shipped before confirming delivery`,
+      );
     }
 
     if (!order.acceptedRevisionId) {
@@ -285,7 +289,9 @@ export const getFulfillmentDetails = query({
       .first();
 
     const buyerOrg = await ctx.db.get(order.buyerOrganizationId);
-    const supplierOrg = order.supplierOrganizationId ? await ctx.db.get(order.supplierOrganizationId) : null;
+    const supplierOrg = order.supplierOrganizationId
+      ? await ctx.db.get(order.supplierOrganizationId)
+      : null;
 
     return {
       order,

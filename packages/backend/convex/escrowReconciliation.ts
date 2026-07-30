@@ -44,8 +44,8 @@ export const applyResult = internalMutation({
         args.status === "shipped"
           ? "shipped"
           : args.status === "released"
-          ? "delivery_confirmed"
-          : order.fulfillmentStatus,
+            ? "delivery_confirmed"
+            : order.fulfillmentStatus,
       updatedAt: now,
       version: (order.version ?? 1n) + 1n,
     });
@@ -55,9 +55,7 @@ export const applyResult = internalMutation({
     if (txHash) {
       const txRecord = await ctx.db
         .query("transactionRecords")
-        .withIndex("by_hash_network", (q) =>
-          q.eq("hash", txHash).eq("network", "testnet"),
-        )
+        .withIndex("by_hash_network", (q) => q.eq("hash", txHash).eq("network", "testnet"))
         .first();
 
       if (txRecord) {
@@ -81,9 +79,7 @@ export const applyResult = internalMutation({
         const existingNotif = await ctx.db
           .query("notifications")
           .withIndex("by_recipientOrganizationId_and_idempotencyKey", (q) =>
-            q
-              .eq("recipientOrganizationId", recipientOrgId)
-              .eq("idempotencyKey", idempotencyKey),
+            q.eq("recipientOrganizationId", recipientOrgId).eq("idempotencyKey", idempotencyKey),
           )
           .first();
 
