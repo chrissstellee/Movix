@@ -11,6 +11,8 @@ const app = defineApp({
     MOVIX_AUTH_PUBLIC_JWKS: v.string(),
     MOVIX_AUTH_STORE_SECRET: v.string(),
     BUSINESS_REGISTRATION_FINGERPRINT_KEY: v.optional(v.string()),
+    MOVIX_ENABLE_DEVELOPMENT_FIXTURES: v.optional(v.string()),
+    MOVIX_ENABLE_DEVELOPMENT_SELF_VERIFICATION: v.optional(v.string()),
   },
 });
 

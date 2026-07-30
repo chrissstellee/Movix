@@ -31,6 +31,8 @@ type Env = {
   readonly MOVIX_AUTH_JWKS_URL: string;
   readonly MOVIX_AUTH_PUBLIC_JWKS: string;
   readonly MOVIX_AUTH_STORE_SECRET: string;
+  readonly MOVIX_ENABLE_DEVELOPMENT_FIXTURES: string | undefined;
+  readonly MOVIX_ENABLE_DEVELOPMENT_SELF_VERIFICATION: string | undefined;
 };
 
 /**

@@ -1,6 +1,6 @@
 import { v } from "convex/values";
 
-import { internalMutation, mutation, query } from "./_generated/server";
+import { env, internalMutation, mutation, query } from "./_generated/server";
 import { getSingleActiveOrganizationContext, requireCapability } from "./lib/authorization";
 import { businessError } from "./lib/errors";
 import { canonicalVerificationStatus } from "./lib/verification";
@@ -22,6 +22,22 @@ const publicCaseValidator = v.object({
 function validDigest(value: string) {
   return /^[a-f0-9]{64}$/u.test(value);
 }
+
+function developmentSelfVerificationEnabled() {
+  return env.MOVIX_ENABLE_DEVELOPMENT_SELF_VERIFICATION === "enabled";
+}
+
+export const developmentOptions = query({
+  args: {},
+  returns: v.object({ selfVerificationAvailable: v.boolean() }),
+  handler: async (ctx) => {
+    const context = await getSingleActiveOrganizationContext(ctx);
+    if (context.kind !== "single") {
+      throw businessError("ORGANIZATION_FORBIDDEN");
+    }
+    return { selfVerificationAvailable: developmentSelfVerificationEnabled() };
+  },
+});
 
 export const current = query({
   args: {},
@@ -45,6 +61,68 @@ export const current = query({
       ...(verificationCase?.reviewedAt ? { reviewedAt: verificationCase.reviewedAt } : {}),
       ...(verificationCase?.version ? { version: verificationCase.version } : {}),
     };
+  },
+});
+
+export const verifyForDevelopment = mutation({
+  args: {
+    organizationId: v.id("organizations"),
+    expectedOrganizationVersion: v.int64(),
+  },
+  returns: v.object({
+    status: v.literal("verified"),
+    caseId: v.id("organizationVerificationCases"),
+    organizationVersion: v.int64(),
+  }),
+  handler: async (ctx, args) => {
+    if (!developmentSelfVerificationEnabled()) {
+      throw businessError("ORGANIZATION_VERIFICATION_INVALID");
+    }
+    const context = await requireCapability(ctx, args.organizationId, "organization:edit");
+    if (context.organization.version !== args.expectedOrganizationVersion) {
+      throw businessError("ORGANIZATION_VERIFICATION_STALE");
+    }
+    const status = canonicalVerificationStatus(context.organization.verificationStatus);
+    if (status === "verified" || status === "pending") {
+      throw businessError("ORGANIZATION_VERIFICATION_INVALID");
+    }
+    const now = Date.now();
+    const referenceId = crypto.randomUUID();
+    const evidenceDigest = `${crypto.randomUUID().replaceAll("-", "")}${crypto
+      .randomUUID()
+      .replaceAll("-", "")}`;
+    const caseId = await ctx.db.insert("organizationVerificationCases", {
+      organizationId: context.organization._id,
+      status: "verified",
+      evidenceDigest,
+      evidenceReference: `development://self-verification/${referenceId}`,
+      submittedByUserId: context.principal.user._id,
+      submittedAt: now,
+      reviewedBy: "Movix development self-verification",
+      reviewedAt: now,
+      createdAt: now,
+      updatedAt: now,
+      version: 1n,
+    });
+    const organizationVersion = context.organization.version + 1n;
+    await ctx.db.patch("organizations", context.organization._id, {
+      verificationStatus: "verified",
+      verificationCaseId: caseId,
+      updatedAt: now,
+      version: organizationVersion,
+    });
+    await ctx.db.insert("auditEvents", {
+      entityType: "organization_verification",
+      entityId: caseId,
+      organizationId: context.organization._id,
+      actorUserId: context.principal.user._id,
+      actorWalletAddress: context.principal.wallet.address,
+      action: "organization.verification_development_verified",
+      correlationId: crypto.randomUUID(),
+      changedFields: ["verificationStatus", "verificationCaseId", "reviewedBy", "reviewedAt"],
+      occurredAt: now,
+    });
+    return { status: "verified" as const, caseId, organizationVersion };
   },
 });
 

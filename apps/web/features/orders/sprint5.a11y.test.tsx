@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from "@testing-library/react";
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { axe } from "vitest-axe";
 
 import { OrderDetail } from "./order-detail";
@@ -7,6 +7,7 @@ import { SupplierDashboard } from "./supplier-dashboard";
 
 const testState = vi.hoisted(() => ({
   verificationStatus: "verified" as "not_started" | "pending" | "verified" | "action_required",
+  supplierAcceptanceDeadlineOffsetMs: 60_000,
 }));
 
 vi.mock("@repo/backend/client", () => ({
@@ -101,7 +102,7 @@ vi.mock("convex/react", () => ({
         orderDate: "2026-07-28",
         issueDate: "2026-07-28",
         requestedDeliveryDate: "2026-08-31",
-        supplierAcceptanceDeadline: Date.now() + 60_000,
+        supplierAcceptanceDeadline: Date.now() + testState.supplierAcceptanceDeadlineOffsetMs,
         fundingDeadline: Date.now() + 120_000,
         asset: {
           key: "testnet:USDC",
@@ -173,6 +174,11 @@ vi.mock("convex/react", () => ({
 }));
 
 describe("Sprint 5 supplier acceptance surfaces", () => {
+  beforeEach(() => {
+    testState.verificationStatus = "verified";
+    testState.supplierAcceptanceDeadlineOffsetMs = 60_000;
+  });
+
   it("renders an accessible supplier dashboard with exact queue counts", async () => {
     const { container } = render(<SupplierDashboard />);
 
@@ -206,7 +212,15 @@ describe("Sprint 5 supplier acceptance surfaces", () => {
       "/settings/business#verification",
     );
     expect(screen.getByRole("button", { name: "Upload version" })).toBeDisabled();
+  });
 
-    testState.verificationStatus = "verified";
+  it("removes decision controls and explains recovery after the acceptance deadline", () => {
+    testState.supplierAcceptanceDeadlineOffsetMs = -60_000;
+
+    render(<OrderDetail orderId="order-1" />);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Decision deadline passed");
+    expect(screen.queryByRole("button", { name: "Accept revision" })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: "Reject revision" })).not.toBeInTheDocument();
   });
 });

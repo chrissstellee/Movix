@@ -6,8 +6,18 @@ import { BusinessOnboarding } from "./onboarding/business-onboarding";
 import { BusinessSettings } from "./settings/business-settings";
 import { WorkspaceShell } from "./workspace/workspace-shell";
 
-const state = vi.hoisted(() => ({ scenario: "onboarding" }));
+const state = vi.hoisted(() => ({
+  scenario: "onboarding",
+  developmentSelfVerificationAvailable: false,
+}));
 const replace = vi.hoisted(() => vi.fn());
+const verifyForDevelopment = vi.hoisted(() =>
+  vi.fn(async () => ({
+    status: "verified",
+    caseId: "verification-case",
+    organizationVersion: 2n,
+  })),
+);
 
 vi.mock("@repo/backend/client", () => ({
   api: {
@@ -21,7 +31,9 @@ vi.mock("@repo/backend/client", () => ({
     },
     organizationVerification: {
       current: "currentVerification",
+      developmentOptions: "developmentVerificationOptions",
       submit: "submitVerification",
+      verifyForDevelopment: "verifyForDevelopment",
     },
   },
 }));
@@ -103,7 +115,10 @@ const settings = {
 
 vi.mock("convex/react", () => ({
   useConvexAuth: () => ({ isAuthenticated: true, isLoading: false }),
-  useMutation: () => vi.fn(async () => ({ updated: false, version: 1n })),
+  useMutation: (reference: string) =>
+    reference === "verifyForDevelopment"
+      ? verifyForDevelopment
+      : vi.fn(async () => ({ updated: false, version: 1n })),
   useQuery: (reference: string) => {
     if (reference === "getDraft") {
       return { kind: "blank", version: 0n, currentStep: "identity", completedSteps: [] };
@@ -111,6 +126,11 @@ vi.mock("convex/react", () => ({
     if (reference === "getBusinessSettings") return settings;
     if (reference === "currentVerification") {
       return { status: "not_started", organizationVersion: 1n, case: null };
+    }
+    if (reference === "developmentVerificationOptions") {
+      return {
+        selfVerificationAvailable: state.developmentSelfVerificationAvailable,
+      };
     }
     if (reference === "currentContext") return state.scenario === "onboarding" ? null : context;
     return undefined;
@@ -120,6 +140,8 @@ vi.mock("convex/react", () => ({
 describe("Sprint 2 accessible surfaces", () => {
   beforeEach(() => {
     replace.mockClear();
+    verifyForDevelopment.mockClear();
+    state.developmentSelfVerificationAvailable = false;
   });
 
   it("has no automated violations in onboarding", async () => {
@@ -166,5 +188,23 @@ describe("Sprint 2 accessible surfaces", () => {
     expect(screen.getByRole("tab", { name: "Addresses" })).toBeVisible();
     expect(screen.getByRole("tabpanel")).toBeVisible();
     expect((await axe(container)).violations).toEqual([]);
+  });
+
+  it("offers auditable self-verification only when the development deployment enables it", async () => {
+    state.scenario = "settings";
+    state.developmentSelfVerificationAvailable = true;
+    render(<BusinessSettings />);
+
+    const verificationTab = await screen.findByRole("tab", { name: "Verification" });
+    fireEvent.mouseDown(verificationTab, { button: 0, ctrlKey: false });
+    await waitFor(() => expect(verificationTab).toHaveAttribute("aria-selected", "true"));
+    fireEvent.click(screen.getByRole("button", { name: "Verify this development organization" }));
+
+    await waitFor(() =>
+      expect(verifyForDevelopment).toHaveBeenCalledWith({
+        organizationId: "organization",
+        expectedOrganizationVersion: 1n,
+      }),
+    );
   });
 });

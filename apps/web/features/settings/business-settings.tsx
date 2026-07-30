@@ -58,10 +58,15 @@ export function BusinessSettings() {
     organizationId ? { organizationId } : "skip",
   );
   const verification = useQuery(api.organizationVerification.current, organizationId ? {} : "skip");
+  const developmentVerification = useQuery(
+    api.organizationVerification.developmentOptions,
+    organizationId ? {} : "skip",
+  );
   const updateProfile = useMutation(api.organizations.updateProfile);
   const updateContact = useMutation(api.organizations.updatePrimaryContact);
   const updateAddress = useMutation(api.organizations.updateAddress);
   const submitVerification = useMutation(api.organizationVerification.submit);
+  const verifyForDevelopment = useMutation(api.organizationVerification.verifyForDevelopment);
   const [identity, setIdentity] = useState<IdentityForm | null>(null);
   const [contact, setContact] = useState<ContactForm | null>(null);
   const [message, setMessage] = useState("");
@@ -176,6 +181,22 @@ export function BusinessSettings() {
         evidenceReference: evidenceReference.trim(),
       });
       setEvidenceReference("");
+    } catch (error) {
+      setMessage(mutationError(error));
+    } finally {
+      setSaving("");
+    }
+  }
+
+  async function verifyDevelopmentOrganization() {
+    if (!settings) return;
+    setSaving("development-verification");
+    setMessage("");
+    try {
+      await verifyForDevelopment({
+        organizationId: settings.organization.id,
+        expectedOrganizationVersion: settings.organization.version,
+      });
     } catch (error) {
       setMessage(mutationError(error));
     } finally {
@@ -359,6 +380,29 @@ export function BusinessSettings() {
                         Open recovery instructions
                       </a>
                     ) : null}
+                  </AlertDescription>
+                </Alert>
+              ) : null}
+              {developmentVerification?.selfVerificationAvailable &&
+              verification?.status !== "verified" &&
+              verification?.status !== "pending" ? (
+                <Alert>
+                  <AlertTitle>Development testing</AlertTitle>
+                  <AlertDescription className="space-y-3">
+                    <p>
+                      This development deployment can create an auditable test verification for your
+                      active organization. This option is disabled unless the deployment flag is
+                      explicitly enabled.
+                    </p>
+                    <Button
+                      type="button"
+                      disabled={saving === "development-verification"}
+                      onClick={() => void verifyDevelopmentOrganization()}
+                    >
+                      {saving === "development-verification"
+                        ? "Verifying…"
+                        : "Verify this development organization"}
+                    </Button>
                   </AlertDescription>
                 </Alert>
               ) : null}

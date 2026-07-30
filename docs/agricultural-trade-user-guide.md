@@ -29,6 +29,14 @@ The Importer identifies the intended Exporter and enters:
 
 Review the complete revision before sending. The Exporter accepts or rejects that exact revision. A material change creates a new revision and requires acceptance again.
 
+### Edit, cancel, and development sample data
+
+An Importer can select **Edit draft** from the Trade Orders list while a Trade Order is still a draft. Sent and historical revisions are not edited in place because the accepted terms, decisions, documents, and audit history must remain attributable to the exact revision.
+
+Movix does not hard-delete Trade Orders. Use the audited **Cancel Trade Order** action where the lifecycle permits cancellation. Cancellation preserves the record and prevents it from being mistaken for an active agreement.
+
+On a development deployment with `MOVIX_ENABLE_DEVELOPMENT_FIXTURES=enabled`, an eligible Importer sees **Add sample data** on the Trade Orders page. It creates three complete, editable agricultural drafts using the Importer's profile and first active Exporter relationship. Retrying the same request is idempotent and does not duplicate the drafts. This control is unavailable on deployments where the flag is not enabled.
+
 ## Escrow and shipment
 
 Sprint 6 records the exact accepted revision and keeps the Escrow and Shipment projections separate. Sprint 7 will add the wallet-reviewed funding transaction, funded-escrow activation, on-chain dispatch, Delivery Confirmation release, and interrupted-transaction recovery.

@@ -13,6 +13,10 @@ vi.mock("@repo/backend/client", () => ({
     orderDashboard: { getBuyerSummary: "getBuyerSummary" },
     notifications: { listCurrentOrganization: "listNotifications" },
     supplierOrders: { list: "listSupplierOrders" },
+    developmentFixtures: {
+      options: "developmentFixtureOptions",
+      seedTradeOrders: "seedTradeOrders",
+    },
     tradeOrders: {
       createDraft: "create",
       saveTradeTerms: "saveAgriculturalTerms",
@@ -41,6 +45,7 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("convex/react", () => ({
+  useAction: () => vi.fn(),
   useMutation: () => vi.fn(),
   useQuery: (reference: string) => {
     if (reference === "currentContext") {
@@ -58,6 +63,9 @@ vi.mock("convex/react", () => ({
           { id: "shipping-1", type: "shipping", label: "Warehouse", city: "Makati" },
         ],
       };
+    }
+    if (reference === "developmentFixtureOptions") {
+      return { available: false };
     }
     if (reference === "getDraft") {
       return {

@@ -310,6 +310,147 @@ describe("Sprint 6 organization verification", () => {
     ]);
     expect(state.audits[1]).toMatchObject({ correlationId: "sprint6-review-success" });
   });
+
+  it("allows an authenticated owner to self-verify only when the development flag is enabled", async () => {
+    const t = convexTest(schema, modules);
+    const organization = await createParty(t, {
+      suffix: "development-verification",
+      wallet: wallets.importer,
+      capability: "buyer",
+      verificationStatus: "unverified",
+    });
+
+    await expect(
+      organization.authenticated.mutation(api.organizationVerification.verifyForDevelopment, {
+        organizationId: organization.organizationId,
+        expectedOrganizationVersion: 1n,
+      }),
+    ).rejects.toMatchObject({
+      data: expect.objectContaining({ code: "ORGANIZATION_VERIFICATION_INVALID" }),
+    });
+
+    const previousFlag = process.env.MOVIX_ENABLE_DEVELOPMENT_SELF_VERIFICATION;
+    process.env.MOVIX_ENABLE_DEVELOPMENT_SELF_VERIFICATION = "enabled";
+    try {
+      await expect(
+        organization.authenticated.query(api.organizationVerification.developmentOptions, {}),
+      ).resolves.toEqual({ selfVerificationAvailable: true });
+      const verified = await organization.authenticated.mutation(
+        api.organizationVerification.verifyForDevelopment,
+        {
+          organizationId: organization.organizationId,
+          expectedOrganizationVersion: 1n,
+        },
+      );
+      expect(verified).toMatchObject({
+        status: "verified",
+        organizationVersion: 2n,
+        caseId: expect.any(String),
+      });
+
+      const state = await t.run(async (ctx) => ({
+        organization: await ctx.db.get("organizations", organization.organizationId),
+        verificationCase: await ctx.db.get("organizationVerificationCases", verified.caseId),
+        audits: (await ctx.db.query("auditEvents").take(20)).filter(
+          (event) => event.entityId === verified.caseId,
+        ),
+      }));
+      expect(state.organization).toMatchObject({
+        verificationStatus: "verified",
+        verificationCaseId: verified.caseId,
+        version: 2n,
+      });
+      expect(state.verificationCase).toMatchObject({
+        organizationId: organization.organizationId,
+        status: "verified",
+        reviewedBy: "Movix development self-verification",
+        version: 1n,
+      });
+      expect(state.audits).toEqual([
+        expect.objectContaining({
+          action: "organization.verification_development_verified",
+        }),
+      ]);
+    } finally {
+      if (previousFlag === undefined) {
+        delete process.env.MOVIX_ENABLE_DEVELOPMENT_SELF_VERIFICATION;
+      } else {
+        process.env.MOVIX_ENABLE_DEVELOPMENT_SELF_VERIFICATION = previousFlag;
+      }
+    }
+  });
+});
+
+describe("Sprint 6 development fixtures", () => {
+  it("seeds three complete editable Trade Order drafts idempotently through normal APIs", async () => {
+    const fixture = await createTradeFixture();
+    await fixture.t.run((ctx) =>
+      ctx.db.insert("relationships", {
+        buyerOrganizationId: fixture.importer.organizationId,
+        supplierOrganizationId: fixture.exporter.organizationId,
+        status: "active",
+        createdAt: Date.now(),
+        updatedAt: Date.now(),
+        version: 1n,
+      }),
+    );
+    const previousFlag = process.env.MOVIX_ENABLE_DEVELOPMENT_FIXTURES;
+    process.env.MOVIX_ENABLE_DEVELOPMENT_FIXTURES = "enabled";
+    try {
+      const args = { batchId: "sprint6-development-fixtures-001" };
+      const seeded = await fixture.importer.authenticated.action(
+        api.developmentFixtures.seedTradeOrders,
+        args,
+      );
+      expect(seeded.orders).toHaveLength(3);
+      expect(seeded.replay).toBe(false);
+      const replayed = await fixture.importer.authenticated.action(
+        api.developmentFixtures.seedTradeOrders,
+        args,
+      );
+      expect(replayed).toEqual({ ...seeded, replay: true });
+
+      const state = await fixture.t.run(async (ctx) =>
+        Promise.all(
+          seeded.orders.map(async ({ orderId }) => {
+            const order = await ctx.db.get("orders", orderId);
+            const revision = order?.currentRevisionId
+              ? await ctx.db.get("orderRevisions", order.currentRevisionId)
+              : null;
+            const lines = revision
+              ? await ctx.db
+                  .query("orderLines")
+                  .withIndex("by_revisionId", (index) => index.eq("revisionId", revision._id))
+                  .take(10)
+              : [];
+            return { order, revision, lines };
+          }),
+        ),
+      );
+      expect(state).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            order: expect.objectContaining({
+              agreementStatus: "draft",
+              supplierOrganizationId: fixture.exporter.organizationId,
+              migrationState: "current",
+            }),
+            revision: expect.objectContaining({
+              termsHashVersion: "order-terms-v2",
+              destinationCountry: "PH",
+            }),
+            lines: [expect.objectContaining({ originCountry: expect.any(String) })],
+          }),
+        ]),
+      );
+    } finally {
+      if (previousFlag === undefined) {
+        delete process.env.MOVIX_ENABLE_DEVELOPMENT_FIXTURES;
+      } else {
+        process.env.MOVIX_ENABLE_DEVELOPMENT_FIXTURES = previousFlag;
+      }
+    }
+  });
 });
 
 describe("Sprint 6 intended Exporter invitations", () => {

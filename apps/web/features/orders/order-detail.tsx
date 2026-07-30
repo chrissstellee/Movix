@@ -30,7 +30,7 @@ import { Textarea } from "@repo/ui/components/ui/textarea";
 import { useMutation, usePaginatedQuery, useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { orderAmount, orderStatusLabel } from "./order-format";
 
@@ -71,7 +71,23 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
   >("participants");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [documentPending, setDocumentPending] = useState(false);
+  const [decisionNow, setDecisionNow] = useState(() => Date.now());
   const decisionAttempt = useRef<{ fingerprint: string; key: string } | null>(null);
+
+  const supplierAcceptanceDeadline = detail?.revision.supplierAcceptanceDeadline;
+  useEffect(() => {
+    if (supplierAcceptanceDeadline === undefined) return;
+    const remaining = supplierAcceptanceDeadline - Date.now();
+    if (remaining < 0) {
+      if (decisionNow <= supplierAcceptanceDeadline) setDecisionNow(Date.now());
+      return;
+    }
+    const timer = window.setTimeout(
+      () => setDecisionNow(Date.now()),
+      Math.min(remaining + 1, 2_147_483_647),
+    );
+    return () => window.clearTimeout(timer);
+  }, [decisionNow, supplierAcceptanceDeadline]);
 
   if (detail === undefined) return <p role="status">Loading order…</p>;
   const loadedDetail = detail;
@@ -86,9 +102,11 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
     ["accepted", "rejected"].includes(detail.order.agreementStatus) &&
     detail.order.settlementStatus === "unfunded";
   const canUploadDocuments = organizationVerification?.status === "verified";
+  const decisionExpired =
+    supplierAcceptanceDeadline !== undefined && decisionNow > supplierAcceptanceDeadline;
 
   async function runDecision(command: DecisionCommand) {
-    if (loadedDetail.viewerSide !== "supplier" || pendingDecision) return;
+    if (loadedDetail.viewerSide !== "supplier" || pendingDecision || decisionExpired) return;
     const note = command === "reject" ? rejectionNote.trim() || undefined : undefined;
     const fingerprint = JSON.stringify({
       command,
@@ -133,10 +151,19 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
         setMessage(`Revision ${loadedDetail.revision.revisionNumber.toString()} rejected.`);
       }
       decisionAttempt.current = null;
-    } catch {
-      setMessage(
-        "The decision was not recorded. Reload if the revision is stale, or retry the identical request.",
-      );
+    } catch (error) {
+      if (convexErrorCode(error) === "ORDER_DECISION_EXPIRED") {
+        setDecisionNow(Date.now());
+        setAcceptOpen(false);
+        setRejectOpen(false);
+        setMessage(
+          "The decision deadline has passed. Ask the importer to issue a new Trade Order with a future deadline.",
+        );
+      } else {
+        setMessage(
+          "The decision was not recorded. Reload if the revision is stale, or retry the identical request.",
+        );
+      }
     } finally {
       setPendingDecision(null);
     }
@@ -154,9 +181,16 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
           </h1>
           <p className="mt-2 break-words text-muted-foreground">{detail.revision.title}</p>
         </div>
-        <Button asChild variant="outline">
-          <Link href={`/orders?view=${detail.viewerSide}`}>Back to trade orders</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {detail.viewerSide === "buyer" && detail.order.agreementStatus === "draft" ? (
+            <Button asChild>
+              <Link href={`/orders/new?orderId=${orderId}`}>Edit draft</Link>
+            </Button>
+          ) : null}
+          <Button asChild variant="outline">
+            <Link href={`/orders?view=${detail.viewerSide}`}>Back to trade orders</Link>
+          </Button>
+        </div>
       </header>
 
       <section
@@ -388,7 +422,20 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
         </Card>
       ) : null}
 
-      {isSupplier && detail.canDecide ? (
+      {isSupplier && detail.canDecide && decisionExpired ? (
+        <div
+          role="alert"
+          className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 text-sm"
+        >
+          <p className="font-medium">Decision deadline passed</p>
+          <p className="mt-1 text-muted-foreground">
+            This revision can no longer be accepted or rejected. Ask the importer to cancel the
+            expired Trade Order and issue a new one with a future decision deadline.
+          </p>
+        </div>
+      ) : null}
+
+      {isSupplier && detail.canDecide && !decisionExpired ? (
         <Card>
           <CardHeader>
             <CardTitle>Record exporter decision</CardTitle>
@@ -783,4 +830,11 @@ function formatExactQuantity(coefficient: bigint, scale: bigint) {
 async function sha256Hex(buffer: ArrayBuffer) {
   const digest = await crypto.subtle.digest("SHA-256", buffer);
   return Array.from(new Uint8Array(digest), (byte) => byte.toString(16).padStart(2, "0")).join("");
+}
+
+function convexErrorCode(error: unknown) {
+  if (typeof error !== "object" || error === null || !("data" in error)) return "";
+  const data = (error as { data?: unknown }).data;
+  if (typeof data !== "object" || data === null || !("code" in data)) return "";
+  return String((data as { code?: unknown }).code ?? "");
 }

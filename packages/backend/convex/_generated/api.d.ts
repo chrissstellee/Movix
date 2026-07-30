@@ -13,6 +13,7 @@ import type * as authJwks from "../authJwks.js";
 import type * as authStore from "../authStore.js";
 import type * as businessValidators from "../businessValidators.js";
 import type * as crons from "../crons.js";
+import type * as developmentFixtures from "../developmentFixtures.js";
 import type * as exporterDirectory from "../exporterDirectory.js";
 import type * as exporterInvitations from "../exporterInvitations.js";
 import type * as exporterOrders from "../exporterOrders.js";
@@ -62,6 +63,7 @@ declare const fullApi: ApiFromModules<{
   authStore: typeof authStore;
   businessValidators: typeof businessValidators;
   crons: typeof crons;
+  developmentFixtures: typeof developmentFixtures;
   exporterDirectory: typeof exporterDirectory;
   exporterInvitations: typeof exporterInvitations;
   exporterOrders: typeof exporterOrders;

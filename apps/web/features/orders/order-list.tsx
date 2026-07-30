@@ -5,9 +5,10 @@ import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent } from "@repo/ui/components/ui/card";
 import { Input } from "@repo/ui/components/ui/input";
-import { usePaginatedQuery, useQuery } from "convex/react";
+import { useAction, usePaginatedQuery, useQuery } from "convex/react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
+import { useRef, useState } from "react";
 
 import { orderAmount, orderStatusLabel } from "./order-format";
 import { hasExporterAccess, SupplierAccessUnavailable } from "./supplier-access";
@@ -83,12 +84,42 @@ export function OrderList() {
     view === "supplier" ? { ...(queueState ? { queueState } : {}) } : "skip",
     { initialNumItems: 20 },
   );
+  const developmentFixtures = useQuery(
+    api.developmentFixtures.options,
+    view === "buyer" ? {} : "skip",
+  );
+  const seedTradeOrders = useAction(api.developmentFixtures.seedTradeOrders);
+  const seedBatchId = useRef<string | null>(null);
+  const [seedPending, setSeedPending] = useState(false);
+  const [seedMessage, setSeedMessage] = useState("");
 
   function setFilter(name: string, value: string) {
     const next = new URLSearchParams(searchParams.toString());
     if (value) next.set(name, value);
     else next.delete(name);
     router.replace(`/orders${next.size ? `?${next.toString()}` : ""}`);
+  }
+
+  async function addSampleData() {
+    setSeedPending(true);
+    setSeedMessage("");
+    try {
+      seedBatchId.current ??= crypto.randomUUID();
+      const result = await seedTradeOrders({ batchId: seedBatchId.current });
+      seedBatchId.current = null;
+      setSeedMessage(
+        result.replay
+          ? "The sample Trade Orders were already added."
+          : "Added 3 editable sample Trade Orders.",
+      );
+    } catch {
+      setSeedMessage(
+        developmentFixtures?.blocker ??
+          "Sample data could not be added. Check the Importer profile and Exporter relationship.",
+      );
+    } finally {
+      setSeedPending(false);
+    }
   }
 
   if (context === undefined) return <p role="status">Loading Trade Order view…</p>;
@@ -205,11 +236,29 @@ export function OrderList() {
             Browse organization-scoped agricultural trades and independent lifecycle states.
           </p>
         </div>
-        <Button asChild>
-          <Link href="/orders/new">Create Trade Order</Link>
-        </Button>
+        <div className="flex flex-wrap gap-2">
+          {developmentFixtures?.available ? (
+            <Button
+              type="button"
+              variant="outline"
+              disabled={seedPending}
+              onClick={() => void addSampleData()}
+            >
+              {seedPending ? "Adding sample data…" : "Add sample data"}
+            </Button>
+          ) : null}
+          <Button asChild>
+            <Link href="/orders/new">Create Trade Order</Link>
+          </Button>
+        </div>
         {allowedViews.length > 1 ? <ViewSwitch view="buyer" /> : null}
       </header>
+
+      {seedMessage ? (
+        <p role="status" className="text-sm text-muted-foreground">
+          {seedMessage}
+        </p>
+      ) : null}
 
       <section
         aria-label="Trade Order filters"
@@ -283,13 +332,19 @@ export function OrderList() {
             <table className="w-full text-left text-sm">
               <thead className="bg-muted/50">
                 <tr>
-                  {["Trade Order", "Exporter", "Title", "Issue date", "Total", "Status"].map(
-                    (heading) => (
-                      <th key={heading} scope="col" className="px-4 py-3 font-medium">
-                        {heading}
-                      </th>
-                    ),
-                  )}
+                  {[
+                    "Trade Order",
+                    "Exporter",
+                    "Title",
+                    "Issue date",
+                    "Total",
+                    "Status",
+                    "Actions",
+                  ].map((heading) => (
+                    <th key={heading} scope="col" className="px-4 py-3 font-medium">
+                      {heading}
+                    </th>
+                  ))}
                 </tr>
               </thead>
               <tbody className="divide-y">
@@ -308,6 +363,18 @@ export function OrderList() {
                     </td>
                     <td className="px-4 py-3">
                       <Badge variant="outline">{orderStatusLabel(order.agreementStatus)}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      {order.agreementStatus === "draft" ? (
+                        <Link
+                          className="font-medium text-primary hover:underline"
+                          href={`/orders/new?orderId=${order.orderId}`}
+                        >
+                          Edit draft
+                        </Link>
+                      ) : (
+                        <span className="text-muted-foreground">—</span>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -336,6 +403,11 @@ export function OrderList() {
                       value={orderAmount(order.grandTotalBaseUnits, order.assetCode)}
                       mono
                     />
+                    {order.agreementStatus === "draft" ? (
+                      <Button asChild size="sm" variant="outline">
+                        <Link href={`/orders/new?orderId=${order.orderId}`}>Edit draft</Link>
+                      </Button>
+                    ) : null}
                   </CardContent>
                 </Card>
               </li>
