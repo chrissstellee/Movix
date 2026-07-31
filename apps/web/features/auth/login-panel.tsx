@@ -201,11 +201,7 @@ export function LoginPanel() {
             {status}
           </div>
           <Button className="h-11 w-full" disabled={busy} onClick={() => void signIn()}>
-            {busy
-              ? "Signing in…"
-              : state.phase === "error"
-                ? "Try again"
-                : "Connect Wallet"}
+            {busy ? "Signing in…" : state.phase === "error" ? "Try again" : "Connect Wallet"}
           </Button>
           <p className="text-center text-xs leading-5 text-muted-foreground">
             Testnet only. Signing the challenge authenticates you to Movix and cannot transfer
