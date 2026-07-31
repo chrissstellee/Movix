@@ -1,6 +1,6 @@
 import { StrKey } from "@stellar/stellar-sdk";
 
-import { hexToBytes32 } from "./escrow-funding.js";
+import { hexToBytes32 } from "./escrow-funding";
 
 export interface EncodedAcceptArguments {
   id: Uint8Array;

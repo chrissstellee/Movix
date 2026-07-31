@@ -125,7 +125,7 @@ export function TransactionReview({
             Cancel
           </Button>
           <Button disabled={isSubmitting} onClick={onConfirm}>
-            {isSubmitting ? "Signing & Submitting…" : "Confirm and Sign with Wallet"}
+            {isSubmitting ? "Locking Funds in Escrow…" : "Confirm Escrow Funding"}
           </Button>
         </DialogFooter>
       </DialogContent>

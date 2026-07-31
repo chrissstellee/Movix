@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 import { hash, StrKey } from "@stellar/stellar-sdk";
 
 export interface DerivedEscrowKey {

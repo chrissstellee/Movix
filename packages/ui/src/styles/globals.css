@@ -155,3 +155,13 @@
 .dot:nth-child(3) {
   --i: 2;
 }
+
+/* ── Stellar Wallets Kit Modal Overrides ── */
+#stellar-wallets-kit,
+.stellar-wallets-kit-modal,
+stellar-wallets-modal,
+div[class*="stellar-wallets"],
+div[id*="stellar-wallets"] {
+  pointer-events: auto !important;
+  z-index: 99999 !important;
+}

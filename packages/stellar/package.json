@@ -15,7 +15,8 @@
     "./evidence-manifests": "./src/evidence-manifests.ts",
     "./transactions": "./src/transactions.ts",
     "./wallet": "./src/wallet.ts",
-    "./wallet/freighter": "./src/freighter-wallet-adapter.ts"
+    "./wallet/freighter": "./src/freighter-wallet-adapter.ts",
+    "./wallet/multi": "./src/multi-wallet-adapter.ts"
   },
   "scripts": {
     "build": "tsc --noEmit",

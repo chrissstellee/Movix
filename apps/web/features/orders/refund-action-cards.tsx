@@ -1,10 +1,16 @@
 "use client";
 
 import { api, type Id } from "@repo/backend/client";
-import { requestFreighterSignature } from "@repo/stellar";
+import { submitApproveRefund, submitRejectRefund } from "@repo/stellar";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@repo/ui/components/ui/card";
 import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 
@@ -41,17 +47,31 @@ export function RefundActionCards({
     setErrorMessage(null);
 
     try {
-      // Wallet simulation & signing
-      const signRes = await requestFreighterSignature({
-        contractId: "REFUND_APPROVE",
-        buyerWallet: "",
-        amountBaseUnits: 0n,
+      // Build, simulate, sign via Freighter, and submit approve_refund to Stellar Testnet
+      const approverWallet = isBuyer
+        ? activeRequest.buyerWalletAddress
+        : activeRequest.supplierWalletAddress;
+
+      if (!approverWallet) {
+        throw new Error("Approver wallet address not found.");
+      }
+
+      const result = await submitApproveRefund({
+        signerAddress: approverWallet,
+        escrowIdHex: activeRequest.escrowKey,
+        approverWallet,
+        refundTermsHashHex: activeRequest.termsHash,
+        contractId: activeRequest.contractId,
       });
+
+      if (!result.success || !result.transactionHash) {
+        throw new Error(result.error || "Refund approval transaction failed.");
+      }
 
       await approveRefund({
         orderId,
         termsHash: activeRequest.termsHash,
-        txHash: signRes.transactionHash ?? undefined,
+        txHash: result.transactionHash,
       });
     } catch (err) {
       setErrorMessage(err instanceof Error ? err.message : "Approval failed");
@@ -66,6 +86,27 @@ export function RefundActionCards({
     setErrorMessage(null);
 
     try {
+      // Build, simulate, sign via Freighter, and submit reject_refund to Stellar Testnet
+      const approverWallet = isBuyer
+        ? activeRequest.buyerWalletAddress
+        : activeRequest.supplierWalletAddress;
+
+      if (!approverWallet) {
+        throw new Error("Approver wallet address not found.");
+      }
+
+      const result = await submitRejectRefund({
+        signerAddress: approverWallet,
+        escrowIdHex: activeRequest.escrowKey,
+        approverWallet,
+        refundTermsHashHex: activeRequest.termsHash,
+        contractId: activeRequest.contractId,
+      });
+
+      if (!result.success) {
+        throw new Error(result.error || "Refund rejection transaction failed.");
+      }
+
       await rejectRefund({
         orderId,
         termsHash: activeRequest.termsHash,
@@ -98,14 +139,19 @@ export function RefundActionCards({
     <Card className="mt-6 border-amber-500/50 bg-amber-500/5 dark:bg-amber-500/10">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">
-          <CardTitle className="text-lg font-bold flex items-center gap-2">
+          <CardTitle className="flex items-center gap-2 text-lg font-bold">
             <span>Mutual Refund Pending</span>
-            <Badge variant="outline" className="border-amber-500 text-amber-600 dark:text-amber-400">
+            <Badge
+              variant="outline"
+              className="border-amber-500 text-amber-600 dark:text-amber-400"
+            >
               Action Required
             </Badge>
           </CardTitle>
           <CardDescription>
-            A full refund of <span className="font-semibold text-foreground">{grandTotalFormatted}</span> has been requested.
+            A full refund of{" "}
+            <span className="font-semibold text-foreground">{grandTotalFormatted}</span> has been
+            requested.
           </CardDescription>
         </div>
       </CardHeader>
@@ -117,22 +163,23 @@ export function RefundActionCards({
           </div>
         )}
 
-        <div className="rounded-md border bg-background/60 p-3 text-sm space-y-1">
+        <div className="space-y-1 rounded-md border bg-background/60 p-3 text-sm">
           <p>
             <span className="font-medium text-muted-foreground">Reason Code:</span>{" "}
             <span className="font-semibold">{activeRequest.reasonCode}</span>
           </p>
-          <p className="font-mono text-xs text-muted-foreground break-all">
+          <p className="font-mono text-xs break-all text-muted-foreground">
             Terms Hash: {activeRequest.termsHash}
           </p>
         </div>
 
         {isCounterparty ? (
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-2">
+          <div className="flex flex-col items-center justify-between gap-3 pt-2 sm:flex-row">
             <p className="text-xs text-muted-foreground">
-              Review terms carefully. Approving will immediately return 100% of locked tokens to the Importer.
+              Review terms carefully. Approving will immediately return 100% of locked tokens to the
+              Importer.
             </p>
-            <div className="flex gap-2 w-full sm:w-auto">
+            <div className="flex w-full gap-2 sm:w-auto">
               <Button
                 variant="outline"
                 size="sm"
@@ -158,12 +205,7 @@ export function RefundActionCards({
             <p className="text-xs text-muted-foreground">
               Waiting for counterparty response. You can withdraw your request before they act.
             </p>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleWithdraw}
-              disabled={isSubmitting}
-            >
+            <Button variant="outline" size="sm" onClick={handleWithdraw} disabled={isSubmitting}>
               {isSubmitting ? "Withdrawing..." : "Withdraw Request"}
             </Button>
           </div>

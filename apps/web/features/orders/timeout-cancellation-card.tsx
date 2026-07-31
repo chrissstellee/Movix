@@ -1,10 +1,16 @@
 "use client";
 
 import { api, type Id } from "@repo/backend/client";
-import { requestFreighterSignature } from "@repo/stellar";
+import { submitCancelUnaccepted } from "@repo/stellar";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@repo/ui/components/ui/card";
 import { useMutation, useQuery } from "convex/react";
 import { useState } from "react";
 
@@ -30,24 +36,29 @@ export function TimeoutCancellationCard({
   }
 
   async function handleCancelUnaccepted() {
+    if (!eligibility || !eligibility.isEligible) return;
     setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      const signRes = await requestFreighterSignature({
-        contractId: eligibility.contractId ?? "CANCEL_UNACCEPTED",
+      // Build, simulate, sign via Freighter, and submit cancel_unaccepted to Stellar Testnet
+      const result = await submitCancelUnaccepted({
+        signerAddress: eligibility.buyerWalletAddress ?? "",
+        escrowIdHex: eligibility.escrowKey ?? "",
         buyerWallet: eligibility.buyerWalletAddress ?? "",
-        amountBaseUnits: 0n,
+        contractId: eligibility.contractId ?? undefined,
       });
+
+      if (!result.success || !result.transactionHash) {
+        throw new Error(result.error || "Cancellation transaction failed.");
+      }
 
       await cancelUnaccepted({
         orderId,
-        txHash: signRes.transactionHash ?? undefined,
+        txHash: result.transactionHash,
       });
     } catch (err) {
-      setErrorMessage(
-        err instanceof Error ? err.message : "Failed to cancel expired escrow.",
-      );
+      setErrorMessage(err instanceof Error ? err.message : "Failed to cancel expired escrow.");
     } finally {
       setIsSubmitting(false);
     }
@@ -57,12 +68,13 @@ export function TimeoutCancellationCard({
     <Card className="mt-6 border-red-500/50 bg-red-500/5 dark:bg-red-500/10">
       <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
         <div className="space-y-1">
-          <CardTitle className="text-lg font-bold flex items-center gap-2 text-red-600 dark:text-red-400">
+          <CardTitle className="flex items-center gap-2 text-lg font-bold text-red-600 dark:text-red-400">
             <span>Exporter Acceptance Deadline Expired</span>
             <Badge variant="destructive">Expired</Badge>
           </CardTitle>
           <CardDescription>
-            The Exporter failed to activate this escrow before the deadline. As the Importer, you can cancel and recover 100% of your funds ({grandTotalFormatted}).
+            The Exporter failed to activate this escrow before the deadline. As the Importer, you
+            can cancel and recover 100% of your funds ({grandTotalFormatted}).
           </CardDescription>
         </div>
       </CardHeader>
@@ -76,7 +88,8 @@ export function TimeoutCancellationCard({
 
         <div className="flex items-center justify-between pt-1">
           <p className="text-xs text-muted-foreground">
-            Invoking cancel_unaccepted will return 100% of the locked tokens to your wallet and mark the order cancelled.
+            Invoking cancel_unaccepted will return 100% of the locked tokens to your wallet and mark
+            the order cancelled.
           </p>
           <Button
             variant="destructive"

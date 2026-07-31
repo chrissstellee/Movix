@@ -29,8 +29,8 @@ function displayAddress(address: string) {
 }
 
 async function getAdapter() {
-  const { FreighterWalletAdapter } = await import("@repo/stellar/wallet/freighter");
-  return new FreighterWalletAdapter();
+  const { MultiWalletAdapter } = await import("@repo/stellar");
+  return new MultiWalletAdapter();
 }
 
 export function LoginPanel() {

@@ -6,7 +6,19 @@ import {
 } from "@repo/stellar/wallet";
 import { Networks, StrKey } from "@stellar/stellar-sdk";
 
-export interface FreighterDriver {
+/**
+ * Multi-wallet adapter wrapping Stellar Wallets Kit with all available wallet modules.
+ *
+ * Supported wallets:
+ * - Freighter
+ * - xBull
+ * - Lobstr
+ * - Hana
+ *
+ * Only installed/available wallets are displayed in the auth modal.
+ */
+
+interface WalletsKitDriver {
   connect(): Promise<{ address: string }>;
   disconnect(): Promise<void>;
   getNetwork(): Promise<{ network: string; networkPassphrase: string }>;
@@ -15,55 +27,82 @@ export interface FreighterDriver {
     options: { address: string; networkPassphrase: string },
   ): Promise<{ signedTxXdr: string }>;
   subscribe(listener: (state: { address?: string; networkPassphrase: string }) => void): () => void;
+  selectedWalletName(): string;
 }
 
-async function createWalletsKitDriver(): Promise<FreighterDriver> {
+async function createMultiWalletDriver(): Promise<WalletsKitDriver> {
   if (typeof window === "undefined") {
-    throw new WalletError("unsupported_wallet", "Freighter is only available in a browser.");
+    throw new WalletError("unsupported_wallet", "Stellar wallets are only available in a browser.");
   }
 
-  const [{ StellarWalletsKit }, { FreighterModule, FREIGHTER_ID }, { KitEventType, Networks }] =
-    await Promise.all([
-      import("@creit-tech/stellar-wallets-kit/sdk"),
-      import("@creit-tech/stellar-wallets-kit/modules/freighter"),
-      import("@creit-tech/stellar-wallets-kit/types"),
-    ]);
+  const [
+    { StellarWalletsKit },
+    { FreighterModule, FREIGHTER_ID },
+    { KitEventType, Networks: KitNetworks },
+  ] = await Promise.all([
+    import("@creit-tech/stellar-wallets-kit/sdk"),
+    import("@creit-tech/stellar-wallets-kit/modules/freighter"),
+    import("@creit-tech/stellar-wallets-kit/types"),
+  ]);
 
-  const freighter = new FreighterModule();
-  if (!(await freighter.isAvailable())) {
-    throw new WalletError(
-      "unsupported_wallet",
-      "Freighter is not installed or is unavailable in this browser.",
-    );
-  }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const modules: any[] = [new FreighterModule()];
+
+  try {
+    const { xBullModule } = await import("@creit-tech/stellar-wallets-kit/modules/xbull");
+    modules.push(new xBullModule());
+  } catch {}
+
+  try {
+    const { LobstrModule } = await import("@creit-tech/stellar-wallets-kit/modules/lobstr");
+    modules.push(new LobstrModule());
+  } catch {}
+
+  try {
+    const { HanaModule } = await import("@creit-tech/stellar-wallets-kit/modules/hana");
+    modules.push(new HanaModule());
+  } catch {}
 
   StellarWalletsKit.init({
-    modules: [freighter],
+    modules,
     selectedWalletId: FREIGHTER_ID,
-    network: Networks.TESTNET,
+    network: KitNetworks.TESTNET,
     authModal: {
       hideUnsupportedWallets: true,
       showInstallLabel: true,
     },
   });
 
+  let selectedName = "Wallet";
+
   return {
     connect: async () => {
       try {
         const addrObj = await StellarWalletsKit.getAddress();
-        if (addrObj?.address) return addrObj;
+        if (addrObj?.address) {
+          selectedName = "Connected Wallet";
+          return addrObj;
+        }
       } catch {}
       try {
         const addrObj = await StellarWalletsKit.fetchAddress();
-        if (addrObj?.address) return addrObj;
+        if (addrObj?.address) {
+          selectedName = "Connected Wallet";
+          return addrObj;
+        }
       } catch {}
-      return StellarWalletsKit.authModal();
+
+      // Fallback to showing auth modal so the user can pick a wallet
+      const result = await StellarWalletsKit.authModal();
+      selectedName = result.address ? "Connected Wallet" : "Wallet";
+      return result;
     },
     disconnect: () => StellarWalletsKit.disconnect(),
     getNetwork: () => StellarWalletsKit.getNetwork(),
     signTransaction: (xdr, options) => StellarWalletsKit.signTransaction(xdr, options),
     subscribe: (listener) =>
       StellarWalletsKit.on(KitEventType.STATE_UPDATED, (event) => listener(event.payload)),
+    selectedWalletName: () => selectedName,
   };
 }
 
@@ -89,13 +128,10 @@ function validateAccount(
   network: { network: string; networkPassphrase: string },
 ): WalletAccount {
   if (!StrKey.isValidEd25519PublicKey(address)) {
-    throw new WalletError(
-      "invalid_account",
-      "Freighter did not return a standard Stellar account.",
-    );
+    throw new WalletError("invalid_account", "Wallet did not return a standard Stellar account.");
   }
   if (network.networkPassphrase !== Networks.TESTNET) {
-    throw new WalletError("wrong_network", "Switch Freighter to Stellar Testnet and try again.");
+    throw new WalletError("wrong_network", "Switch your wallet to Stellar Testnet and try again.");
   }
 
   return {
@@ -105,21 +141,21 @@ function validateAccount(
   };
 }
 
-export class FreighterWalletAdapter implements WalletAdapter {
-  readonly id = "freighter";
-  readonly name = "Freighter";
+export class MultiWalletAdapter implements WalletAdapter {
+  readonly id = "stellar-wallets-kit";
+  readonly name = "Stellar Wallet";
 
   private account: WalletAccount | null = null;
   private connectRequest: Promise<WalletAccount> | null = null;
-  private driver: FreighterDriver | null = null;
-  private driverRequest: Promise<FreighterDriver> | null = null;
+  private driver: WalletsKitDriver | null = null;
+  private driverRequest: Promise<WalletsKitDriver> | null = null;
   private generation = 0;
   private listeners = new Set<(event: WalletStateChange) => void>();
   private signRequest: Promise<string> | null = null;
   private unsubscribeDriver: (() => void) | null = null;
 
   constructor(
-    private readonly driverFactory: () => Promise<FreighterDriver> = createWalletsKitDriver,
+    private readonly driverFactory: () => Promise<WalletsKitDriver> = createMultiWalletDriver,
   ) {}
 
   connect(): Promise<WalletAccount> {
@@ -188,7 +224,7 @@ export class FreighterWalletAdapter implements WalletAdapter {
     }
   }
 
-  private async getDriver(): Promise<FreighterDriver> {
+  private async getDriver(): Promise<WalletsKitDriver> {
     if (this.driver) {
       return this.driver;
     }
@@ -224,7 +260,7 @@ export class FreighterWalletAdapter implements WalletAdapter {
 
   private async signOnce(xdr: string, networkPassphrase: string): Promise<string> {
     if (!this.account || !this.driver) {
-      throw new WalletError("wallet_disconnected", "Connect Freighter before signing.");
+      throw new WalletError("wallet_disconnected", "Connect your wallet before signing.");
     }
     if (networkPassphrase !== Networks.TESTNET) {
       throw new WalletError("wrong_network", "Only Stellar Testnet challenges can be signed.");

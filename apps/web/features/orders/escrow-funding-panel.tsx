@@ -1,7 +1,7 @@
 "use client";
 
 import { api, type Id } from "@repo/backend/client";
-import { requestFreighterSignature } from "@repo/stellar";
+import { fundingDeadlineSeconds, submitCreateAndFund } from "@repo/stellar";
 import { Badge } from "@repo/ui/components/ui/badge";
 import { Button } from "@repo/ui/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@repo/ui/components/ui/card";
@@ -59,29 +59,34 @@ export function EscrowFundingPanel({
 
   async function handleConfirmAndSign() {
     if (!preparedIntent) return;
+    setReviewOpen(false);
     setIsSubmitting(true);
     setErrorMessage(null);
 
     try {
-      // Wallet signing simulation & submission
-      // Request Freighter wallet signature for simulation payload
-      const signResult = await requestFreighterSignature({
-        contractId: preparedIntent.contractId,
+      // Build, simulate, sign via Freighter, and submit to Stellar Testnet
+      const result = await submitCreateAndFund({
+        signerAddress: preparedIntent.buyerWalletAddress,
+        escrowIdHex: preparedIntent.escrowKey,
         buyerWallet: preparedIntent.buyerWalletAddress,
+        supplierWallet: preparedIntent.supplierWalletAddress,
+        tokenContractId: preparedIntent.tokenContractId,
         amountBaseUnits: preparedIntent.grandTotalBaseUnits,
+        feeBps: 0,
+        acceptBySeconds: fundingDeadlineSeconds(preparedIntent.fundingDeadlineMs),
+        termsHashHex: preparedIntent.termsHashHex,
+        contractId: preparedIntent.contractId,
       });
 
-      if (!signResult.success || !signResult.transactionHash) {
-        throw new Error(signResult.error || "Wallet signing was rejected or failed.");
+      if (!result.success || !result.transactionHash) {
+        throw new Error(result.error || "Transaction signing or submission failed.");
       }
 
       await recordSubmission({
         orderId,
         escrowKey: preparedIntent.escrowKey,
-        transactionHash: signResult.transactionHash,
+        transactionHash: result.transactionHash,
       });
-
-      setReviewOpen(false);
     } catch (err) {
       setErrorMessage(
         err instanceof Error ? err.message : "Transaction signing or submission failed.",

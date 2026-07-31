@@ -29,7 +29,9 @@ export const prepareRefundProposalIntent = mutation({
     }
 
     if (!["funded", "accepted", "shipped"].includes(escrow.status)) {
-      throw new Error(`Escrow status '${escrow.status}' is not eligible for mutual refund proposal`);
+      throw new Error(
+        `Escrow status '${escrow.status}' is not eligible for mutual refund proposal`,
+      );
     }
 
     // Proposer must belong to either Buyer or Supplier organization
@@ -38,10 +40,22 @@ export const prepareRefundProposalIntent = mutation({
     let counterpartyOrgId = order.supplierOrganizationId;
 
     try {
-      await requireRole(ctx, order.buyerOrganizationId, ["owner", "admin", "procurement", "finance", "operations"]);
+      await requireRole(ctx, order.buyerOrganizationId, [
+        "owner",
+        "admin",
+        "procurement",
+        "finance",
+        "operations",
+      ]);
     } catch {
       if (order.supplierOrganizationId) {
-        await requireRole(ctx, order.supplierOrganizationId, ["owner", "admin", "procurement", "finance", "operations"]);
+        await requireRole(ctx, order.supplierOrganizationId, [
+          "owner",
+          "admin",
+          "procurement",
+          "finance",
+          "operations",
+        ]);
         userOrgId = order.supplierOrganizationId;
         proposerRole = "SUPPLIER";
         counterpartyOrgId = order.buyerOrganizationId;
@@ -122,6 +136,8 @@ export const prepareRefundProposalIntent = mutation({
       termsHash: args.termsHash,
       resumeStatus,
       proposerRole,
+      buyerWalletAddress: escrow.buyerWalletAddress,
+      supplierWalletAddress: escrow.supplierWalletAddress,
     };
   },
 });
@@ -534,10 +550,22 @@ export const getActiveRefundRequest = query({
       return null;
     }
 
-    return await ctx.db
+    const refundRequest = await ctx.db
       .query("refundRequests")
       .withIndex("by_escrowId", (q) => q.eq("escrowId", escrow._id))
       .filter((q) => q.eq(q.field("status"), "pending"))
       .first();
+
+    if (!refundRequest) {
+      return null;
+    }
+
+    return {
+      ...refundRequest,
+      escrowKey: escrow.escrowKey,
+      contractId: escrow.contractId,
+      buyerWalletAddress: escrow.buyerWalletAddress,
+      supplierWalletAddress: escrow.supplierWalletAddress,
+    };
   },
 });

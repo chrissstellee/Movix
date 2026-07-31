@@ -42,22 +42,8 @@ export const prepareAcceptIntent = mutation({
       throw new Error("Escrow record not found for this order");
     }
 
-    if (escrow.status !== "funded") {
-      throw new Error(`Escrow status is ${escrow.status}, expected funded`);
-    }
-
-    // accept_by safety buffer of 300 seconds
-    const nowSeconds = Math.floor(Date.now() / 1000);
-    if (escrow.acceptBy && escrow.acceptBy <= nowSeconds + 300) {
-      throw new Error("ESCROW_DEADLINE_EXPIRED");
-    }
-
-    if (!escrow.supplierWalletAddress) {
-      throw new Error("Escrow is missing snapshotted supplier wallet address");
-    }
-
-    if (!escrow.termsHash) {
-      throw new Error("Escrow is missing terms hash");
+    if (escrow.status !== "funded" && escrow.status !== "funding_submitted") {
+      throw new Error(`Escrow status is ${escrow.status}, expected funded or funding_submitted`);
     }
 
     return {
@@ -257,6 +243,113 @@ export const confirmDeliveryIntent = mutation({
       contractId: escrow.contractId,
       amountBaseUnits: escrow.amountBaseUnits,
     };
+  },
+});
+
+/**
+ * Records Exporter on-chain accept transaction submission and updates escrow status to accepted.
+ */
+export const recordAcceptSubmission = mutation({
+  args: {
+    orderId: v.id("orders"),
+    transactionHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) throw new Error("Order not found");
+
+    const escrow = await ctx.db
+      .query("escrows")
+      .withIndex("by_orderId", (q) => q.eq("orderId", order._id))
+      .first();
+
+    if (!escrow) throw new Error("Escrow record not found");
+
+    const now = Date.now();
+    await ctx.db.patch(escrow._id, {
+      status: "accepted",
+      submittedTransactionHash: args.transactionHash,
+      updatedAt: now,
+    });
+
+    await ctx.db.patch(order._id, {
+      settlementStatus: "accepted",
+      updatedAt: now,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Records Exporter on-chain mark_shipped submission and updates escrow status to shipped.
+ */
+export const recordShipmentSubmission = mutation({
+  args: {
+    orderId: v.id("orders"),
+    transactionHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) throw new Error("Order not found");
+
+    const escrow = await ctx.db
+      .query("escrows")
+      .withIndex("by_orderId", (q) => q.eq("orderId", order._id))
+      .first();
+
+    if (!escrow) throw new Error("Escrow record not found");
+
+    const now = Date.now();
+    await ctx.db.patch(escrow._id, {
+      status: "shipped",
+      submittedTransactionHash: args.transactionHash,
+      updatedAt: now,
+    });
+
+    await ctx.db.patch(order._id, {
+      settlementStatus: "shipped",
+      fulfillmentStatus: "shipped",
+      updatedAt: now,
+    });
+
+    return { success: true };
+  },
+});
+
+/**
+ * Records Importer on-chain confirm_delivery submission and updates escrow status to released.
+ */
+export const recordReleaseSubmission = mutation({
+  args: {
+    orderId: v.id("orders"),
+    transactionHash: v.string(),
+  },
+  handler: async (ctx, args) => {
+    const order = await ctx.db.get(args.orderId);
+    if (!order) throw new Error("Order not found");
+
+    const escrow = await ctx.db
+      .query("escrows")
+      .withIndex("by_orderId", (q) => q.eq("orderId", order._id))
+      .first();
+
+    if (!escrow) throw new Error("Escrow record not found");
+
+    const now = Date.now();
+    await ctx.db.patch(escrow._id, {
+      status: "released",
+      submittedTransactionHash: args.transactionHash,
+      updatedAt: now,
+    });
+
+    await ctx.db.patch(order._id, {
+      settlementStatus: "released",
+      fulfillmentStatus: "delivery_confirmed",
+      updatedAt: now,
+    });
+
+    return { success: true };
   },
 });
 

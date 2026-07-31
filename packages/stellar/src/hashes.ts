@@ -1,3 +1,5 @@
+import { Buffer } from "buffer";
+
 import { hash } from "@stellar/stellar-sdk";
 
 export interface ShipmentEvidence {

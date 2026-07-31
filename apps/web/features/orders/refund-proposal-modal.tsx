@@ -1,9 +1,16 @@
 "use client";
 
 import { api, type Id } from "@repo/backend/client";
-import { requestFreighterSignature } from "@repo/stellar";
+import { submitProposeRefund } from "@repo/stellar";
 import { Button } from "@repo/ui/components/ui/button";
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@repo/ui/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@repo/ui/components/ui/dialog";
 import { useMutation } from "convex/react";
 import { useState } from "react";
 
@@ -38,7 +45,7 @@ export function RefundProposalModal({
   async function computeTermsHash(payload: object): Promise<string> {
     const jsonStr = JSON.stringify(payload);
     const msgBuffer = new TextEncoder().encode(jsonStr);
-    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer);
+    const hashBuffer = await crypto.subtle.digest("SHA-256", msgBuffer.buffer as ArrayBuffer);
     const hashArray = Array.from(new Uint8Array(hashBuffer));
     return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
   }
@@ -65,14 +72,27 @@ export function RefundProposalModal({
         termsHash,
       });
 
-      // Wallet simulation & signing
-      await requestFreighterSignature({
-        contractId: res.contractId,
-        buyerWallet: res.escrowKey,
-        amountBaseUnits: 0n,
-      });
+      // Build, simulate, sign via Freighter, and submit propose_refund to Stellar Testnet
+      const proposerWallet =
+        res.proposerRole === "BUYER" ? res.buyerWalletAddress : res.supplierWalletAddress;
+
+      if (!proposerWallet) {
+        throw new Error("Proposer wallet address missing.");
+      }
 
       onOpenChange(false);
+
+      const submitResult = await submitProposeRefund({
+        signerAddress: proposerWallet,
+        escrowIdHex: res.escrowKey,
+        proposerWallet,
+        refundTermsHashHex: termsHash,
+        contractId: res.contractId,
+      });
+
+      if (!submitResult.success) {
+        throw new Error(submitResult.error || "Refund proposal transaction failed.");
+      }
     } catch (err) {
       setErrorMessage(
         err instanceof Error ? err.message : "Failed to propose mutual refund. Please try again.",
@@ -86,9 +106,12 @@ export function RefundProposalModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle className="text-xl font-bold text-red-500">Request Mutual Refund</DialogTitle>
+          <DialogTitle className="text-xl font-bold text-red-500">
+            Request Mutual Refund
+          </DialogTitle>
           <DialogDescription>
-            Propose a 100% mutual refund ({grandTotalFormatted}) for this trade escrow. Counterparty approval is required before funds are returned.
+            Propose a 100% mutual refund ({grandTotalFormatted}) for this trade escrow. Counterparty
+            approval is required before funds are returned.
           </DialogDescription>
         </DialogHeader>
 
@@ -100,11 +123,14 @@ export function RefundProposalModal({
           )}
 
           <div>
-            <label className="block text-sm font-medium mb-1">Refund Reason Category</label>
+            <label htmlFor="refund-reason-category" className="mb-1 block text-sm font-medium">
+              Refund Reason Category
+            </label>
             <select
+              id="refund-reason-category"
               value={reasonCode}
               onChange={(e) => setReasonCode(e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:outline-none"
             >
               {REASON_OPTIONS.map((opt) => (
                 <option key={opt.value} value={opt.value}>
@@ -115,25 +141,33 @@ export function RefundProposalModal({
           </div>
 
           <div>
-            <label className="block text-sm font-medium mb-1">Detailed Explanation</label>
+            <label htmlFor="refund-explanation" className="mb-1 block text-sm font-medium">
+              Detailed Explanation
+            </label>
             <textarea
+              id="refund-explanation"
               value={explanation}
               onChange={(e) => setExplanation(e.target.value)}
               rows={3}
               placeholder="Provide context or evidence details agreed upon with the counterparty..."
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-ring"
+              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm focus:ring-2 focus:ring-ring focus:outline-none"
               required
             />
           </div>
 
-          <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground space-y-1">
+          <div className="space-y-1 rounded-md bg-muted p-3 text-xs text-muted-foreground">
             <p className="font-semibold">Security & Policy Notice:</p>
             <p>• Post-acceptance refunds cannot be executed unilaterally.</p>
             <p>• Counterparty must explicitly approve identical refund term hashes.</p>
           </div>
 
           <DialogFooter className="pt-2">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isSubmitting}>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
             <Button type="submit" variant="destructive" disabled={isSubmitting}>

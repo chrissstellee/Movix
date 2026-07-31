@@ -6,14 +6,14 @@ import {
   type Escrow,
   type Status,
   type TtlConfig,
-} from "../generated/escrow/src/index.js";
+} from "../generated/escrow/src/index";
 
-import { TESTNET_USDC_CONTRACT, TESTNET_XLM_CONTRACT, testnetConfig } from "./config.js";
+import { TESTNET_USDC_CONTRACT, TESTNET_XLM_CONTRACT, testnetConfig } from "./config";
 
 import type { MethodOptions } from "@stellar/stellar-sdk/contract";
 
 export type { Config as EscrowConfig, Escrow, Status as GeneratedEscrowStatus, TtlConfig };
-export { Errors as EscrowGeneratedErrors } from "../generated/escrow/src/index.js";
+export { Errors as EscrowGeneratedErrors } from "../generated/escrow/src/index";
 
 type GeneratedClientOptions = ConstructorParameters<typeof GeneratedEscrowClient>[0];
 type ClientMethod = (...args: never[]) => Promise<unknown>;

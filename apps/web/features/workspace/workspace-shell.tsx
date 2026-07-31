@@ -226,9 +226,13 @@ function WorkspaceShellContent({ children }: { children: ReactNode }) {
           </p>
           <div className="flex items-center gap-2">
             <Badge variant="outline">Testnet</Badge>
-            <span className="hidden font-mono text-xs sm:inline">
+            <Link
+              href="/settings/wallet"
+              className="hidden font-mono text-xs text-muted-foreground transition-colors hover:text-foreground hover:underline sm:inline"
+              title="View wallet settings"
+            >
               {walletLabel(context.wallet.address)}
-            </span>
+            </Link>
           </div>
         </header>
         <main className="mx-auto w-full max-w-6xl p-4 sm:p-6 lg:p-8">
@@ -268,7 +272,13 @@ function ShellIdentity({
           <p className="mt-5 truncate text-sm font-medium" title={name}>
             {name}
           </p>
-          <p className="mt-1 font-mono text-xs text-muted-foreground">{walletLabel(wallet)}</p>
+          <Link
+            href="/settings/wallet"
+            className="mt-1 block font-mono text-xs text-muted-foreground transition-colors hover:text-foreground hover:underline"
+            title="View wallet settings"
+          >
+            {walletLabel(wallet)}
+          </Link>
         </>
       )}
     </div>

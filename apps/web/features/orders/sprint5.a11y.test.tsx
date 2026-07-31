@@ -32,6 +32,11 @@ vi.mock("@repo/backend/client", () => ({
       recordSubmission: "escrowFundingRecordSubmission",
       confirmReceipt: "escrowFundingConfirmReceipt",
     },
+    refunds: {
+      checkCancellationEligibility: "checkCancellationEligibility",
+      cancelUnacceptedIntent: "cancelUnacceptedIntent",
+      prepareRefundProposalIntent: "prepareRefundProposalIntent",
+    },
   },
 }));
 
