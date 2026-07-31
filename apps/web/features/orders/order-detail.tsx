@@ -34,6 +34,9 @@ import { useEffect, useRef, useState } from "react";
 
 import { EscrowFundingPanel } from "./escrow-funding-panel";
 import { orderAmount, orderStatusLabel } from "./order-format";
+import { RefundActionCards } from "./refund-action-cards";
+import { RefundProposalModal } from "./refund-proposal-modal";
+import { TimeoutCancellationCard } from "./timeout-cancellation-card";
 
 type DecisionCommand = "accept" | "reject";
 type RejectionReason =
@@ -72,6 +75,7 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
   >("participants");
   const [documentFile, setDocumentFile] = useState<File | null>(null);
   const [documentPending, setDocumentPending] = useState(false);
+  const [refundModalOpen, setRefundModalOpen] = useState(false);
   const [decisionNow, setDecisionNow] = useState(() => Date.now());
   const decisionAttempt = useRef<{ fingerprint: string; key: string } | null>(null);
 
@@ -188,6 +192,15 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
               <Link href={`/orders/new?orderId=${orderId}`}>Edit draft</Link>
             </Button>
           ) : null}
+          {["funded", "accepted", "shipped"].includes(detail.order.settlementStatus) ? (
+            <Button
+              variant="outline"
+              className="border-red-500/50 text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30"
+              onClick={() => setRefundModalOpen(true)}
+            >
+              Request Mutual Refund
+            </Button>
+          ) : null}
           <Button asChild variant="outline">
             <Link href={`/orders?view=${detail.viewerSide}`}>Back to trade orders</Link>
           </Button>
@@ -223,6 +236,34 @@ export function OrderDetail({ orderId: rawOrderId }: { orderId: string }) {
         poNumber={detail.revision.purchaseOrderNumber}
         orderTitle={detail.revision.title}
         revisionNumber={detail.revision.revisionNumber.toString()}
+      />
+
+      <TimeoutCancellationCard
+        orderId={orderId}
+        isBuyer={!isSupplier}
+        grandTotalFormatted={orderAmount(
+          detail.revision.totals.grandTotalBaseUnits,
+          detail.revision.asset?.code,
+        )}
+      />
+
+      <RefundActionCards
+        orderId={orderId}
+        isBuyer={!isSupplier}
+        grandTotalFormatted={orderAmount(
+          detail.revision.totals.grandTotalBaseUnits,
+          detail.revision.asset?.code,
+        )}
+      />
+
+      <RefundProposalModal
+        orderId={orderId}
+        open={refundModalOpen}
+        onOpenChange={setRefundModalOpen}
+        grandTotalFormatted={orderAmount(
+          detail.revision.totals.grandTotalBaseUnits,
+          detail.revision.asset?.code,
+        )}
       />
 
       {isSupplier ? (

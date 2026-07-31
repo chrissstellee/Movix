@@ -48,6 +48,15 @@ export const rejectionReasonCodes = [
 ] as const;
 export type RejectionReasonCode = (typeof rejectionReasonCodes)[number];
 
+export const refundReasonCodes = [
+  "DAMAGED_GOODS",
+  "LOGISTICS_DELAY",
+  "SPEC_MISMATCH",
+  "MUTUAL_AGREEMENT",
+  "OTHER",
+] as const;
+export type RefundReasonCode = (typeof refundReasonCodes)[number];
+
 export const orderTimelineEventTypes = [
   "order_draft_created",
   "revision_sent",

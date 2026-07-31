@@ -627,6 +627,11 @@ Sprint 7 continues to display the original funding backlog IDs `S6-01` through `
 
 - Contract authorization and transition tests for accept, ship, and release.
 - Wrong party, wrong terms/shipment hash, repeat call, release before shipment, release after terminal state, arithmetic, fee boundary, payout conservation, liability decrease, event, and TTL.
+
+### Testing commitment
+
+- Contract authorization and transition tests for accept, ship, and release.
+- Wrong party, wrong terms/shipment hash, repeat call, release before shipment, release after terminal state, arithmetic, fee boundary, payout conservation, liability decrease, event, and TTL.
 - Backend shipment field and organization-isolation tests.
 - Release-versus-other-action concurrency and repeated-click tests.
 - Full Playwright funded → accepted → shipped → confirmed → released journey.
@@ -657,6 +662,7 @@ Do not continue adding scope without reviewing these findings.
 
 **Duration:** 2 weeks  
 **Sprint goal:** Provide controlled, auditable exception paths without enabling unilateral post-acceptance fund movement.  
+**Detailed implementation plan:** [Movix Sprint 9 — Mutual Refunds and Unaccepted Timeout Cancellation Detailed Plan](./Movix-Sprint-09-Exceptions-Mutual-Refund-Detailed.md)  
 **Page/functionality:** Refund and cancellation sections on `/orders/[orderId]`  
 **Dependencies:** Active funded/accepted/shipped escrow states and transaction orchestration.  
 **Demo:** Importer requests a refund, Exporter approves it, and funds return exactly once. Separate demos show rejection, withdrawal, and Importer cancellation after an unaccepted escrow deadline.

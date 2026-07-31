@@ -45,6 +45,7 @@ import type * as orders from "../orders.js";
 import type * as organizationValidators from "../organizationValidators.js";
 import type * as organizationVerification from "../organizationVerification.js";
 import type * as organizations from "../organizations.js";
+import type * as refunds from "../refunds.js";
 import type * as shipments from "../shipments.js";
 import type * as supplierDirectory from "../supplierDirectory.js";
 import type * as supplierOrderDeadlines from "../supplierOrderDeadlines.js";
@@ -99,6 +100,7 @@ declare const fullApi: ApiFromModules<{
   organizationValidators: typeof organizationValidators;
   organizationVerification: typeof organizationVerification;
   organizations: typeof organizations;
+  refunds: typeof refunds;
   shipments: typeof shipments;
   supplierDirectory: typeof supplierDirectory;
   supplierOrderDeadlines: typeof supplierOrderDeadlines;
