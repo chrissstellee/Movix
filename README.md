@@ -9,6 +9,9 @@
 </p>
 
 <p align="center">
+  <a href="https://movix-zeta-two.vercel.app/" target="_blank">
+    <img src="https://img.shields.io/badge/Live%20Demo-movix--zeta--two.vercel.app-7928CA?style=flat-square&logo=vercel&logoColor=white" alt="Live Demo" />
+  </a>
   <a href="https://github.com/chrissstellee/Movix/actions/workflows/ci.yml">
     <img src="https://github.com/chrissstellee/Movix/actions/workflows/ci.yml/badge.svg?branch=main" alt="CI" />
   </a>
@@ -379,7 +382,7 @@ pnpm build:contracts
 
 ## 🎨 Visuals & Demo
 
-**Live Demo**: <!-- ADD YOUR LIVE DEMO LINK HERE -->
+**Live Demo**: [https://movix-zeta-two.vercel.app/](https://movix-zeta-two.vercel.app/)
 
 **Demo Video**: <!-- ADD YOUR DEMO VIDEO LINK HERE -->
 
