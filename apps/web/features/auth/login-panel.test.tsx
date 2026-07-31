@@ -12,8 +12,8 @@ const mocks = vi.hoisted(() => ({
   isAuthenticated: false,
 }));
 
-vi.mock("@repo/stellar/wallet/freighter", () => ({
-  FreighterWalletAdapter: class {
+vi.mock("@repo/stellar", () => ({
+  MultiWalletAdapter: class {
     connect = mocks.connect;
     disconnect = mocks.disconnect;
     signTransaction = mocks.signTransaction;
@@ -80,7 +80,7 @@ describe("LoginPanel", () => {
       .mockResolvedValueOnce(jsonResponse(session));
     const view = render(<LoginPanel />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Continue with Freighter" }));
+    fireEvent.click(screen.getByRole("button", { name: "Connect Wallet" }));
     await waitFor(() => expect(mocks.establishSession).toHaveBeenCalledWith(session));
     expect(screen.getByText(/confirming your movix identity/i)).toBeVisible();
     expect(screen.getByLabelText(`Wallet address ${account.address}`)).toHaveTextContent(
@@ -116,7 +116,7 @@ describe("LoginPanel", () => {
       .mockResolvedValueOnce(jsonResponse(session));
 
     render(<LoginPanel />);
-    fireEvent.click(screen.getByRole("button", { name: "Continue with Freighter" }));
+    fireEvent.click(screen.getByRole("button", { name: "Connect Wallet" }));
     expect(await screen.findByRole("alert")).toHaveTextContent(/declined/i);
     fireEvent.click(screen.getByRole("button", { name: "Try again" }));
 
@@ -130,7 +130,7 @@ describe("LoginPanel", () => {
     mocks.connect.mockRejectedValue({ code: "wrong_network" });
     render(<LoginPanel />);
 
-    fireEvent.click(screen.getByRole("button", { name: "Continue with Freighter" }));
+    fireEvent.click(screen.getByRole("button", { name: "Connect Wallet" }));
     const alert = await screen.findByRole("alert");
     expect(alert).toHaveTextContent(/switch freighter to stellar testnet/i);
     expect(alert).toHaveFocus();

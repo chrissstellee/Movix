@@ -205,7 +205,7 @@ export function LoginPanel() {
               ? "Signing in…"
               : state.phase === "error"
                 ? "Try again"
-                : "Continue with Freighter"}
+                : "Connect Wallet"}
           </Button>
           <p className="text-center text-xs leading-5 text-muted-foreground">
             Testnet only. Signing the challenge authenticates you to Movix and cannot transfer
