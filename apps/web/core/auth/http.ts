@@ -40,8 +40,7 @@ export function isSameOrigin(request: Request, expectedOrigin: string): boolean 
   const origin = request.headers.get("origin");
   const expected = new URL(expectedOrigin);
   const actual = new URL(request.url);
-  const requestHost =
-    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ?? actual.host;
+  const requestHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ?? actual.host;
 
   const isLocalDevHost =
     (expected.hostname === "localhost" || expected.hostname === "127.0.0.1") &&
