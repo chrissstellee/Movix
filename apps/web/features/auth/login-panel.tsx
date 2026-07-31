@@ -101,7 +101,17 @@ export function LoginPanel() {
         { cache: "no-store", credentials: "same-origin" },
       );
       if (!challengeResponse.ok) {
-        throw new Error("Movix could not create a fresh sign-in challenge.");
+        const failure: unknown = await challengeResponse.json().catch(() => null);
+        const message =
+          failure &&
+          typeof failure === "object" &&
+          "error" in failure &&
+          failure.error &&
+          typeof failure.error === "object" &&
+          "message" in failure.error
+            ? String(failure.error.message)
+            : "Movix could not create a fresh sign-in challenge.";
+        throw new Error(message);
       }
       const challenge = (await challengeResponse.json()) as Sep10Challenge;
       if (attempt !== attemptRef.current) return;
@@ -147,10 +157,10 @@ export function LoginPanel() {
 
   const busy = isLoginBusy(state.phase);
   const status = {
-    idle: "Connect Freighter to begin.",
-    connecting: "Waiting for Freighter…",
+    idle: "Connect wallet to begin.",
+    connecting: "Waiting for wallet…",
     requesting_challenge: "Creating a secure, five-minute challenge…",
-    awaiting_signature: "Review the sign-in request in Freighter. Signing does not move funds.",
+    awaiting_signature: "Review the sign-in request in your wallet. Signing does not move funds.",
     verifying: "Verifying your wallet proof…",
     confirming_identity: "Confirming your Movix identity…",
     error: state.error ?? "Sign-in failed.",
@@ -201,7 +211,11 @@ export function LoginPanel() {
             {status}
           </div>
           <Button className="h-11 w-full" disabled={busy} onClick={() => void signIn()}>
-            {busy ? "Signing in…" : state.phase === "error" ? "Try again" : "Connect Wallet"}
+            {busy
+              ? "Signing in…"
+              : state.phase === "error"
+                ? "Try again"
+                : "Connect Wallet"}
           </Button>
           <p className="text-center text-xs leading-5 text-muted-foreground">
             Testnet only. Signing the challenge authenticates you to Movix and cannot transfer

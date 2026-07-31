@@ -34,14 +34,31 @@ export function authError(
 }
 
 export function isSameOrigin(request: Request, expectedOrigin: string): boolean {
+  if (request.headers.get("sec-fetch-site") === "cross-site") {
+    return false;
+  }
   const origin = request.headers.get("origin");
   const expected = new URL(expectedOrigin);
   const actual = new URL(request.url);
-  return (
-    origin === expected.origin &&
-    actual.protocol === expected.protocol &&
-    actual.host === expected.host
-  );
+  const requestHost =
+    request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ?? actual.host;
+
+  const isLocalDevHost =
+    (expected.hostname === "localhost" || expected.hostname === "127.0.0.1") &&
+    (requestHost.startsWith("localhost") || requestHost.startsWith("127.0.0.1"));
+
+  const isHostMatching = requestHost === expected.host || isLocalDevHost;
+
+  let isOriginMatching = true;
+  if (origin) {
+    const originUrl = new URL(origin);
+    const isLocalDevOrigin =
+      (expected.hostname === "localhost" || expected.hostname === "127.0.0.1") &&
+      (originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1");
+    isOriginMatching = origin === expected.origin || isLocalDevOrigin;
+  }
+
+  return actual.protocol === expected.protocol && isHostMatching && isOriginMatching;
 }
 
 export function clientNetworkSubject(request: Request): string {

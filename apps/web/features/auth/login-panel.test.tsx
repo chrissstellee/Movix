@@ -12,14 +12,26 @@ const mocks = vi.hoisted(() => ({
   isAuthenticated: false,
 }));
 
-vi.mock("@repo/stellar", () => ({
-  MultiWalletAdapter: class {
-    connect = mocks.connect;
-    disconnect = mocks.disconnect;
-    signTransaction = mocks.signTransaction;
-    subscribe = mocks.subscribe;
-  },
-}));
+vi.mock("@repo/stellar", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("@repo/stellar")>();
+  return {
+    ...actual,
+    MultiWalletAdapter: class {
+      connect(...args: unknown[]) {
+        return mocks.connect(...args);
+      }
+      disconnect(...args: unknown[]) {
+        return mocks.disconnect(...args);
+      }
+      signTransaction(...args: unknown[]) {
+        return mocks.signTransaction(...args);
+      }
+      subscribe(...args: unknown[]) {
+        return mocks.subscribe(...args);
+      }
+    },
+  };
+});
 vi.mock("@/core/auth/auth-context", () => ({
   useMovixAuth: () => ({ establishSession: mocks.establishSession }),
 }));

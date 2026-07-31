@@ -1,7 +1,7 @@
 import { LOGIN_INTENT_COOKIE, setLoginIntentCookie } from "@/core/auth/cookies";
 import { keyedHash, newCorrelationId, newOpaqueCredential } from "@/core/auth/crypto";
 import { callAuthStore, type GatewayResult } from "@/core/auth/gateway";
-import { authError, clientNetworkSubject, NO_STORE_HEADERS } from "@/core/auth/http";
+import { authError, clientNetworkSubject, isSameOrigin, NO_STORE_HEADERS } from "@/core/auth/http";
 import { getServerEnv } from "@/core/config/server-env";
 import { Keypair, Networks, StrKey, TransactionBuilder, WebAuth } from "@stellar/stellar-sdk";
 import { cookies } from "next/headers";
@@ -15,15 +15,7 @@ export async function GET(request: Request) {
   const correlationId = newCorrelationId();
   try {
     const env = getServerEnv();
-    const origin = request.headers.get("origin");
-    const expected = new URL(env.MOVIX_AUTH_ISSUER);
-    const actual = new URL(request.url);
-    if (
-      (origin && origin !== expected.origin) ||
-      actual.protocol !== expected.protocol ||
-      actual.host !== expected.host ||
-      request.headers.get("sec-fetch-site") === "cross-site"
-    ) {
+    if (!isSameOrigin(request, env.MOVIX_AUTH_ISSUER)) {
       return authError(
         "invalid_request",
         "Cross-origin requests are not allowed.",
