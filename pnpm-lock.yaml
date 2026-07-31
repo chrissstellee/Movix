@@ -127,6 +127,9 @@ importers:
       '@repo/domain':
         specifier: workspace:*
         version: link:../domain
+      '@repo/stellar':
+        specifier: workspace:*
+        version: link:../stellar
       convex:
         specifier: ^1.42.3
         version: 1.42.3(bufferutil@4.1.0)(react@19.2.8)(utf-8-validate@6.0.6)
