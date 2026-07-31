@@ -148,7 +148,7 @@ export function LandingPage() {
               </p>
               <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg" className="h-12 px-7">
-                  <Link href="/login">Sign in with Freighter</Link>
+                  <Link href="/login">Connect Wallet</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-12 px-7">
                   <a href="#how-it-works">See how it works</a>

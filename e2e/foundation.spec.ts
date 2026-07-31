@@ -54,7 +54,7 @@ test("landing navigation, FAQ, and responsive disclosure remain usable", async (
 
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.reload();
-  await expect(page.getByRole("link", { name: "Sign in with Freighter" })).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Connect Wallet" })).toHaveAttribute(
     "href",
     "/login",
   );
