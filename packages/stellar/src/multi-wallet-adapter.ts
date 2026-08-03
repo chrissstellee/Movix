@@ -18,7 +18,7 @@ import { Networks, StrKey } from "@stellar/stellar-sdk";
  * Only installed/available wallets are displayed in the auth modal.
  */
 
-interface WalletsKitDriver {
+export interface WalletsKitDriver {
   connect(): Promise<{ address: string }>;
   disconnect(): Promise<void>;
   getNetwork(): Promise<{ network: string; networkPassphrase: string }>;
@@ -30,20 +30,17 @@ interface WalletsKitDriver {
   selectedWalletName(): string;
 }
 
-async function createMultiWalletDriver(): Promise<WalletsKitDriver> {
+export async function createMultiWalletDriver(): Promise<WalletsKitDriver> {
   if (typeof window === "undefined") {
     throw new WalletError("unsupported_wallet", "Stellar wallets are only available in a browser.");
   }
 
-  const [
-    { StellarWalletsKit },
-    { FreighterModule, FREIGHTER_ID },
-    { KitEventType, Networks: KitNetworks },
-  ] = await Promise.all([
-    import("@creit-tech/stellar-wallets-kit/sdk"),
-    import("@creit-tech/stellar-wallets-kit/modules/freighter"),
-    import("@creit-tech/stellar-wallets-kit/types"),
-  ]);
+  const [{ StellarWalletsKit }, { FreighterModule }, { KitEventType, Networks: KitNetworks }] =
+    await Promise.all([
+      import("@creit-tech/stellar-wallets-kit/sdk"),
+      import("@creit-tech/stellar-wallets-kit/modules/freighter"),
+      import("@creit-tech/stellar-wallets-kit/types"),
+    ]);
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const modules: any[] = [new FreighterModule()];
@@ -65,7 +62,6 @@ async function createMultiWalletDriver(): Promise<WalletsKitDriver> {
 
   StellarWalletsKit.init({
     modules,
-    selectedWalletId: FREIGHTER_ID,
     network: KitNetworks.TESTNET,
     authModal: {
       hideUnsupportedWallets: true,
@@ -77,22 +73,6 @@ async function createMultiWalletDriver(): Promise<WalletsKitDriver> {
 
   return {
     connect: async () => {
-      try {
-        const addrObj = await StellarWalletsKit.getAddress();
-        if (addrObj?.address) {
-          selectedName = "Connected Wallet";
-          return addrObj;
-        }
-      } catch {}
-      try {
-        const addrObj = await StellarWalletsKit.fetchAddress();
-        if (addrObj?.address) {
-          selectedName = "Connected Wallet";
-          return addrObj;
-        }
-      } catch {}
-
-      // Fallback to showing auth modal so the user can pick a wallet
       const result = await StellarWalletsKit.authModal();
       selectedName = result.address ? "Connected Wallet" : "Wallet";
       return result;

@@ -78,6 +78,13 @@ beforeEach(() => {
 });
 
 describe("LoginPanel", () => {
+  it("describes sign-in without requiring a specific wallet", () => {
+    render(<LoginPanel />);
+
+    expect(screen.getByText(/your selected wallet proves/i)).toBeVisible();
+    expect(screen.queryByText(/freighter/i)).not.toBeInTheDocument();
+  });
+
   it("establishes the session but redirects only after Convex confirms identity", async () => {
     mocks.connect.mockResolvedValue(account);
     mocks.signTransaction.mockResolvedValue("signed-xdr");
@@ -144,7 +151,7 @@ describe("LoginPanel", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Connect Wallet" }));
     const alert = await screen.findByRole("alert");
-    expect(alert).toHaveTextContent(/switch freighter to stellar testnet/i);
+    expect(alert).toHaveTextContent(/switch your wallet to stellar testnet/i);
     expect(alert).toHaveFocus();
     expect(screen.getByRole("button", { name: "Try again" })).toBeEnabled();
     expect(fetch).not.toHaveBeenCalled();

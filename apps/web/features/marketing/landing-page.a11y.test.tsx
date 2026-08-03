@@ -19,6 +19,8 @@ describe("LandingPage", () => {
     );
     expect(screen.queryByText("Agreement accepted")).not.toBeInTheDocument();
     expect(screen.getByTestId("landing-hero-copy")).toHaveClass("text-center");
+    expect(screen.getByRole("link", { name: "Connect Wallet" })).toHaveAttribute("href", "/login");
+    expect(screen.queryByText(/freighter/i)).not.toBeInTheDocument();
   });
 
   it("has no automated accessibility violations", async () => {

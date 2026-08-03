@@ -31,7 +31,7 @@ const faqs = [
   ],
   [
     "Does Movix hold my private key?",
-    "No. Your private key stays in Freighter. Movix receives only the signed authentication challenge.",
+    "No. Your private key stays in your wallet. Movix receives only the signed authentication challenge.",
   ],
   [
     "Does Stellar prove that goods were delivered?",
@@ -148,7 +148,7 @@ export function LandingPage() {
               </p>
               <div className="mt-9 flex flex-col justify-center gap-3 sm:flex-row">
                 <Button asChild size="lg" className="h-12 px-7">
-                  <Link href="/login">Sign in with Freighter</Link>
+                  <Link href="/login">Connect Wallet</Link>
                 </Button>
                 <Button asChild size="lg" variant="outline" className="h-12 px-7">
                   <a href="#how-it-works">See how it works</a>
@@ -202,7 +202,10 @@ export function LandingPage() {
             </div>
             <div className="grid gap-4">
               {[
-                ["Wallet proof", "Freighter signs a five-minute authentication challenge."],
+                [
+                  "Wallet proof",
+                  "Your selected wallet signs a five-minute authentication challenge.",
+                ],
                 [
                   "Explicit transactions",
                   "Funds move only after a separate review and approval flow.",
@@ -262,7 +265,7 @@ export function LandingPage() {
               Start with a wallet proof, not a password.
             </h2>
             <p className="mt-4 max-w-2xl text-primary-foreground/80">
-              Connect Freighter on Stellar Testnet. Signing in does not transfer funds.
+              Connect a supported Stellar wallet on Testnet. Signing in does not transfer funds.
             </p>
             <Button asChild size="lg" variant="secondary" className="mt-8">
               <Link href="/login">Sign in to Movix</Link>

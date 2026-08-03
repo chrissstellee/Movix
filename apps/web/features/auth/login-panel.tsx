@@ -18,8 +18,9 @@ function errorMessage(error: unknown) {
   if (error && typeof error === "object" && "code" in error) {
     const code = String(error.code);
     if (code === "user_rejected") return "The wallet request was declined. You can try again.";
-    if (code === "wrong_network") return "Switch Freighter to Stellar Testnet and try again.";
-    if (code === "unsupported_wallet") return "Install or unlock Freighter, then try again.";
+    if (code === "wrong_network") return "Switch your wallet to Stellar Testnet and try again.";
+    if (code === "unsupported_wallet")
+      return "Install or unlock a supported Stellar wallet, then try again.";
   }
   return error instanceof Error ? error.message : "Sign-in could not be completed. Try again.";
 }
@@ -181,8 +182,8 @@ export function LoginPanel() {
             Sign in with your Stellar wallet
           </h1>
           <p className="leading-7 text-muted-foreground">
-            Freighter proves that you control this Testnet account. No password, payment, or
-            transaction is required.
+            Your selected wallet proves that you control this Testnet account. No password, payment,
+            or transaction is required.
           </p>
         </CardHeader>
         <CardContent className="space-y-5">

@@ -50,7 +50,8 @@ export function isSameOrigin(request: Request, expectedOrigin: string): boolean 
 
   const requestHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ?? actual.host;
   const requestProto =
-    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ?? actual.protocol.replace(":", "");
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ??
+    actual.protocol.replace(":", "");
 
   let requestHostname = requestHost;
   try {
