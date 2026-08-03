@@ -33,31 +33,61 @@ export function authError(
   return response;
 }
 
+function isLocalHost(hostname: string): boolean {
+  const clean = hostname.replace(/^\[|\]$/g, "").toLowerCase();
+  return (
+    clean === "localhost" ||
+    clean === "127.0.0.1" ||
+    clean === "0.0.0.0" ||
+    clean === "::1" ||
+    clean.endsWith(".localhost")
+  );
+}
+
 export function isSameOrigin(request: Request, expectedOrigin: string): boolean {
-  if (request.headers.get("sec-fetch-site") === "cross-site") {
-    return false;
-  }
-  const origin = request.headers.get("origin");
   const expected = new URL(expectedOrigin);
   const actual = new URL(request.url);
+
   const requestHost = request.headers.get("x-forwarded-host")?.split(",")[0]?.trim() ?? actual.host;
+  const requestProto =
+    request.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() ?? actual.protocol.replace(":", "");
 
-  const isLocalDevHost =
-    (expected.hostname === "localhost" || expected.hostname === "127.0.0.1") &&
-    (requestHost.startsWith("localhost") || requestHost.startsWith("127.0.0.1"));
+  let requestHostname = requestHost;
+  try {
+    requestHostname = new URL(`http://${requestHost}`).hostname;
+  } catch {
+    requestHostname = requestHost.split(":")[0]?.replace(/^\[|\]$/g, "") ?? requestHost;
+  }
 
-  const isHostMatching = requestHost === expected.host || isLocalDevHost;
+  const origin = request.headers.get("origin");
+  let originUrl: URL | null = null;
+  if (origin) {
+    try {
+      originUrl = new URL(origin);
+    } catch {
+      return false;
+    }
+  }
+
+  const isLocalDev =
+    isLocalHost(expected.hostname) &&
+    isLocalHost(requestHostname) &&
+    (!originUrl || isLocalHost(originUrl.hostname));
+
+  if (!isLocalDev && request.headers.get("sec-fetch-site") === "cross-site") {
+    return false;
+  }
+
+  const expectedProto = expected.protocol.replace(":", "");
+  const isProtoMatching = isLocalDev || requestProto === expectedProto;
+  const isHostMatching = requestHost === expected.host || isLocalDev;
 
   let isOriginMatching = true;
   if (origin) {
-    const originUrl = new URL(origin);
-    const isLocalDevOrigin =
-      (expected.hostname === "localhost" || expected.hostname === "127.0.0.1") &&
-      (originUrl.hostname === "localhost" || originUrl.hostname === "127.0.0.1");
-    isOriginMatching = origin === expected.origin || isLocalDevOrigin;
+    isOriginMatching = origin === expected.origin || isLocalDev;
   }
 
-  return actual.protocol === expected.protocol && isHostMatching && isOriginMatching;
+  return isProtoMatching && isHostMatching && isOriginMatching;
 }
 
 export function clientNetworkSubject(request: Request): string {
